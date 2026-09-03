@@ -20,6 +20,7 @@ jobs:
         run: |
           set -euo pipefail
           cat bootstrap/chunk-aa bootstrap/chunk-ab bootstrap/chunk-ac bootstrap/chunk-ad > /tmp/music-theory-tutor.b64
+          printf '=' >> /tmp/music-theory-tutor.b64
           base64 --decode /tmp/music-theory-tutor.b64 > /tmp/music-theory-tutor.zip
           echo "e5c6a16c85e6f9831fe2cf9f016aba8aad9dad305b6e75e7fbf7b087fd024076  /tmp/music-theory-tutor.zip" | sha256sum -c -
           rm -rf /tmp/music-theory-tutor-src
