@@ -2,6 +2,10 @@
 
 Personal adaptive web tutor for practical music theory.
 
+## Live app
+
+https://unknwnawknd.github.io/music-theory-app---public-/
+
 ## Learning model
 
 - Tiny prerequisite-linked micro-skills
@@ -24,6 +28,7 @@ Personal adaptive web tutor for practical music theory.
 ## Verify
 
 ```bash
+npm install
 npm test
 ```
 
@@ -37,4 +42,10 @@ The dedicated production Supabase project is already configured with public brow
 
 ## Hosting
 
-A GitHub Pages workflow is included. If Pages is unavailable for the chosen repository/account, the same `site/` output can be deployed to Netlify with no application rewrite.
+GitHub Pages deploys automatically from `main` after the test/build workflow succeeds.
+
+## Auth deployment note
+
+Password signup uses the deployed app URL as its email-confirmation return URL. Supabase Auth must allow this exact production redirect URL:
+
+`https://unknwnawknd.github.io/music-theory-app---public-/`
