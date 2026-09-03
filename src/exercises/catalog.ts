@@ -71,14 +71,14 @@ function pitchExercise(skillId: string, index: number): Exercise {
   if (skillId === "pitch.accidentals") {
     const pairs = [["C♯", "D♭"], ["D♯", "E♭"], ["F♯", "G♭"], ["G♯", "A♭"], ["A♯", "B♭"]] as const;
     const pair = pick(pairs, index);
-    return text(skillId, index, `Give the common enharmonic spelling of ${pair[0]} using a flat.`, pair[1]);
+    return text(skillId, index, `What is another name for ${pair[0]}?`, pair[1]);
   }
   return text(skillId, index, index % 2 ? "How many semitones are in a whole step?" : "How many semitones are in a half step?", index % 2 ? "2" : "1", ["1", "2", "3"]);
 }
 
 function intervalExercise(skillId: string, index: number): Exercise {
-  if (skillId === "interval.generic-number") return text(skillId, index, "Ignoring quality, C up to E is what generic interval number?", "3rd", ["2nd", "3rd", "4th"]);
-  if (skillId === "interval.quality-system") return text(skillId, index, "Which interval-number families normally use major/minor qualities?", "2nds, 3rds, 6ths, and 7ths", ["1sts, 4ths, 5ths, and octaves", "2nds, 3rds, 6ths, and 7ths"]);
+  if (skillId === "interval.generic-number") return text(skillId, index, "C to E is what interval number?", "3rd", ["2nd", "3rd", "4th"]);
+  if (skillId === "interval.quality-system") return text(skillId, index, "Which interval numbers can be major or minor?", "2nds, 3rds, 6ths, and 7ths", ["1sts, 4ths, 5ths, and octaves", "2nds, 3rds, 6ths, and 7ths"]);
   if (skillId === "interval.mixed-core" || skillId === "interval.spelling") { const e = intervalBuildExercise(pick(CORE_INTERVALS, index), index); return { ...e, id: `${skillId}:${index}`, skillId }; }
   if (skillId === "interval.inversion") {
     const pairs = [["m2", "M7"], ["M2", "m7"], ["m3", "M6"], ["M3", "m6"], ["P4", "P5"], ["A4", "d5"]] as const;
@@ -95,7 +95,7 @@ function intervalExercise(skillId: string, index: number): Exercise {
 }
 
 function triadExercise(skillId: string, index: number): Exercise {
-  if (skillId === "triad.members") return text(skillId, index, "In a root-position tertian triad, what are the three chord members called?", ["root", "third", "fifth"]);
+  if (skillId === "triad.members") return text(skillId, index, "A basic triad has which three note roles?", ["root", "third", "fifth"]);
   if (skillId === "triad.symbols") {
     const examples = [["Cm", "C minor"], ["F♯", "F♯ major"], ["B°", "B diminished"], ["D+", "D augmented"]] as const;
     const [symbol, expected] = pick(examples, index);
@@ -110,7 +110,7 @@ function triadExercise(skillId: string, index: number): Exercise {
 
 function majorExercise(skillId: string, index: number): Exercise {
   if (skillId === "major.formula") return text(skillId, index, "What is the whole/half-step formula for a major scale?", "W-W-H-W-W-W-H");
-  if (skillId === "scale.degree-numbers") return text(skillId, index, "How many distinct scale degrees are in a diatonic seven-note scale before the octave repeats the tonic?", "7", ["6", "7", "8"]);
+  if (skillId === "scale.degree-numbers") return text(skillId, index, "How many scale degrees are there before the octave repeats?", "7", ["6", "7", "8"]);
   if (skillId === "major.degree-intervals") {
     const map = ["P1", "M2", "M3", "P4", "P5", "M6", "M7"];
     const degree = index % 7 + 1;

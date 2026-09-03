@@ -248,6 +248,56 @@ const PHASE_TITLES = Object.freeze({
   12: "Transfer to guitar",
 });
 
+const PHASE_INTROS = Object.freeze({
+  0: ["This phase is about note names that share the same piano key.", "You will learn when one sound can have more than one correct name."],
+  1: ["This phase is about intervals.", "Intervals tell you the distance between two notes. They are the building blocks for scales and chords."],
+  2: ["This phase is about triads.", "Triads are simple three-note chords. You will learn how their notes are built from the root."],
+  3: ["This phase is about major scales.", "You will learn the pattern behind every major key instead of memorizing unrelated note lists."],
+  4: ["This phase is about the chords inside a major key.", "You will learn which chords naturally belong to a key and why."],
+  5: ["This phase is about chord numbers and progressions.", "The goal is to recognize a progression by its relationships and move it to any key."],
+  6: ["This phase is about what chords do.", "Some chords feel like home, some create movement, and some create tension that wants to resolve."],
+  7: ["This phase is about minor keys.", "You will connect minor scales, chords, and the way minor harmony actually behaves."],
+  8: ["This phase is about seventh chords.", "These are triads with one more note added. They give you more harmonic color and stronger function."],
+  9: ["This phase is about inversions and voice leading.", "You will learn how the same chord can be arranged differently and how to move smoothly between chords."],
+  10: ["This phase is about relationships between keys.", "The Circle of Fifths is a map that helps organize keys, accidentals, and nearby key changes."],
+  11: ["This phase is about advanced practical harmony.", "You will add more chord colors and ways to move outside the basic key without losing the musical center."],
+  12: ["This phase moves the theory onto guitar.", "You will map the same note, interval, chord, and scale relationships across the fretboard."],
+});
+
+const NEW_WORD_CARDS = Object.freeze({
+  "pitch.accidentals": [["Enharmonic", "Two note names that use the same piano key and make the same sound.", "C♯ and D♭ are enharmonic. They are two names for the same black key."]],
+  "interval.generic-number": [["Interval", "The distance between two notes.", "C to E is an interval."]],
+  "interval.quality-system": [["Quality", "The word that tells you the exact size of an interval.", "A 3rd can be major or minor. Major and minor are qualities."]],
+  "triad.members": [["Triad", "A three-note chord built from a root, a 3rd, and a 5th.", "C–E–G is a C major triad."]],
+  "scale.degree-numbers": [["Scale degree", "A number that tells you where a note sits inside a scale.", "In C major, C is 1 and G is 5."]],
+  "diatonic.definition": [["Diatonic", "A note or chord that belongs to the current key.", "In C major, C, D, E, F, G, A, and B are diatonic."], ["Chromatic", "A note that is outside the current key.", "In C major, F♯ is chromatic."]],
+  "roman.major-basic": [["Roman numeral", "A number used to show which scale degree a chord is built on.", "In C major, C major is I and G major is V."]],
+  "function.tonic": [["Tonic", "The musical home or center of a key.", "In C major, C is the tonic."]],
+  "function.dominant": [["Dominant", "A chord or note that strongly pulls back toward tonic.", "In C major, G major strongly pulls toward C."]],
+  "function.predominant": [["Predominant", "A chord that commonly moves toward the dominant.", "In C major, D minor or F major often moves toward G."]],
+  "cadence.basic": [["Cadence", "A chord movement that feels like a pause, ending, or resolution.", "V→I is a strong cadence."]],
+  "minor.relative": [["Relative major/minor", "A major key and minor key that use the same notes but have different home notes.", "C major and A minor use the same notes."]],
+  "progression.transpose": [["Transpose", "Move the same musical relationships into a different key.", "I–V–vi–IV in C major can be moved to G major while keeping the same chord-number pattern."]],
+  "function.basic-flow": [["Function", "The job a chord tends to do in a key.", "Some chords feel like home. Others create movement or tension."]],
+  "minor.parallel": [["Parallel major/minor", "Major and minor keys that share the same home note.", "C major and C minor are parallel keys."]],
+  "minor.raised7": [["Leading tone", "A note one half step below the home note that strongly pulls upward to it.", "In C, B is the leading tone because B wants to move to C."]],
+  "seventh.members": [["Seventh chord", "A four-note chord made by adding a 7th above the root to a triad.", "C–E–G–B is C major 7."]],
+  "inversion.triad": [["Inversion", "A chord with a note other than the root in the bass.", "C/E is a C chord with E as the lowest note."]],
+  "voicing.distinction": [["Voicing", "The way a chord's notes are spread out or arranged.", "C–E–G and C–G–E are different voicings of the same chord."]],
+  "voice.common-tones": [["Voice leading", "How individual notes move from one chord to the next.", "Keeping a shared note while the other notes move can make chord changes smoother."]],
+  "keys.signatures": [["Key signature", "The sharps or flats that normally belong to a key.", "G major has one sharp: F♯."]],
+  "circle.major": [["Circle of Fifths", "A map that organizes keys by fifths.", "Moving clockwise from C takes you to G, then D, then A."]],
+  "extension.compound-intervals": [["Compound interval", "An interval larger than an octave.", "A 9th is an octave plus a 2nd."]],
+  "color.sus": [["Suspended chord", "A chord where the 3rd is replaced by the 2nd or 4th.", "Csus4 uses C–F–G instead of C–E–G."]],
+  "secondary.V": [["Secondary dominant", "A dominant chord that temporarily points toward a chord other than the main tonic.", "In C major, D7 can point strongly to G."]],
+  "mixture.parallel": [["Modal mixture", "Borrowing a chord from the parallel major or minor key.", "In C major, F minor can be borrowed from C minor."]],
+  "mode.tonic-center": [["Mode", "A scale pattern heard around its own home note.", "D Dorian uses D as home; it is not just C major starting on D."]],
+  "modulation.tonicization-vs-keychange": [["Modulation", "A real change of musical home to a new key.", "The music leaves C major and establishes G major as the new home."]],
+  "modulation.tonicization-vs-keychange": [["Tonicization", "Briefly making another chord feel like home without fully changing key.", "D7→G inside C major can briefly make G feel like home."], ["Modulation", "A stronger change where a new key becomes the musical home.", "The music leaves C major and establishes G major."]],
+  "melody.chord-tones": [["Chord tone", "A note that belongs to the chord playing right now.", "Over C major, C, E, and G are chord tones."]],
+  "melody.nonchord": [["Non-chord tone", "A note that is not part of the chord playing right now.", "Over C major, D can be a non-chord tone even though D belongs to the key of C major."]],
+});
+
 function evidenceReady(evidence) {
   return Boolean(evidence?.ready || evidence?.retained || evidence?.state === "ready" || evidence?.state === "retained");
 }
@@ -329,23 +379,41 @@ async function beginItem() {
   await loadExercise(item);
 }
 
-function renderLessonStep(item, label = "Learn") {
+function lessonPagesFor(item) {
   const lesson = lessonForSkill(item.skillId);
+  const skill = SKILL_BY_ID.get(item.skillId);
+  const pages = [];
+  const firstInPhase = skill && SKILLS.find((x) => x.phase === skill.phase)?.id === skill.id;
+  if (item.kind === "new" && firstInPhase) {
+    const intro = PHASE_INTROS[skill.phase];
+    if (intro) pages.push({ eyebrow: `Phase ${skill.phase}`, title: intro[0], body: intro[1] });
+  }
+  for (const [word, meaning, example] of NEW_WORD_CARDS[item.skillId] ?? []) {
+    pages.push({ eyebrow: "New word", title: word, body: meaning, example });
+  }
+  const summaryParts = String(lesson.summary ?? "").split(/(?<=[.!?])\s+/).filter(Boolean);
+  summaryParts.forEach((body, i) => pages.push({ eyebrow: "One idea", title: i === 0 ? lesson.title : "One more piece", body }));
+  if (lesson.rule) pages.push({ eyebrow: "Rule", title: "Keep this simple", body: lesson.rule });
+  if (lesson.workedExample) pages.push({ eyebrow: "Example", title: "Here is one", body: lesson.workedExample });
+  return pages;
+}
+
+function renderLessonStep(item, label = "Learn", pageIndex = 0) {
+  const pages = lessonPagesFor(item);
+  const page = pages[Math.min(pageIndex, pages.length - 1)];
   state.lessonVisible = true;
   root.innerHTML = `
     ${topbarHtml(skillPhase(item.skillId))}
-    <section class="card">
-      <div class="eyebrow">${esc(label)} · ${esc(skillTitle(item.skillId))}</div>
-      <h1>${esc(lesson.title)}</h1>
-      <div class="lesson">
-        <div class="lesson-label">What this means</div>
-        <div class="lesson-summary">${esc(lesson.summary)}</div>
-        ${lesson.rule ? `<div class="rule"><span>Rule</span>${esc(lesson.rule)}</div>` : ""}
-        ${lesson.workedExample ? `<div class="example"><span>Example</span>${esc(lesson.workedExample)}</div>` : ""}
-      </div>
-      <button class="primary" id="lessonTry">${item.kind === "review-repair" ? "Try a repair question" : "Try it"}</button>
+    <section class="card lesson-card-simple">
+      <div class="eyebrow">${esc(page.eyebrow)}</div>
+      <h1>${esc(page.title)}</h1>
+      <div class="lesson-simple-copy">${esc(page.body)}</div>
+      ${page.example ? `<div class="example-simple"><strong>Example</strong><div>${esc(page.example)}</div></div>` : ""}
+      <div class="lesson-page-count">${pageIndex + 1} of ${pages.length}</div>
+      <button class="primary" id="lessonTry">${pageIndex < pages.length - 1 ? "Continue" : (item.kind === "review-repair" ? "Try a repair question" : "Try it")}</button>
     </section>`;
   document.querySelector("#lessonTry").onclick = async () => {
+    if (pageIndex < pages.length - 1) return renderLessonStep(item, label, pageIndex + 1);
     state.lessonVisible = false;
     if (item.kind === "review-repair") state.supportedNext = true;
     await loadExercise(item);
@@ -391,22 +459,23 @@ function answerHtml(spec) {
     return `<div class="answer-stack">
       <div class="field-label">Ascending</div><input class="answer-input" id="ascending" autocomplete="off" placeholder="A B C D…">
       <div class="field-label">Descending</div><input class="answer-input" id="descending" autocomplete="off" placeholder="A G F E…">
-      <div class="hint">Separate notes with spaces or commas. # and b are accepted and normalized.</div>
+      <div class="hint">You can type #, ♯, sharp, b, ♭, or flat. Spaces and hyphens are fine.</div>
     </div>`;
   }
   if (spec.kind === "key-signature") {
     return `<div class="answer-stack"><input class="answer-input" id="count" type="number" min="0" max="7" placeholder="Number of accidentals"><select id="accType"><option value="none">None</option><option value="sharp">Sharps</option><option value="flat">Flats</option></select></div>`;
   }
   const placeholder = spec.kind === "sequence" ? "C E G" : spec.kind === "progression" ? "C G Am F" : spec.kind === "number" ? "6" : "Your answer";
-  const hint = spec.kind === "sequence" ? "Separate notes with spaces or commas. # and b are accepted." : spec.kind === "progression" ? "Enter chord symbols separated by spaces or commas, e.g. C G Am F." : "";
+  const hint = spec.kind === "sequence" ? "Separate notes with spaces or commas. You can type #, ♯, sharp, b, ♭, or flat." : spec.kind === "progression" ? "Enter chord symbols separated by spaces or commas, e.g. C G Am F." : "";
   return `<div class="answer-stack"><input class="answer-input" id="mainAnswer" ${spec.kind === "number" ? 'type="number"' : 'type="text"'} autocomplete="off" placeholder="${esc(placeholder)}">${hint ? `<div class="hint">${esc(hint)}</div>` : ""}</div>`;
 }
 
 function feedbackHtml() {
   if (!state.feedback) return "";
   const f = state.feedback;
-  const expected = f.expected ? `<div class="expected"><strong>Answer:</strong> ${esc(f.expected)}</div>` : "";
-  return `<div class="feedback ${f.correct ? "correct" : "wrong"}"><div class="feedback-title">${f.correct ? "Correct" : "Not quite"}</div><div>${esc(f.detail)}</div>${expected}</div>`;
+  const answer = f.expected ? `<div class="expected">${f.correct ? "Answer" : "Correct answer"}: ${esc(f.expected)}</div>` : "";
+  const message = f.correct ? "You got it." : "Use the correction, then try the next one.";
+  return `<div class="feedback ${f.correct ? "correct" : "wrong"}"><div class="feedback-title">${f.correct ? "Correct" : "Not quite"}</div><div>${message}</div>${answer}</div>`;
 }
 
 function renderPractice() {

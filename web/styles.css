@@ -90,3 +90,9 @@ button { cursor: pointer; }
   .curriculum-phase-head { align-items: flex-start; }
   .status-chip { font-size: .66rem; }
 }
+
+.lesson-card-simple { max-width: 620px; margin: 0 auto; }
+.lesson-simple-copy { font-size: 1.16rem; line-height: 1.55; margin: 18px 0 22px; }
+.example-simple { margin: 18px 0 24px; padding: 16px; border-radius: 14px; background: #1b1e24; border: 1px solid #30343d; line-height: 1.5; }
+.example-simple strong { display: block; color: #a1a1aa; font-size: .75rem; text-transform: uppercase; letter-spacing: .1em; margin-bottom: 7px; }
+.lesson-page-count { color: #71717a; font-size: .78rem; text-align: center; margin: 10px 0 14px; }

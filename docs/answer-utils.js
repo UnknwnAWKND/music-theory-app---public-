@@ -3,14 +3,20 @@ const SHARP = "♯";
 
 export function normalizeAccidentals(text) {
   return String(text ?? "")
+    .trim()
+    .replace(/[‐‑‒–—−-]+/g, "-")
+    .replace(/([A-Ga-g])\s*-?\s*double\s*-?\s*sharp\b/gi, `$1${SHARP}${SHARP}`)
+    .replace(/([A-Ga-g])\s*-?\s*double\s*-?\s*flat\b/gi, `$1${FLAT}${FLAT}`)
+    .replace(/([A-Ga-g])\s*-?\s*sharp\b/gi, `$1${SHARP}`)
+    .replace(/([A-Ga-g])\s*-?\s*flat\b/gi, `$1${FLAT}`)
     .replaceAll("#", SHARP)
     .replace(/([A-Ga-g])b/g, `$1${FLAT}`)
+    .replace(/\b([a-g])(?=[♯♭]|\b)/g, (m) => m.toUpperCase())
     .trim();
 }
 
 export function splitNoteSequence(text) {
-  return String(text ?? "")
-    .trim()
+  return normalizeAccidentals(text)
     .split(/[\s,;|]+/)
     .map((x) => x.trim())
     .filter(Boolean)
@@ -18,14 +24,14 @@ export function splitNoteSequence(text) {
 }
 
 export function parseChordSymbol(symbol) {
-  const raw = normalizeAccidentals(symbol).replace(/\s+/g, "");
+  const raw = normalizeAccidentals(symbol).replace(/[\s-]+/g, "");
   const match = /^([A-Ga-g](?:♯|♭)?)(.*)$/.exec(raw);
   if (!match) return null;
   const root = match[1][0].toUpperCase() + match[1].slice(1);
   const suffix = match[2].toLowerCase();
   let quality = "major";
   if (["m", "min", "minor", "-"] .includes(suffix)) quality = "minor";
-  else if (["°", "dim", "diminished"].includes(suffix)) quality = "diminished";
+  else if (["°", "º", "dim", "diminished"].includes(suffix)) quality = "diminished";
   else if (["+", "aug", "augmented"].includes(suffix)) quality = "augmented";
   else if (suffix !== "" && suffix !== "maj" && suffix !== "major") return null;
   return { root, quality };
