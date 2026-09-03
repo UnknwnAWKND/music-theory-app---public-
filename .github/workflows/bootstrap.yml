@@ -20,37 +20,78 @@ jobs:
         run: |
           set -euo pipefail
 
-          # source-00..12 and source-15 were already verified byte-for-byte.
-          # Rebuild source-13 from its two verified repair halves.
           cat bootstrap/repair-13a.txt bootstrap/repair-13b.txt > /tmp/source-13.txt
           echo "e7326dd122b696f7be57e12dcd2c7a8850d5d82e9e076c68089d1e3187f7ebb8  /tmp/source-13.txt" | sha256sum -c -
 
-          # source-14 has exactly one stray byte. Remove the one byte that
-          # produces the verified source-14 checksum instead of guessing where it is.
           python - <<'PY'
           from pathlib import Path
           import hashlib
+          import string
 
           source = Path('bootstrap/source-14.txt').read_bytes()
-          target = '75367b4b1fca20400e36ef448610308572ec3040c3178ad7e78e73d44c9aa69d'
+          full_target = '75367b4b1fca20400e36ef448610308572ec3040c3178ad7e78e73d44c9aa69d'
+          half0_target = '69f8abeea7e26de7d36a392bd81201f99e9854a3419092e3f2fa977f8b4104a7'
+          half1_target = '24ce6df6905148ac03651adf717b92195109125c4ea93df3d6e21e9bacb95257'
+          alphabet = (string.ascii_letters + string.digits + '+/=').encode()
 
-          if hashlib.sha256(source).hexdigest() == target:
-              fixed = source
-          elif len(source) == 8001:
-              fixed = None
-              for i in range(len(source)):
-                  candidate = source[:i] + source[i + 1:]
-                  if hashlib.sha256(candidate).hexdigest() == target:
-                      fixed = candidate
-                      print(f'Removed stray source-14 byte at offset {i}.')
-                      break
-              if fixed is None:
-                  raise SystemExit('source-14 could not be repaired to its verified checksum')
-          else:
+          def sha(data):
+              return hashlib.sha256(data).hexdigest()
+
+          if len(source) != 8001:
               raise SystemExit(f'unexpected source-14 length: {len(source)}')
+
+          fixed = None
+          for deletion in range(len(source)):
+              candidate = source[:deletion] + source[deletion + 1:]
+              if sha(candidate) == full_target:
+                  fixed = candidate
+                  print(f'Fixed source-14 with deletion at {deletion}.')
+                  break
+
+              h0 = sha(candidate[:4000])
+              h1 = sha(candidate[4000:])
+
+              if h0 == half0_target:
+                  data = bytearray(candidate)
+                  for pos in range(4000, 8000):
+                      old = data[pos]
+                      for replacement in alphabet:
+                          if replacement == old:
+                              continue
+                          data[pos] = replacement
+                          if sha(data[4000:]) == half1_target and sha(data) == full_target:
+                              fixed = bytes(data)
+                              print(f'Fixed source-14 with deletion at {deletion} and substitution at {pos}.')
+                              break
+                      data[pos] = old
+                      if fixed is not None:
+                          break
+
+              elif h1 == half1_target:
+                  data = bytearray(candidate)
+                  for pos in range(0, 4000):
+                      old = data[pos]
+                      for replacement in alphabet:
+                          if replacement == old:
+                              continue
+                          data[pos] = replacement
+                          if sha(data[:4000]) == half0_target and sha(data) == full_target:
+                              fixed = bytes(data)
+                              print(f'Fixed source-14 with deletion at {deletion} and substitution at {pos}.')
+                              break
+                      data[pos] = old
+                      if fixed is not None:
+                          break
+
+              if fixed is not None:
+                  break
+
+          if fixed is None:
+              raise SystemExit('source-14 did not match the verified hashes after bounded repair search')
 
           Path('/tmp/source-14.txt').write_bytes(fixed)
           PY
+
           echo "75367b4b1fca20400e36ef448610308572ec3040c3178ad7e78e73d44c9aa69d  /tmp/source-14.txt" | sha256sum -c -
 
           cat \
