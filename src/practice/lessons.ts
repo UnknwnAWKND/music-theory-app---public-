@@ -41,7 +41,6 @@ export function lessonForSkill(skillId: string): LessonCard {
   if (interval) return interval;
 
   const exact: Record<string, Omit<LessonCard, "skillId" | "title">> = {
-    "pitch.note-names": { summary: "On piano, the white-key letter names repeat A through G. B–C and E–F are adjacent white keys with no black key between them." },
     "pitch.accidentals": { summary: "Sharps raise a written note by a semitone; flats lower it by a semitone. Enharmonic spellings can sound the same but have different theoretical meanings." },
     "pitch.half-whole": { summary: "A half step is one adjacent piano key; a whole step is two half steps." },
     "interval.generic-number": { summary: "Interval number comes from counting letter names inclusively: C–E is some kind of 3rd because C–D–E spans three letters." },

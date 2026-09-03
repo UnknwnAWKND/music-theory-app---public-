@@ -16,23 +16,23 @@ const evidence = (state, ready = false, fragile = false) => ({
 
 test("session planner prioritizes fragile repairs and blocks new material", () => {
   const map = new Map([
-    ["pitch.note-names", evidence("fragile", true, true)],
+    ["pitch.accidentals", evidence("fragile", true, true)],
   ]);
   const plan = planSession({ evidenceBySkill: map, dueReviews: [] });
-  assert.deepEqual(plan.repairSkillIds, ["pitch.note-names"]);
+  assert.deepEqual(plan.repairSkillIds, ["pitch.accidentals"]);
   assert.equal(plan.newSkillId, undefined);
   assert.equal(plan.reasonNoNewSkill, "repair-prerequisite");
 });
 
 test("session planner caps normal review batch at six", () => {
-  const due = Array.from({ length: 8 }, (_, i) => ({ skillId: `x${i}`, dueAt: `2026-09-0${i+1}T00:00:00Z`, urgency: i }));
+  const due = SKILLS.slice(0, 8).map((skill, i) => ({ skillId: skill.id, dueAt: `2026-09-0${i+1}T00:00:00Z`, urgency: i }));
   const plan = planSession({ evidenceBySkill: new Map(), dueReviews: due });
   assert.equal(plan.reviewSkillIds.length, 6);
 });
 
 test("with no repair, backlog, or current acquisition, planner picks an unlocked new skill", () => {
   const plan = planSession({ evidenceBySkill: new Map(), dueReviews: [] });
-  assert.equal(plan.newSkillId, "pitch.note-names");
+  assert.equal(plan.newSkillId, "pitch.accidentals");
 });
 
 test("session planner does not auto-introduce optional enrichment skills", () => {

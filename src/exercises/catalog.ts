@@ -68,11 +68,6 @@ function seventhLabel(q: SeventhQuality) {
 }
 
 function pitchExercise(skillId: string, index: number): Exercise {
-  if (skillId === "pitch.note-names") {
-    const names = ["C", "D", "E", "F", "G", "A", "B"] as const;
-    const expected = pick(names, index);
-    return { id: `${skillId}:${index}`, skillId, type: "note-identify", prompt: "Name the highlighted natural piano key.", assessmentMode: "objective", payload: { expected, naturalKeyIndex: index % 7 } };
-  }
   if (skillId === "pitch.accidentals") {
     const pairs = [["C♯", "D♭"], ["D♯", "E♭"], ["F♯", "G♭"], ["G♯", "A♭"], ["A♯", "B♭"]] as const;
     const pair = pick(pairs, index);

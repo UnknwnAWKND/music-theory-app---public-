@@ -28,7 +28,7 @@ class FakeScheduler {
 }
 
 function acquisition(userId, sessionId, signature, time) {
-  return { userId, sessionId, skillId: "pitch.note-names", promptSignature: signature,
+  return { userId, sessionId, skillId: "pitch.accidentals", promptSignature: signature,
     occurredAt: time, outcome: "correct", independent: true, directEvidence: true, context: "acquisition" };
 }
 
@@ -36,7 +36,7 @@ test("service creates a session plan, derives READY, and seeds delayed review ex
   const repo = new InMemoryTutorRepository();
   const service = new TutorService({ repository: repo, scheduler: new FakeScheduler() });
   const started = await service.startSession("u1", new Date("2026-09-03T12:00:00Z"));
-  assert.equal(started.plan.newSkillId, "pitch.note-names");
+  assert.equal(started.plan.newSkillId, "pitch.accidentals");
 
   await service.submitAttempt(acquisition("u1", started.sessionId, "a", "2026-09-03T12:01:00Z"));
   await service.submitAttempt(acquisition("u1", started.sessionId, "b", "2026-09-03T12:02:00Z"));
@@ -56,12 +56,12 @@ test("only a cold independent review probe advances the scheduler", async () => 
   await service.submitAttempt(acquisition("u1", session.id, "c", "2026-09-03T12:03:00Z"));
   const initialCount = repo.schedulerReviews.length;
 
-  await service.submitAttempt({ userId: "u1", sessionId: session.id, skillId: "pitch.note-names",
+  await service.submitAttempt({ userId: "u1", sessionId: session.id, skillId: "pitch.accidentals",
     promptSignature: "review-a", occurredAt: "2026-09-04T12:00:00Z", outcome: "incorrect",
     independent: true, directEvidence: true, context: "review", coldProbe: true });
   assert.equal(repo.schedulerReviews.length, initialCount + 1);
 
-  await service.submitAttempt({ userId: "u1", sessionId: session.id, skillId: "pitch.note-names",
+  await service.submitAttempt({ userId: "u1", sessionId: session.id, skillId: "pitch.accidentals",
     promptSignature: "repair", occurredAt: "2026-09-04T12:01:00Z", outcome: "correct",
     independent: true, directEvidence: true, context: "review", coldProbe: false });
   assert.equal(repo.schedulerReviews.length, initialCount + 1);

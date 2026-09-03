@@ -1,6 +1,8 @@
 import { SKILLS, type SkillDefinition } from "../curriculum/index.js";
 import type { DerivedSkillEvidence } from "../learning/index.js";
 
+const CURRENT_SKILL_IDS = new Set(SKILLS.map((skill) => skill.id));
+
 export interface DueReview {
   skillId: string;
   dueAt: string;
@@ -46,17 +48,19 @@ export function planSession(input: SessionPlannerInput): SessionPlan {
   const normalBudget = input.normalReviewBudget ?? 6;
   const backlogBudget = input.backlogReviewBudget ?? 10;
   const repairSkillIds = [...input.evidenceBySkill.entries()]
-    .filter(([, evidence]) => evidence.fragile)
+    .filter(([skillId, evidence]) => CURRENT_SKILL_IDS.has(skillId) && evidence.fragile)
     .map(([skillId]) => skillId);
 
-  const sortedDue = [...input.dueReviews].sort((a, b) => {
+  const sortedDue = [...input.dueReviews]
+    .filter((review) => CURRENT_SKILL_IDS.has(review.skillId))
+    .sort((a, b) => {
     if (b.urgency !== a.urgency) return b.urgency - a.urgency;
     return Date.parse(a.dueAt) - Date.parse(b.dueAt);
-  });
+    });
   const budget = sortedDue.length > normalBudget * 2 ? backlogBudget : normalBudget;
   const reviewSkillIds = sortedDue.slice(0, budget).map((x) => x.skillId);
 
-  const acquiringSkillId = input.acquiringSkillIds?.find((id) => input.evidenceBySkill.get(id)?.state === "acquiring");
+  const acquiringSkillId = input.acquiringSkillIds?.find((id) => CURRENT_SKILL_IDS.has(id) && input.evidenceBySkill.get(id)?.state === "acquiring");
 
   let newSkillId: string | undefined;
   let reasonNoNewSkill: string | undefined;

@@ -12,12 +12,11 @@ const s = (
 
 export const SKILLS: readonly SkillDefinition[] = [
   // Entry / foundations
-  s("pitch.note-names", 0, "Name piano notes", [], ["identify"], ["pitch"]),
-  s("pitch.accidentals", 0, "Sharps, flats, and enharmonic spellings", ["pitch.note-names"], ["identify", "diagnose"], ["pitch", "spelling"]),
-  s("pitch.half-whole", 0, "Half steps and whole steps", ["pitch.note-names"], ["construct", "identify"], ["pitch"]),
+  s("pitch.accidentals", 0, "Sharps, flats, and enharmonic spellings", [], ["identify", "diagnose"], ["pitch", "spelling"]),
+  s("pitch.half-whole", 0, "Half steps and whole steps", [], ["construct", "identify"], ["pitch"]),
 
   // Phase 1 — intervals
-  s("interval.generic-number", 1, "Generic interval number", ["pitch.note-names"], ["identify"], ["interval", "spelling"]),
+  s("interval.generic-number", 1, "Generic interval number", [], ["identify"], ["interval", "spelling"]),
   s("interval.quality-system", 1, "Perfect/major/minor/augmented/diminished quality system", ["interval.generic-number", "pitch.half-whole"], ["identify", "diagnose"], ["interval"]),
   s("interval.P1", 1, "Construct perfect unison", ["interval.quality-system", "pitch.accidentals"], ["construct", "identify"], ["interval"]),
   s("interval.m2", 1, "Construct minor 2nd", ["interval.quality-system", "pitch.accidentals"], ["construct", "identify"], ["interval"]),
@@ -48,7 +47,7 @@ export const SKILLS: readonly SkillDefinition[] = [
 
   // Phase 3 — major scales
   s("major.formula", 3, "Major-scale W-W-H-W-W-W-H formula", ["pitch.half-whole"], ["construct", "identify"], ["scale"]),
-  s("scale.degree-numbers", 3, "Scale degrees 1–7", ["pitch.note-names"], ["translate", "identify"], ["scale", "degree"]),
+  s("scale.degree-numbers", 3, "Scale degrees 1–7", ["major.formula"], ["translate", "identify"], ["scale", "degree"]),
   s("major.degree-intervals", 3, "Major scale degrees as tonic intervals", ["major.formula", "scale.degree-numbers", "interval.mixed-core"], ["translate", "construct"], ["scale", "degree", "interval"]),
   s("major.spelling", 3, "Spell major scales with one of each letter", ["major.formula", "pitch.accidentals", "interval.spelling"], ["construct", "diagnose"], ["scale", "spelling"]),
   s("major.construct", 3, "Construct major scales from any practical tonic", ["major.formula", "major.spelling"], ["construct", "diagnose"], ["scale"]),
@@ -153,7 +152,7 @@ export const SKILLS: readonly SkillDefinition[] = [
   s("analysis.integrated", 11, "Integrated harmonic analysis", ["secondary.V", "mixture.parallel", "modulation.tonicization-vs-keychange", "melody.nonchord"], ["identify", "translate", "diagnose", "apply"], ["analysis"]),
 
   // Phase 12 — guitar transfer
-  s("guitar.open-strings", 12, "Standard-tuning open strings", ["pitch.note-names"], ["identify", "apply"], ["guitar"]),
+  s("guitar.open-strings", 12, "Standard-tuning open strings", ["analysis.integrated"], ["identify", "apply"], ["guitar"]),
   s("guitar.fret-notes", 12, "Locate notes across the fretboard", ["guitar.open-strings", "pitch.accidentals", "pitch.half-whole"], ["construct", "identify", "apply"], ["guitar"]),
   s("guitar.intervals", 12, "Map intervals from arbitrary fretboard roots", ["guitar.fret-notes", "interval.mixed-core"], ["construct", "identify", "apply"], ["guitar", "interval"]),
   s("guitar.triads", 12, "Build triads across string sets", ["guitar.intervals", "triad.mixed"], ["construct", "apply"], ["guitar", "chord"]),

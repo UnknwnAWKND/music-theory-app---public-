@@ -26,11 +26,6 @@ function seventhLabel(q) {
     return { major7: "major 7", minor7: "minor 7", dominant7: "dominant 7", halfDiminished7: "half-diminished 7", diminished7: "fully diminished 7" }[q];
 }
 function pitchExercise(skillId, index) {
-    if (skillId === "pitch.note-names") {
-        const names = ["C", "D", "E", "F", "G", "A", "B"];
-        const expected = pick(names, index);
-        return { id: `${skillId}:${index}`, skillId, type: "note-identify", prompt: "Name the highlighted natural piano key.", assessmentMode: "objective", payload: { expected, naturalKeyIndex: index % 7 } };
-    }
     if (skillId === "pitch.accidentals") {
         const pairs = [["C♯", "D♭"], ["D♯", "E♭"], ["F♯", "G♭"], ["G♯", "A♭"], ["A♯", "B♭"]];
         const pair = pick(pairs, index);
