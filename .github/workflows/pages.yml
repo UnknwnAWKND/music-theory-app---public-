@@ -55,3 +55,13 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+      - name: Verify public site is reachable
+        shell: bash
+        env:
+          PAGE_URL: ${{ steps.deployment.outputs.page_url }}
+        run: |
+          set -euo pipefail
+          echo "Checking $PAGE_URL"
+          body="$(curl -fsSL --retry 24 --retry-delay 5 --retry-all-errors "$PAGE_URL")"
+          printf '%s' "$body" | grep -q "Music Theory Tutor"
+          echo "Live site smoke test passed."
