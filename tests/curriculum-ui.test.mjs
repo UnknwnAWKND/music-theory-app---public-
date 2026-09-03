@@ -19,8 +19,8 @@ test("app is dark-only", () => {
   assert.doesNotMatch(css, /prefers-color-scheme:\s*light/i);
 });
 
-test("first theory lesson explains enharmonic spelling in context", () => {
-  assert.match(lessons, /The new idea here is enharmonic spelling/);
-  assert.match(lessons, /A♯ and B♭/);
-  assert.match(lessons, /F♯ major/);
+test("first theory lesson teaches enharmonic notes simply", () => {
+  assert.match(lessons, /Sometimes the same piano key has two different note names/);
+  assert.match(lessons, /C♯ and D♭ are the same black key on the piano/);
+  assert.doesNotMatch(lessons, /The new idea here is enharmonic spelling/);
 });
