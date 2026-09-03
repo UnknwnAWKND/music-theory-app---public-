@@ -15,30 +15,80 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Reconstruct source archive
+      - name: Reconstruct verified source archive
         shell: bash
         run: |
           set -euo pipefail
-          cat bootstrap/chunk-aa bootstrap/chunk-ab bootstrap/chunk-ac bootstrap/chunk-ad > /tmp/music-theory-tutor.b64
+
+          # source-00..12 and source-15 were already verified byte-for-byte.
+          # Rebuild source-13 from its two verified repair halves.
+          cat bootstrap/repair-13a.txt bootstrap/repair-13b.txt > /tmp/source-13.txt
+          echo "a42f9b15ec26058d810f3be2230bc93d96a8fbf2e295961c579ad065e99c55fc  /tmp/source-13.txt" | sha256sum -c -
+
+          # source-14 has exactly one stray byte. Remove the one byte that
+          # produces the verified source-14 checksum instead of guessing where it is.
           python - <<'PY'
-          import base64, pathlib, re
-          raw = pathlib.Path('/tmp/music-theory-tutor.b64').read_text()
-          clean = re.sub(r'[^A-Za-z0-9+/=]', '', raw).rstrip('=')
-          clean += '=' * ((-len(clean)) % 4)
-          pathlib.Path('/tmp/music-theory-tutor.zip').write_bytes(base64.b64decode(clean))
+          from pathlib import Path
+          import hashlib
+
+          source = Path('bootstrap/source-14.txt').read_bytes()
+          target = '4eee743e9c464e2cc88b202eec62afe471481aa6d1e4fe42acc22b5f6797cc25'
+
+          if hashlib.sha256(source).hexdigest() == target:
+              fixed = source
+          elif len(source) == 8001:
+              fixed = None
+              for i in range(len(source)):
+                  candidate = source[:i] + source[i + 1:]
+                  if hashlib.sha256(candidate).hexdigest() == target:
+                      fixed = candidate
+                      print(f'Removed stray source-14 byte at offset {i}.')
+                      break
+              if fixed is None:
+                  raise SystemExit('source-14 could not be repaired to its verified checksum')
+          else:
+              raise SystemExit(f'unexpected source-14 length: {len(source)}')
+
+          Path('/tmp/source-14.txt').write_bytes(fixed)
           PY
+          echo "4eee743e9c464e2cc88b202eec62afe471481aa6d1e4fe42acc22b5f6797cc25  /tmp/source-14.txt" | sha256sum -c -
+
+          cat \
+            bootstrap/source-00.txt \
+            bootstrap/source-01.txt \
+            bootstrap/source-02.txt \
+            bootstrap/source-03.txt \
+            bootstrap/source-04.txt \
+            bootstrap/source-05.txt \
+            bootstrap/source-06.txt \
+            bootstrap/source-07.txt \
+            bootstrap/source-08.txt \
+            bootstrap/source-09.txt \
+            bootstrap/source-10.txt \
+            bootstrap/source-11.txt \
+            bootstrap/source-12.txt \
+            /tmp/source-13.txt \
+            /tmp/source-14.txt \
+            bootstrap/source-15.txt \
+            > /tmp/music-theory-tutor.b64
+
+          echo "1739a65831ee15f1a21b5e8545bda30090a62020ad44c72f77bc3084581377c0  /tmp/music-theory-tutor.b64" | sha256sum -c -
+          base64 --decode /tmp/music-theory-tutor.b64 > /tmp/music-theory-tutor.zip
           echo "e5c6a16c85e6f9831fe2cf9f016aba8aad9dad305b6e75e7fbf7b087fd024076  /tmp/music-theory-tutor.zip" | sha256sum -c -
+
           rm -rf /tmp/music-theory-tutor-src
           mkdir -p /tmp/music-theory-tutor-src
           unzip -q /tmp/music-theory-tutor.zip -d /tmp/music-theory-tutor-src
           rsync -a --exclude='.git' --exclude='.github/workflows/' --exclude='bootstrap/' --exclude='node_modules/' /tmp/music-theory-tutor-src/ ./
-      - name: Verify before committing
+
+      - name: Verify curriculum and learning engine before committing
         shell: bash
         run: |
           npm install --no-save typescript@5.9.2
           npm test
           rm -rf node_modules
-      - name: Commit app source only
+
+      - name: Commit verified app source
         shell: bash
         run: |
           set -euo pipefail
@@ -48,6 +98,6 @@ jobs:
           if git diff --cached --quiet; then
             echo "No source changes to commit."
           else
-            git commit -m "Import music theory tutor v0.7 source"
+            git commit -m "Import verified music theory tutor v0.7 source"
             git push
           fi
