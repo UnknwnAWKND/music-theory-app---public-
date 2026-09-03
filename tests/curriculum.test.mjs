@@ -26,7 +26,7 @@ test("topological order places every prerequisite before its dependent skill", (
 
 test("entry skills unlock with no prerequisites", () => {
   const unlocked = unlockableSkills(new Set());
-  assert.deepEqual(unlocked.map((x) => x.id).sort(), ["pitch.note-names"]);
+  assert.deepEqual(unlocked.map((x) => x.id).sort(), ["interval.generic-number", "pitch.accidentals", "pitch.half-whole"]);
 });
 
 test("a fragile foundational skill can be used to identify all downstream dependents", () => {
