@@ -1,15 +1,35 @@
-# Deployment plan — v0.7
+# Deployment status — v0.7
 
-## Preferred: GitHub repository + static hosting
-The app is a static client plus Supabase. No private server secret is needed in the browser. The committed Supabase publishable key is intentionally public; RLS protects learner rows.
+## Production
 
-1. Create a private repository named `music-theory-tutor` under the connected GitHub account.
-2. Push this project to `main`.
-3. Build with `npm run build:site` or publish the prebuilt static site.
-4. If GitHub Pages is supported for the account/repository, publish the static site there. Otherwise use Netlify with the same files.
+Live GitHub Pages URL:
+
+`https://unknwnawknd.github.io/music-theory-app---public-/`
+
+The repository deploys automatically from `main` after the test/build workflow succeeds.
 
 ## Supabase
-Dedicated project is already created and migrated. Production URL is wired into `web/config.js`. The app uses Supabase Auth and the publishable browser key only.
 
-## Security
-RLS is enabled for all learner-owned tables; anon has no table grants. Attempts and scheduler review history are append-only from the client. Supabase security advisor reported no findings after migration.
+The dedicated `music-theory-tutor` Supabase project is created, migrated, and wired into `web/config.js` using only public browser credentials.
+
+RLS is enabled for all learner-owned tables; anonymous users have no learner-table grants. Attempts and scheduler review history are append-only from the client. Supabase security advisor reports no findings.
+
+## Remaining Auth dashboard setting
+
+Password signup sends confirmation back to the deployed app URL. Supabase Auth URL Configuration should include this exact production URL as an allowed redirect (and preferably as the Site URL):
+
+`https://unknwnawknd.github.io/music-theory-app---public-/`
+
+This setting is managed in the hosted Supabase Auth dashboard and is not exposed by the connected project-management tools used here.
+
+## Verification
+
+Run:
+
+```bash
+npm install
+npm test
+npm run build:site
+```
+
+The GitHub Pages workflow performs the test/build/deploy chain automatically.
