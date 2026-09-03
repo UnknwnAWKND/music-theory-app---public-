@@ -18,8 +18,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          cat bootstrap/source-*.txt > /tmp/music-theory-tutor.b64
-          echo "1739a65831ee15f1a21b5e8545bda30090a62020ad44c72f77bc3084581377c0  /tmp/music-theory-tutor.b64" | sha256sum -c -
+          cat bootstrap/chunk-aa bootstrap/chunk-ab bootstrap/chunk-ac bootstrap/chunk-ad > /tmp/music-theory-tutor.b64
           base64 --decode /tmp/music-theory-tutor.b64 > /tmp/music-theory-tutor.zip
           echo "e5c6a16c85e6f9831fe2cf9f016aba8aad9dad305b6e75e7fbf7b087fd024076  /tmp/music-theory-tutor.zip" | sha256sum -c -
           rm -rf /tmp/music-theory-tutor-src
