@@ -3,6 +3,7 @@ import {
   Fsrs6LongTermSchedulerAdapter,
   SupabaseRestTutorRepository,
   TutorService,
+  SKILLS,
   SKILL_BY_ID,
   exerciseForSkill,
   gradeExercise,
@@ -231,6 +232,68 @@ async function loadToday() {
   renderToday();
 }
 
+const PHASE_TITLES = Object.freeze({
+  0: "Foundations",
+  1: "Intervals",
+  2: "Triads",
+  3: "Major scales",
+  4: "Diatonic major harmony",
+  5: "Progressions & transposition",
+  6: "Harmonic function",
+  7: "Minor tonality",
+  8: "Seventh chords",
+  9: "Inversions, voicings & voice leading",
+  10: "Circle of Fifths & key relationships",
+  11: "Advanced practical harmony",
+  12: "Transfer to guitar",
+});
+
+function evidenceReady(evidence) {
+  return Boolean(evidence?.ready || evidence?.retained || evidence?.state === "ready" || evidence?.state === "retained");
+}
+
+function skillStatus(skill, evidence, readyIds) {
+  if (evidence?.fragile) return { label: "Repair", cls: "repair" };
+  if (evidence?.retained || evidence?.state === "retained") return { label: "Retained", cls: "retained" };
+  if (evidenceReady(evidence)) return { label: "Ready", cls: "ready" };
+  if (evidence?.state === "acquiring") return { label: "In progress", cls: "current" };
+  const prereqsMet = skill.prerequisites.every((id) => readyIds.has(id));
+  return prereqsMet ? { label: "Available", cls: "available" } : { label: "Locked", cls: "locked" };
+}
+
+async function renderCurriculum() {
+  const records = await repo.allSkillStates(USER_ID);
+  const byId = new Map(records.map((record) => [record.skillId, record.evidence]));
+  const readyIds = new Set(records.filter((record) => evidenceReady(record.evidence)).map((record) => record.skillId));
+  const phaseHtml = [];
+
+  for (let phase = 0; phase <= 12; phase += 1) {
+    const skills = SKILLS.filter((skill) => skill.phase === phase);
+    const required = skills.filter((skill) => !skill.optional);
+    const complete = required.length > 0 && required.every((skill) => readyIds.has(skill.id));
+    const anyStarted = skills.some((skill) => byId.has(skill.id));
+    const anyAvailable = skills.some((skill) => skill.prerequisites.every((id) => readyIds.has(id)));
+    const phaseState = complete ? "Complete" : (anyStarted || anyAvailable) ? "Current" : "Locked";
+    const rows = skills.map((skill) => {
+      const status = skillStatus(skill, byId.get(skill.id), readyIds);
+      return `<div class="curriculum-skill ${status.cls}"><div class="curriculum-skill-copy"><strong>${esc(skill.title)}</strong>${skill.optional ? '<span class="optional-tag">Optional</span>' : ''}</div><span class="status-chip ${status.cls}">${esc(status.label)}</span></div>`;
+    }).join("");
+    phaseHtml.push(`<section class="curriculum-phase ${phaseState.toLowerCase()}"><div class="curriculum-phase-head"><div><div class="phase-number">Phase ${phase}</div><h2>${esc(PHASE_TITLES[phase] ?? `Phase ${phase}`)}</h2></div><span class="phase-status ${phaseState.toLowerCase()}">${phaseState === "Locked" ? "🔒 Locked" : esc(phaseState)}</span></div><div class="curriculum-skills">${rows}</div></section>`);
+  }
+
+  root.innerHTML = `
+    ${topbarHtml("Curriculum")}
+    <section class="card curriculum-intro">
+      <div class="eyebrow">Full curriculum</div>
+      <h1>See the whole path.</h1>
+      <p class="muted">Every phase is visible here. This is a roadmap, not a skip menu: locked material stays locked until the learning engine says its prerequisites are ready.</p>
+      <button class="secondary curriculum-back" id="curriculumBack" type="button">Back to today</button>
+    </section>
+    <div class="curriculum-map">${phaseHtml.join("")}</div>
+    ${footerHtml()}`;
+  document.querySelector("#curriculumBack").onclick = renderToday;
+}
+
 function renderToday() {
   const p = state.session.plan;
   const rows = [];
@@ -245,10 +308,11 @@ function renderToday() {
       <h1>${state.queue.length ? "Your practice is ready." : "You're caught up."}</h1>
       <p>${esc(planCountLabel(p))}</p>
       ${rows.length ? `<div class="plan">${rows.map(([a,b]) => `<div class="plan-row"><strong>${esc(a)}</strong><span>${esc(b)}</span></div>`).join("")}</div>` : `<div class="plan"><div class="plan-row"><strong>Done</strong><span>No review or new material is needed right now.</span></div></div>`}
-      <button class="primary" id="startBtn">${state.queue.length ? "Start" : "Finish"}</button>
+      <div class="home-actions"><button class="primary" id="startBtn">${state.queue.length ? "Start" : "Finish"}</button><button class="secondary" id="curriculumBtn" type="button">View full curriculum</button></div>
     </section>
     ${footerHtml()}`;
   document.querySelector("#startBtn").onclick = state.queue.length ? beginItem : finishSession;
+  document.querySelector("#curriculumBtn").onclick = () => renderCurriculum().catch(showFatal);
 }
 
 async function beginItem() {
@@ -274,9 +338,10 @@ function renderLessonStep(item, label = "Learn") {
       <div class="eyebrow">${esc(label)} · ${esc(skillTitle(item.skillId))}</div>
       <h1>${esc(lesson.title)}</h1>
       <div class="lesson">
-        <strong>${esc(lesson.summary)}</strong>
-        ${lesson.rule ? `<div class="rule">Rule: ${esc(lesson.rule)}</div>` : ""}
-        ${lesson.workedExample ? `<div class="example">Example: ${esc(lesson.workedExample)}</div>` : ""}
+        <div class="lesson-label">What this means</div>
+        <div class="lesson-summary">${esc(lesson.summary)}</div>
+        ${lesson.rule ? `<div class="rule"><span>Rule</span>${esc(lesson.rule)}</div>` : ""}
+        ${lesson.workedExample ? `<div class="example"><span>Example</span>${esc(lesson.workedExample)}</div>` : ""}
       </div>
       <button class="primary" id="lessonTry">${item.kind === "review-repair" ? "Try a repair question" : "Try it"}</button>
     </section>`;
