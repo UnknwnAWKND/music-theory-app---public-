@@ -15,6 +15,9 @@ export function hasSupabaseConfig(config = runtimeConfig()) {
 
 export async function createSupabaseBrowserClient(config = runtimeConfig()) {
   if (!hasSupabaseConfig(config)) throw new Error("Supabase browser configuration is incomplete");
+  // Safari/WebKit throws when Window.fetch is later stored and called without Window as its receiver.
+  // Bind it once before the app's REST repository captures the function.
+  if (typeof globalThis.fetch === "function") globalThis.fetch = globalThis.fetch.bind(globalThis);
   const { createClient } = await import(SUPABASE_JS_CDN);
   return createClient(config.supabaseUrl, config.supabasePublishableKey, {
     auth: {
