@@ -1,4 +1,4 @@
-name: Deploy Theory Tutor
+name: Build Theory Tutor
 
 on:
   push:
@@ -6,24 +6,23 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
-  pages: write
-  id-token: write
+  contents: write
 
 concurrency:
-  group: pages
+  group: theory-tutor-build
   cancel-in-progress: true
 
 jobs:
-  test-and-build:
+  test-build-and-sync:
+    if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Configure GitHub Pages
-        uses: actions/configure-pages@v5
       - name: Install build dependencies
         run: npm install
       - name: Apply lesson clarity rules
@@ -45,27 +44,22 @@ jobs:
           NODE
           )"
           npm run build:site
-      - uses: actions/upload-pages-artifact@v3
-        with:
-          path: site
-
-  deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: ubuntu-latest
-    needs: test-and-build
-    steps:
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
-      - name: Verify public site is reachable
+      - name: Sync tested build to docs
         shell: bash
-        env:
-          PAGE_URL: ${{ steps.deployment.outputs.page_url }}
         run: |
           set -euo pipefail
-          echo "Checking $PAGE_URL"
-          body="$(curl -fsSL --retry 24 --retry-delay 5 --retry-all-errors "$PAGE_URL")"
-          printf '%s' "$body" | grep -q "Music Theory Tutor"
-          echo "Live site smoke test passed."
+          rm -rf docs
+          cp -R site docs
+      - name: Commit tested source and docs
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add web/app.js web/styles.css src/practice/lessons.ts src/exercises/catalog.ts docs
+          if git diff --cached --quiet; then
+            echo "No generated changes"
+          else
+            git commit -m "Deploy lesson clarity and answer normalization fixes"
+            git push
+          fi
