@@ -26,6 +26,8 @@ jobs:
         uses: actions/configure-pages@v5
       - name: Install build dependencies
         run: npm install
+      - name: Apply lesson clarity rules
+        run: python scripts/apply-lesson-clarity.py
       - name: Verify curriculum and learning engine
         run: npm test
       - name: Build static site with public Supabase config
