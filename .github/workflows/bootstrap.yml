@@ -1,0 +1,69 @@
+name: Bootstrap Theory Tutor Source
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - bootstrap/READY
+
+permissions:
+  contents: write
+
+jobs:
+  unpack-source:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Reconstruct source archive
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > /tmp/chunks.sha256 <<'EOF'
+          2a2dce4ccaaa138fdc7af03b9be9accca580a7af56cbdba447373fdd1a35fd8f  bootstrap/chunk-00.txt
+          53dff6b03fd448424537c961ccb0d1519d39c555a4d861739474a59a8a1e0af3  bootstrap/chunk-01.txt
+          b3e62336f07662b6f46a1641d6c2f5340bcbe9c7b6d5b8f59e311f0702fb0fa5  bootstrap/chunk-02.txt
+          816ffccaf5c861f160ad49236182dfc64a7e3221612241e8379c21918d4c6e6f  bootstrap/chunk-03.txt
+          9eb13a91f356a60937e864f4f789c525c24084d6ca4cb1f9b8a2282fbee6b558  bootstrap/chunk-04.txt
+          fa702f8a81a38622422dd47bbcea407a88650484fbe0392af9993aac14e698fd  bootstrap/chunk-05.txt
+          256d03ba8aff97ab93e5cc500ea7d36518ff480807e7628d10162fcb73319ced  bootstrap/chunk-06.txt
+          deac654c2b94fa602fcc9fee28d3177702c463f890b1ec34140feb12c22798ab  bootstrap/chunk-07.txt
+          97484c11891df28f903c7cb66ddb0e39112979360b9f31244f3c4d3597759217  bootstrap/chunk-08.txt
+          0995f6d072a0bc5cece659926bc695621d0492e40e1ae1e26e39d109792df25a  bootstrap/chunk-09.txt
+          774e1dfad06174d0f45d70a404c14083ef424992dc13be5334cfb0e59a7b4b47  bootstrap/chunk-10-00.txt
+          240c4dd6152222ff9eb3774f76faa987e8c9c652955a2f8358fa367c60f4fac1  bootstrap/chunk-10-01-00.txt
+          b758c40dee8fd86545e18066f85beff31bd28b4d9f19ff6a171bbaf93c0a5ec7  bootstrap/chunk-10-01-01.txt
+          676da455d475ac8a37488e4a9288cb25001074a9f0485313c7fa138772282cbb  bootstrap/chunk-10-01-02.txt
+          831ca4f3f86949723084ecf50d197e3a34a50f51899d09c71cff7dc7b437efec  bootstrap/chunk-10-01-03.txt
+          1095f25f905267b6f9cafc9b5cedc5ce3aa2f10636d7b69cbefd554cf87f130a  bootstrap/chunk-10-02.txt
+          effa636cac2ec9d361072ccf996496a684ae9b745572a924f460b0bc07dda83c  bootstrap/chunk-10-03.txt
+          296bfda5bef4a2b952b7354ec0b778cbfa17b01fe646ef31ffb36c0b010e4fb7  bootstrap/chunk-10-04.txt
+          a3b7c95aa9bdcbb6f987ce6c4c8bef7a7fb9864d41cdbba4c7282a13db18d72b  bootstrap/chunk-11-00.txt
+          81bcefe097dde80f799f272c8d252a9f65d858a434d7d374652b094365b4b032  bootstrap/chunk-11-01.txt
+          EOF
+          sha256sum -c /tmp/chunks.sha256
+          cat bootstrap/chunk-*.txt > /tmp/music-theory-tutor.b64
+          base64 --decode /tmp/music-theory-tutor.b64 > /tmp/music-theory-tutor.zip
+          echo "e5c6a16c85e6f9831fe2cf9f016aba8aad9dad305b6e75e7fbf7b087fd024076  /tmp/music-theory-tutor.zip" | sha256sum -c -
+          rm -rf /tmp/music-theory-tutor-src
+          mkdir -p /tmp/music-theory-tutor-src
+          unzip -q /tmp/music-theory-tutor.zip -d /tmp/music-theory-tutor-src
+          rsync -a --exclude='.git' --exclude='.github/workflows/' --exclude='bootstrap/' --exclude='node_modules/' /tmp/music-theory-tutor-src/ ./
+      - name: Verify before committing
+        shell: bash
+        run: |
+          npm install --no-save typescript@5.9.2
+          npm test
+          rm -rf node_modules
+      - name: Commit app source only
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .env.example ARCHITECTURE.md BUILD_STATUS.md CURRICULUM_AUDIT.md DEPLOYMENT_PREVIEW.md EXERCISE_COVERAGE.md README.md netlify.toml package.json scripts src supabase tests tsconfig.json web dist
+          if git diff --cached --quiet; then
+            echo "No source changes to commit."
+          else
+            git commit -m "Import music theory tutor v0.7 source"
+            git push
+          fi
