@@ -59,6 +59,20 @@ jobs:
           p = p.replace('  });\n  const budget = sortedDue.length', '    });\n  const budget = sortedDue.length', 1)
           p = p.replace('const acquiringSkillId = input.acquiringSkillIds?.find((id) => input.evidenceBySkill.get(id)?.state === "acquiring");', 'const acquiringSkillId = input.acquiringSkillIds?.find((id) => CURRENT_SKILL_IDS.has(id) && input.evidenceBySkill.get(id)?.state === "acquiring");')
           planner.write_text(p)
+
+          curriculum_test = Path('tests/curriculum.test.mjs')
+          t = curriculum_test.read_text()
+          t = t.replace('assert.deepEqual(unlocked.map((x) => x.id), ["pitch.note-names"]);', 'assert.deepEqual(unlocked.map((x) => x.id).sort(), ["interval.generic-number", "pitch.accidentals", "pitch.half-whole"]);')
+          curriculum_test.write_text(t)
+
+          service_test = Path('tests/service.test.mjs')
+          t = service_test.read_text().replace('pitch.note-names', 'pitch.accidentals')
+          service_test.write_text(t)
+
+          session_test = Path('tests/session.test.mjs')
+          t = session_test.read_text().replace('pitch.note-names', 'pitch.accidentals')
+          t = t.replace('const due = Array.from({ length: 8 }, (_, i) => ({ skillId: `x${i}`, dueAt: `2026-09-0${i+1}T00:00:00Z`, urgency: i }));', 'const due = SKILLS.slice(0, 8).map((skill, i) => ({ skillId: skill.id, dueAt: `2026-09-0${i+1}T00:00:00Z`, urgency: i }));')
+          session_test.write_text(t)
           PY
       - name: Add regression test for hard curriculum boundary
         shell: bash
@@ -110,6 +124,6 @@ jobs:
           rm .github/workflows/remove-beginner-material.yml
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add src/curriculum/skills.ts src/exercises/catalog.ts src/practice/lessons.ts src/session/planner.ts tests/no-beginner-material.test.mjs docs/core/curriculum/skills.js docs/core/exercises/catalog.js docs/core/practice/lessons.js docs/core/session/planner.js .github/workflows/remove-beginner-material.yml
+          git add src/curriculum/skills.ts src/exercises/catalog.ts src/practice/lessons.ts src/session/planner.ts tests/curriculum.test.mjs tests/service.test.mjs tests/session.test.mjs tests/no-beginner-material.test.mjs docs/core/curriculum/skills.js docs/core/exercises/catalog.js docs/core/practice/lessons.js docs/core/session/planner.js .github/workflows/remove-beginner-material.yml
           git commit -m 'Remove excluded beginner material from curriculum'
           git push origin HEAD:main
