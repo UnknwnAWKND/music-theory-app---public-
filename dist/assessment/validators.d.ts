@@ -1,0 +1,10 @@
+import { type Note, type TriadQuality } from "../theory/index.js";
+import type { AssessmentResult } from "./types.js";
+export declare function assessNote(expected: Note, answer: string): AssessmentResult<string, string>;
+export declare function assessNoteSequence(expected: readonly Note[], answers: readonly string[], orderMatters?: boolean): AssessmentResult<string[], string[]>;
+export declare function assessMajorScale(tonic: string, answers: readonly string[]): AssessmentResult<string[], string[]>;
+export declare function assessTriad(root: string, quality: TriadQuality, answers: readonly string[]): AssessmentResult<string[], string[]>;
+export declare function assessMajorScaleDegree(tonic: string, degree: number, answer: string): AssessmentResult<string, string>;
+export declare function assessMajorRomanForChord(tonic: string, chordRoot: string, quality: TriadQuality, answer: string): AssessmentResult<string, string>;
+export declare function assessText(expected: string, answer: string, aliases?: readonly string[]): AssessmentResult<string, string>;
+export declare function assessPitchClassAnswer(expectedPc: number, answer: string): AssessmentResult<number, string>;

@@ -1,0 +1,108 @@
+import { SKILLS } from "./skills.js";
+export function validateSkillGraph(skills = SKILLS) {
+    const counts = new Map();
+    for (const skill of skills)
+        counts.set(skill.id, (counts.get(skill.id) ?? 0) + 1);
+    const duplicateIds = [...counts.entries()].filter(([, n]) => n > 1).map(([id]) => id);
+    const ids = new Set(skills.map((x) => x.id));
+    const missingPrerequisites = [];
+    for (const skill of skills) {
+        for (const prerequisiteId of skill.prerequisites) {
+            if (!ids.has(prerequisiteId))
+                missingPrerequisites.push({ skillId: skill.id, prerequisiteId });
+        }
+    }
+    const byId = new Map(skills.map((skill) => [skill.id, skill]));
+    const visiting = new Set();
+    const visited = new Set();
+    const stack = [];
+    const cycles = [];
+    const cycleKeys = new Set();
+    const dfs = (id) => {
+        if (visited.has(id))
+            return;
+        if (visiting.has(id)) {
+            const start = stack.indexOf(id);
+            const cycle = [...stack.slice(start), id];
+            const key = cycle.join("→");
+            if (!cycleKeys.has(key)) {
+                cycleKeys.add(key);
+                cycles.push(cycle);
+            }
+            return;
+        }
+        visiting.add(id);
+        stack.push(id);
+        const skill = byId.get(id);
+        if (skill)
+            for (const dep of skill.prerequisites)
+                if (byId.has(dep))
+                    dfs(dep);
+        stack.pop();
+        visiting.delete(id);
+        visited.add(id);
+    };
+    for (const skill of skills)
+        dfs(skill.id);
+    return {
+        ok: duplicateIds.length === 0 && missingPrerequisites.length === 0 && cycles.length === 0,
+        duplicateIds,
+        missingPrerequisites,
+        cycles,
+    };
+}
+export function topologicalSkillOrder(skills = SKILLS) {
+    const validation = validateSkillGraph(skills);
+    if (!validation.ok)
+        throw new Error(`Invalid skill graph: ${JSON.stringify(validation)}`);
+    const byId = new Map(skills.map((skill) => [skill.id, skill]));
+    const inDegree = new Map(skills.map((skill) => [skill.id, 0]));
+    const children = new Map();
+    for (const skill of skills) {
+        for (const dep of skill.prerequisites) {
+            inDegree.set(skill.id, (inDegree.get(skill.id) ?? 0) + 1);
+            const arr = children.get(dep) ?? [];
+            arr.push(skill.id);
+            children.set(dep, arr);
+        }
+    }
+    const queue = skills.filter((s) => inDegree.get(s.id) === 0).map((s) => s.id);
+    const result = [];
+    while (queue.length) {
+        const id = queue.shift();
+        result.push(byId.get(id));
+        for (const child of children.get(id) ?? []) {
+            const next = (inDegree.get(child) ?? 0) - 1;
+            inDegree.set(child, next);
+            if (next === 0)
+                queue.push(child);
+        }
+    }
+    return result;
+}
+export function prerequisitesMet(skill, readySkillIds) {
+    return skill.prerequisites.every((id) => readySkillIds.has(id));
+}
+export function unlockableSkills(readySkillIds, knownSkillIds = new Set(), skills = SKILLS) {
+    return skills.filter((skill) => !readySkillIds.has(skill.id) && !knownSkillIds.has(skill.id) && prerequisitesMet(skill, readySkillIds));
+}
+export function descendantsOf(skillId, skills = SKILLS) {
+    const children = new Map();
+    for (const skill of skills) {
+        for (const dep of skill.prerequisites) {
+            const arr = children.get(dep) ?? [];
+            arr.push(skill.id);
+            children.set(dep, arr);
+        }
+    }
+    const out = new Set();
+    const queue = [...(children.get(skillId) ?? [])];
+    while (queue.length) {
+        const id = queue.shift();
+        if (out.has(id))
+            continue;
+        out.add(id);
+        queue.push(...(children.get(id) ?? []));
+    }
+    return out;
+}
