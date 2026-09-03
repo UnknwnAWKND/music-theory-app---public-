@@ -20,11 +20,28 @@ export function mod(n: number, m: number): number {
   return ((n % m) + m) % m;
 }
 
+export function normalizeNoteInput(input: string): string {
+  let text = String(input ?? "")
+    .trim()
+    .toLowerCase()
+    .replace(/[‐‑‒–—−-]+/g, " ")
+    .replaceAll("♯", "#")
+    .replaceAll("♭", "b")
+    .replace(/\bdouble\s+sharp\b/g, "##")
+    .replace(/\bdouble\s+flat\b/g, "bb")
+    .replace(/\bsharp\b/g, "#")
+    .replace(/\bflat\b/g, "b")
+    .replace(/\bnatural\b/g, "")
+    .replace(/\s+/g, "");
+  if (!text) return text;
+  return text[0].toUpperCase() + text.slice(1);
+}
+
 export function parseNote(input: string): Note {
-  const normalized = input.trim().replaceAll("♯", "#").replaceAll("♭", "b");
-  const match = /^([A-Ga-g])([#b]*)$/.exec(normalized);
+  const normalized = normalizeNoteInput(input);
+  const match = /^([A-G])([#b]*)$/.exec(normalized);
   if (!match) throw new Error(`Invalid note: ${input}`);
-  const letter = match[1].toUpperCase() as Letter;
+  const letter = match[1] as Letter;
   const symbols = match[2];
   let accidental = 0;
   for (const symbol of symbols) accidental += symbol === "#" ? 1 : -1;
