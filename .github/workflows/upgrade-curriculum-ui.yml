@@ -1,37 +1,10 @@
-name: Upgrade curriculum UI
+name: Upgrade curriculum UI (one-time)
 
 on:
-  push:
-    branches: [main]
-
-permissions:
-  contents: write
+  workflow_dispatch:
 
 jobs:
-  upgrade:
-    if: github.actor != 'github-actions[bot]'
+  no-op:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-      - name: Apply migration
-        run: python .github/scripts/upgrade_curriculum_ui.py
-      - name: Test
-        run: npm test
-      - name: Build production site
-        run: npm run build:site
-      - name: Mirror production docs
-        run: |
-          rm -rf docs
-          cp -R site docs
-      - name: Commit
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add web src/practice/lessons.ts tests/curriculum-ui.test.mjs docs
-          git commit -m "Add curriculum roadmap, dark UI, and clearer lessons" || exit 0
-          git push
+      - run: echo "This one-time migration has already been applied."
