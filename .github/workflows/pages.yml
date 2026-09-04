@@ -49,7 +49,9 @@ jobs:
           python scripts/prepare-phase-checkpoint-transform.py
           python scripts/apply-phase-checkpoints.py
           python scripts/finalize-phase-checkpoints.py
-      - name: Verify curriculum and learning engine
+      - name: Apply Prompt 4 UI and lesson cleanup
+        run: python scripts/prompt4-ui-lesson-cleanup.py
+      - name: Verify curriculum, UI, and learning engine
         run: npm test
       - name: Check common mobile and tablet widths
         shell: bash
@@ -90,6 +92,6 @@ jobs:
           if git diff --cached --quiet; then
             echo "No generated changes"
           else
-            git commit -m "Deploy phase checkpoints and placement"
+            git commit -m "Deploy Prompt 4 UI and lesson cleanup"
             git push
           fi
