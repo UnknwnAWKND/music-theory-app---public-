@@ -36,6 +36,7 @@ jobs:
           python scripts/ui-polish.py
       - name: Apply learning engine foundation
         run: |
+          python scripts/remove-phase0-curriculum.py
           python scripts/learning-engine-foundation.py
           python scripts/persistence-foundation.py
       - name: Verify curriculum and learning engine
