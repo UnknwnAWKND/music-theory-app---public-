@@ -102,6 +102,15 @@ function currentReadiness(attempts, mode) {
         && x.context !== "review"
         && isCleanFirstResponse(x)
         && x.outcome === "correct");
+    // READY is a current teaching decision, not a permanent reward for an early streak.
+    // A later independent acquisition miss leaves the skill acquiring until the learner
+    // repairs it with a later clean retrieval. Historical successes remain in the log.
+    const lastCurrentAcquisition = [...attempts].reverse().find((x) => !isLegacy(x)
+        && x.context === "acquisition"
+        && isCleanFirstResponse(x));
+    if (lastCurrentAcquisition?.outcome === "incorrect") {
+        return { ready: false, basis: "none" };
+    }
     const qualifies = (subset) => {
         if (!subset.length)
             return "none";

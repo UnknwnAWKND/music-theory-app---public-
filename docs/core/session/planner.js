@@ -1,4 +1,5 @@
 import { SKILLS } from "../curriculum/index.js";
+import { interleavingTargets } from "../practice/adaptive.js";
 const CURRENT_SKILL_IDS = new Set(SKILLS.map((skill) => skill.id));
 function isReadyForPrerequisites(evidence) {
     return Boolean(evidence?.ready && !evidence.fragile);
@@ -28,11 +29,17 @@ export function planSession(input) {
     });
     const budget = sortedDue.length > normalBudget * 2 ? backlogBudget : normalBudget;
     const reviewSkillIds = sortedDue.slice(0, budget).map((x) => x.skillId);
+    const nowMs = Date.parse(input.nowIso ?? new Date().toISOString());
+    const longBreakMs = (input.longBreakDays ?? 14) * 86_400_000;
+    const recoveringFromLongBreak = sortedDue.some((review) => nowMs - Date.parse(review.dueAt) >= longBreakMs);
     const acquiringSkillId = input.acquiringSkillIds?.find((id) => CURRENT_SKILL_IDS.has(id) && input.evidenceBySkill.get(id)?.state === "acquiring");
     let newSkillId;
     let reasonNoNewSkill;
     if (repairSkillIds.length > 0) {
         reasonNoNewSkill = "repair-prerequisite";
+    }
+    else if (recoveringFromLongBreak) {
+        reasonNoNewSkill = "long-break-recovery";
     }
     else if (sortedDue.length > backlogBudget) {
         reasonNoNewSkill = "review-backlog";
@@ -45,5 +52,14 @@ export function planSession(input) {
         if (!newSkillId)
             reasonNoNewSkill = "nothing-unlocked";
     }
-    return { repairSkillIds, reviewSkillIds, acquiringSkillId, newSkillId, reasonNoNewSkill };
+    const alreadyPlanned = new Set([
+        ...repairSkillIds,
+        ...reviewSkillIds,
+        acquiringSkillId,
+        newSkillId,
+    ].filter((x) => Boolean(x)));
+    const interleaveSkillIds = repairSkillIds.length || recoveringFromLongBreak || sortedDue.length > backlogBudget
+        ? []
+        : interleavingTargets(input.evidenceBySkill).filter((id) => !alreadyPlanned.has(id)).slice(0, 2);
+    return { repairSkillIds, reviewSkillIds, acquiringSkillId, newSkillId, interleaveSkillIds, reasonNoNewSkill };
 }

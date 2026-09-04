@@ -117,12 +117,16 @@ export function selectAdaptiveExercise(skillId, attempts, startIndex = 0, poolSi
             index,
             semanticSignature,
             reason: !seenSemantic.has(semanticSignature) ? "unseen-example" : !recentPromptIds.includes(exercise.id) ? "avoid-recent-duplicate" : "best-available",
-            ...{ score },
+            score,
         });
     }
-    return [...candidates]
-        .map((x) => x)
-        .sort((a, b) => b.score - a.score || a.index - b.index)[0];
+    const selected = [...candidates].sort((a, b) => b.score - a.score || a.index - b.index)[0];
+    return {
+        exercise: selected.exercise,
+        index: selected.index,
+        semanticSignature: selected.semanticSignature,
+        reason: selected.reason,
+    };
 }
 export function confusionPartnerFor(skillId, evidence) {
     const partners = CONFUSION_PAIRS[skillId] ?? [];

@@ -8,7 +8,9 @@ import {
   exerciseForSkill,
   gradeExercise,
   lessonForSkill,
-  nextAcquisitionAction,
+  decideAdaptivePractice,
+  inferredConfusionPartner,
+  selectAdaptiveExercise,
 } from "./core/index.js";
 import {
   answerSpecForExercise,
@@ -48,6 +50,7 @@ const state = {
   lessonVisible: false,
   supportedNext: false,
   guidanceForNext: "none",
+  hintShown: false,
   submitted: false,
   selectedChoice: "",
   startedPromptAt: 0,
@@ -321,6 +324,7 @@ function buildQueue(plan) {
   plan.reviewSkillIds.forEach((id) => add(id, "review"));
   add(plan.acquiringSkillId, "acquisition");
   add(plan.newSkillId, "new");
+  (plan.interleaveSkillIds ?? []).forEach((id) => add(id, "interleave"));
   return out;
 }
 
@@ -330,6 +334,7 @@ function planCountLabel(plan) {
   if (plan.reviewSkillIds.length) parts.push(`${plan.reviewSkillIds.length} review${plan.reviewSkillIds.length === 1 ? "" : "s"}`);
   if (plan.acquiringSkillId) parts.push("continue 1 skill");
   if (plan.newSkillId) parts.push("1 new skill");
+  if (plan.interleaveSkillIds?.length) parts.push(`${plan.interleaveSkillIds.length} mixed practice`);
   return parts.length ? parts.join(" · ") : "Nothing meaningful is due";
 }
 
@@ -696,6 +701,7 @@ async function beginItem() {
   state.supportedNext = false;
   state.guidanceForNext = "none";
   state.selectedChoice = "";
+  state.hintShown = false;
   const item = state.queue[state.itemIndex];
   if (item.kind === "new" || item.kind === "acquisition" || item.kind === "review-repair") {
     return renderLessonStep(item, item.kind === "review-repair" ? "Repair" : "Learn");
@@ -753,7 +759,7 @@ function renderLessonStep(item, label = "Learn", pageIndex = 0) {
       outcome: "exposed",
       independent: false,
       directEvidence: false,
-      context: item.kind === "review" || item.kind === "repair" || item.kind === "review-repair" ? "review" : "acquisition",
+      context: item.kind === "review" || item.kind === "repair" || item.kind === "review-repair" ? "review" : item.kind === "interleave" ? "transfer" : "acquisition",
       eventKind: "explanation",
       guidance: "explanation",
       solutionSeen: false,
@@ -767,7 +773,10 @@ function renderLessonStep(item, label = "Learn", pageIndex = 0) {
 
 async function loadExercise(item) {
   const current = state.exerciseIndex.get(item.skillId) ?? 0;
-  state.currentExercise = exerciseForSkill(item.skillId, current);
+  const attempts = await repo.attemptsForSkill(USER_ID, item.skillId);
+  const selected = selectAdaptiveExercise(item.skillId, attempts, current, 12);
+  state.currentExercise = selected.exercise;
+  state.exerciseIndex.set(item.skillId, selected.index);
   state.currentSpec = answerSpecForExercise(state.currentExercise);
   state.startedPromptAt = performance.now();
   state.submitted = false;
@@ -838,6 +847,7 @@ function renderPractice() {
     <section class="question-shell">
       <div class="question-meta"><span>Question ${state.itemIndex + 1} of ${state.queue.length}</span><span>${esc(contextLabel)}</span></div>
       ${state.supportedNext ? `<div class="practice-note"><strong>Quick retry</strong><span>Use the example if you need it. This one is practice, not a mastery check.</span></div>` : ""}
+      ${state.hintShown ? `<div class="practice-note"><strong>Hint</strong><span>${esc(lessonForSkill(item.skillId).rule || lessonForSkill(item.skillId).summary)}</span></div>` : ""}
       <div class="prompt">${esc(e.prompt)}</div>
       ${exerciseVisualHtml(e)}
       ${answerHtml(state.currentSpec)}
@@ -852,7 +862,7 @@ function actionButtons(item) {
   if (state.currentSpec.kind === "self-check") {
     return `<div class="self-check-actions"><button class="primary" id="selfYes">I did it correctly</button><button class="secondary" id="selfNo">Not yet</button></div>`;
   }
-  return `<button class="primary" id="submitBtn">Check answer</button>`;
+  return `<div class="answer-actions"><button class="secondary" id="hintBtn" type="button" ${state.hintShown ? "disabled" : ""}>${state.hintShown ? "Hint used" : "Need a hint?"}</button><button class="primary" id="submitBtn">Check answer</button></div>`;
 }
 
 function bindPracticeHandlers(item) {
@@ -862,6 +872,7 @@ function bindPracticeHandlers(item) {
   }));
   const input = document.querySelector("#mainAnswer");
   if (input) input.addEventListener("keydown", (ev) => { if (ev.key === "Enter") submitObjective(item); });
+  document.querySelector("#hintBtn")?.addEventListener("click", () => useHint(item));
   document.querySelector("#submitBtn")?.addEventListener("click", () => submitObjective(item));
   document.querySelector("#selfYes")?.addEventListener("click", () => submitSelfCheck(item, true));
   document.querySelector("#selfNo")?.addEventListener("click", () => submitSelfCheck(item, false));
@@ -906,8 +917,37 @@ function exampleSignatureForExercise(exercise) {
 }
 
 function activeGuidance() {
+  if (state.hintShown) return "hint";
   if (state.supportedNext) return "explanation";
   return state.guidanceForNext || "none";
+}
+
+async function useHint(item) {
+  if (state.hintShown || state.submitted) return;
+  state.hintShown = true;
+  const lesson = lessonForSkill(item.skillId);
+  const context = item.kind === "review" || item.kind === "repair" || item.kind === "review-repair" ? "review" : item.kind === "interleave" ? "transfer" : "acquisition";
+  await service.submitAttempt({
+    userId: USER_ID,
+    skillId: item.skillId,
+    sessionId: state.session.sessionId,
+    promptSignature: state.currentExercise.id,
+    occurredAt: new Date().toISOString(),
+    outcome: "hinted",
+    independent: false,
+    directEvidence: false,
+    context,
+    coldProbe: false,
+    evidenceSource: "objective",
+    eventKind: "hint",
+    guidance: "hint",
+    solutionSeen: false,
+    exampleSignature: exampleSignatureForExercise(state.currentExercise),
+    exampleAttributes: evidenceAttributesForExercise(state.currentExercise),
+    evidenceVersion: "v2",
+    metadata: { hint: lesson.rule || lesson.summary },
+  });
+  renderPractice();
 }
 
 async function submitObjective(item) {
@@ -942,6 +982,7 @@ async function submitObjective(item) {
     solutionSeen: support === "answer-reveal",
     exampleSignature,
     exampleAttributes,
+    confusionWith: assessment.correct ? undefined : inferredConfusionPartner(item.skillId, answer),
     evidenceVersion: "v2",
     responseMs: Math.round(performance.now() - state.startedPromptAt),
     assessmentCode: assessment.code,
@@ -1006,7 +1047,7 @@ async function submitSelfCheck(item, correct) {
     outcome: correct ? "correct" : "incorrect",
     independent,
     directEvidence: true,
-    context: item.kind === "review" || item.kind === "repair" || item.kind === "review-repair" ? "review" : "acquisition",
+    context: item.kind === "review" || item.kind === "repair" || item.kind === "review-repair" ? "review" : item.kind === "interleave" ? "transfer" : "acquisition",
     coldProbe: Boolean(item.firstProbe && independent),
     evidenceSource: "self-report",
     eventKind: "response",
@@ -1041,26 +1082,33 @@ async function afterFeedback(item) {
     }
     return advanceItem();
   }
-  if (item.kind === "review-repair") return advanceItem();
-  if (evidence?.ready) return advanceItem();
-  if (state.supportedNext) {
-    state.stoppedSkillIds.add(item.skillId);
-    state.supportedNext = false;
+  if (item.kind === "interleave") return advanceItem();
+  if (item.kind === "review-repair") {
+    if (state.supportedNext && state.feedback?.correct) {
+      state.supportedNext = false;
+      state.guidanceForNext = "none";
+      state.hintShown = false;
+      state.exerciseIndex.set(item.skillId, (state.exerciseIndex.get(item.skillId) ?? 0) + 1);
+      return loadExercise(item);
+    }
     return advanceItem();
   }
+  if (evidence?.ready) return advanceItem();
 
   const attempts = await repo.attemptsForSkill(USER_ID, item.skillId);
-  const action = nextAcquisitionAction(attempts);
-  if (action === "stop-unit-for-now") {
+  const decision = decideAdaptivePractice(attempts, evidence);
+  if (decision.action === "stop-for-now") {
     state.stoppedSkillIds.add(item.skillId);
     return advanceItem();
   }
   state.exerciseIndex.set(item.skillId, (state.exerciseIndex.get(item.skillId) ?? 0) + 1);
-  if (action === "scaffold-and-retry") {
+  state.hintShown = false;
+  if (decision.action === "reteach") {
     state.supportedNext = true;
     return renderLessonStep(item, "Quick repair");
   }
   state.supportedNext = false;
+  state.guidanceForNext = "none";
   state.lessonVisible = false;
   await loadExercise(item);
 }

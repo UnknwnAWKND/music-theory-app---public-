@@ -113,7 +113,7 @@ export function selectAdaptiveExercise(
     .slice(-3)
     .map((x) => x.promptSignature);
   const seenSemantic = new Set(attempts.map((x) => x.exampleSignature).filter((x): x is string => Boolean(x)));
-  const candidates: AdaptiveExerciseSelection[] = [];
+  const candidates: Array<AdaptiveExerciseSelection & { score: number }> = [];
 
   for (let offset = 0; offset < Math.max(1, poolSize); offset++) {
     const index = startIndex + offset;
@@ -129,13 +129,17 @@ export function selectAdaptiveExercise(
       index,
       semanticSignature,
       reason: !seenSemantic.has(semanticSignature) ? "unseen-example" : !recentPromptIds.includes(exercise.id) ? "avoid-recent-duplicate" : "best-available",
-      ...( { score } as object ),
-    } as AdaptiveExerciseSelection & { score: number });
+      score,
+    });
   }
 
-  return [...candidates]
-    .map((x) => x as AdaptiveExerciseSelection & { score: number })
-    .sort((a, b) => b.score - a.score || a.index - b.index)[0];
+  const selected = [...candidates].sort((a, b) => b.score - a.score || a.index - b.index)[0];
+  return {
+    exercise: selected.exercise,
+    index: selected.index,
+    semanticSignature: selected.semanticSignature,
+    reason: selected.reason,
+  };
 }
 
 export function confusionPartnerFor(skillId: string, evidence: DerivedSkillEvidence): string | undefined {

@@ -17,7 +17,7 @@ export class TutorService {
         const evidenceBySkill = new Map(states.map((x) => [x.skillId, x.evidence]));
         const dueReviews = await this.repository.dueReviews(userId, now.toISOString());
         const acquiringSkillIds = await this.repository.acquiringSkillIds(userId);
-        return planSession({ evidenceBySkill, dueReviews, acquiringSkillIds });
+        return planSession({ evidenceBySkill, dueReviews, acquiringSkillIds, nowIso: now.toISOString() });
     }
     async startSession(userId, now = new Date()) {
         const plan = await this.previewPlan(userId, now);
