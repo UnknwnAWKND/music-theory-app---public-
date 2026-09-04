@@ -50,7 +50,9 @@ jobs:
       - name: Apply Prompt 4 UI and lesson cleanup
         run: python scripts/prompt4-ui-lesson-cleanup.py
       - name: Apply full QA bug sweep
-        run: python scripts/qa-bug-sweep.py
+        run: |
+          python scripts/qa-bug-sweep.py
+          python scripts/qa-finalize.py
       - name: Verify curriculum, UI, and learning engine
         run: npm test
       - name: Check common mobile and tablet widths
