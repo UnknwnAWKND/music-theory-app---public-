@@ -78,7 +78,7 @@ test("8. login lazily creates or loads fresh profile and settings state", () => 
   assert.match(app, /upsertProfile\(userId/);
   assert.match(app, /getSettings\(userId\)/);
   assert.match(app, /upsertSettings\(settings\)/);
-  assert.match(app, /rebuild-block1/);
+  assert.match(read("web/config.js"), /buildVersion:\s*"rebuild-block1"/);
 });
 
 test("9. active rebuilt UI has no assistance button", () => {
@@ -151,7 +151,9 @@ test("18. app safely loads with zero active curriculum lessons", () => {
 
 test("19. Phase 0 does not exist", () => {
   assert.equal(CURRICULUM_PHASES.some((phase) => phase.phase === 0), false);
-  assert.doesNotMatch(read("src/curriculum/types.ts"), /\b0\s*\|\s*1/);
+  const phaseType = read("src/curriculum/types.ts").split("\n").find((line) => line.includes("type PhaseNumber")) ?? "";
+  assert.match(phaseType, /PhaseNumber = 1 \| 2 \| 3 \| 4 \| 5 \| 6;/);
+  assert.doesNotMatch(phaseType, /\b0\b/);
 });
 
 test("20. reusable adaptive learning infrastructure remains intact", () => {
