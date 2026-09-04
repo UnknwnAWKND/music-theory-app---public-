@@ -1,8 +1,12 @@
+export type LessonExpectation = "know-instantly" | "understand";
+
 export interface LessonTeachingStep {
   id: string;
   title: string;
   body: string;
   workedExample?: string;
+  payoff?: string;
+  expectation?: LessonExpectation;
   visual?: { kind: "piano" | "interval" | "scale" | "chord" | "circle"; data?: Record<string, unknown> };
 }
 
