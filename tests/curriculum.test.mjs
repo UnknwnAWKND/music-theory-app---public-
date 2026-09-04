@@ -24,9 +24,27 @@ test("topological order places every prerequisite before its dependent skill", (
   }
 });
 
-test("entry skills unlock with no prerequisites", () => {
+test("Phase 1 is the curriculum entry point after Phase 0 removal", () => {
   const unlocked = unlockableSkills(new Set());
-  assert.deepEqual(unlocked.map((x) => x.id).sort(), ["interval.generic-number", "pitch.accidentals", "pitch.half-whole"]);
+  assert.deepEqual(unlocked.map((x) => x.id), ["interval.generic-number"]);
+  assert.equal(SKILLS[0].phase, 1);
+  assert.equal(SKILLS[0].id, "interval.generic-number");
+});
+
+test("Phase 0 is absent and later phase numbers remain 1 through 12", () => {
+  const phases = [...new Set(SKILLS.map((x) => x.phase))].sort((a, b) => a - b);
+  assert.deepEqual(phases, [1,2,3,4,5,6,7,8,9,10,11,12]);
+  assert.equal(SKILLS.some((x) => x.phase === 0), false);
+  assert.equal(SKILLS.some((x) => x.id === "pitch.accidentals" || x.id === "pitch.half-whole"), false);
+});
+
+test("retired Phase 0 skills are not prerequisite edges", () => {
+  const retired = new Set(["pitch.accidentals", "pitch.half-whole"]);
+  for (const skill of SKILLS) {
+    for (const prerequisite of skill.prerequisites) {
+      assert.equal(retired.has(prerequisite), false, `${skill.id} still depends on ${prerequisite}`);
+    }
+  }
 });
 
 test("a fragile foundational skill can be used to identify all downstream dependents", () => {
