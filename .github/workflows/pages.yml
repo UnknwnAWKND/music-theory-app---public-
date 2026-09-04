@@ -45,8 +45,12 @@ jobs:
         run: |
           python scripts/apply-lesson-clarity.py
           python scripts/final-lesson-clarity.py
+      - name: Apply 2026 UI redesign
+        run: python scripts/redesign-ui.py
       - name: Verify curriculum and learning engine
         run: npm test
+      - name: Check common mobile and tablet widths
+        run: node scripts/responsive-smoke.mjs
       - name: Build static site with public Supabase config
         shell: bash
         run: |
@@ -78,6 +82,6 @@ jobs:
           if git diff --cached --quiet; then
             echo "No generated changes"
           else
-            git commit -m "Deploy profile and settings update"
+            git commit -m "Deploy 2026 mobile UI redesign"
             git push
           fi
