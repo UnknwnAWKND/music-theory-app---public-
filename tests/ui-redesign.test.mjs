@@ -70,7 +70,7 @@ test("curriculum has compact phase navigation and focused phase detail screens",
 test("lesson and question flows use focused study layouts with inline feedback", () => {
   assert.match(app, /class="lesson-content"/);
   assert.match(app, /class="question-shell"/);
-  assert.match(app, /Question \$\{state\.itemIndex \+ 1\} of/);
+  assert.match(app, /Question \$\{questionNumber\} of \$\{round\.size\}/);
   assert.match(app, /feedback-detail/);
   assert.match(app, /f\.detail/);
 });

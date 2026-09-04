@@ -1,4 +1,4 @@
-import { SKILLS, type SkillDefinition } from "../curriculum/index.js";
+import { SKILLS, SKILL_BY_ID, type SkillDefinition } from "../curriculum/index.js";
 import type { DerivedSkillEvidence } from "../learning/index.js";
 import { interleavingTargets } from "../practice/adaptive.js";
 
@@ -63,18 +63,27 @@ function nextUnlockable(
   });
 }
 
+function duePriority(review: DueReview): number {
+  const weight = Math.max(1, SKILL_BY_ID.get(review.skillId)?.recurrenceWeight ?? 1);
+  // Urgency still dominates. Curriculum weight breaks ties and lifts foundational
+  // work when several reviews are legitimately due; it never marks anything due early.
+  return review.urgency * (1 + (weight - 1) * 0.18);
+}
+
 export function planSession(input: SessionPlannerInput): SessionPlan {
   const normalBudget = input.normalReviewBudget ?? 6;
   const backlogBudget = input.backlogReviewBudget ?? 10;
   const repairSkillIds = [...input.evidenceBySkill.entries()]
     .filter(([skillId, evidence]) => CURRENT_SKILL_IDS.has(skillId) && evidence.fragile)
-    .map(([skillId]) => skillId);
+    .map(([skillId]) => skillId)
+    .sort((a, b) => (SKILL_BY_ID.get(b)?.recurrenceWeight ?? 1) - (SKILL_BY_ID.get(a)?.recurrenceWeight ?? 1));
 
   const sortedDue = [...input.dueReviews]
     .filter((review) => CURRENT_SKILL_IDS.has(review.skillId))
     .sort((a, b) => {
-    if (b.urgency !== a.urgency) return b.urgency - a.urgency;
-    return Date.parse(a.dueAt) - Date.parse(b.dueAt);
+      const priorityDelta = duePriority(b) - duePriority(a);
+      if (priorityDelta !== 0) return priorityDelta;
+      return Date.parse(a.dueAt) - Date.parse(b.dueAt);
     });
   const budget = sortedDue.length > normalBudget * 2 ? backlogBudget : normalBudget;
   const reviewSkillIds = sortedDue.slice(0, budget).map((x) => x.skillId);

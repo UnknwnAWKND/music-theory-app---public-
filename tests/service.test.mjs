@@ -28,9 +28,9 @@ class FakeScheduler {
 }
 
 function acquisition(userId, sessionId, signature, time, overrides = {}) {
-  return { userId, sessionId, skillId: "interval.generic-number", promptSignature: signature,
+  return { userId, sessionId, skillId: "interval.number-3-8", promptSignature: signature,
     occurredAt: time, outcome: "correct", independent: true, directEvidence: true, context: "acquisition",
-    eventKind: "response", responseMode: "recognition", guidance: "none", evidenceVersion: "v2",
+    eventKind: "response", responseMode: "constructed", guidance: "none", evidenceVersion: "v2",
     exampleSignature: signature, ...overrides };
 }
 
@@ -38,11 +38,11 @@ test("service establishes READY from the skill evidence profile and seeds review
   const repo = new InMemoryTutorRepository();
   const service = new TutorService({ repository: repo, scheduler: new FakeScheduler() });
   const started = await service.startSession("u1", new Date("2026-09-03T12:00:00Z"));
-  assert.equal(started.plan.newSkillId, "interval.generic-number");
+  assert.equal(started.plan.newSkillId, "interval.number-3-8");
 
-  const one = await service.submitAttempt(acquisition("u1", started.sessionId, "generic:1", "2026-09-03T12:01:00Z"));
+  const one = await service.submitAttempt(acquisition("u1", started.sessionId, "number-3-8:1", "2026-09-03T12:01:00Z"));
   assert.equal(one.ready, false);
-  const evidence = await service.submitAttempt(acquisition("u1", started.sessionId, "generic:2", "2026-09-03T12:03:00Z"));
+  const evidence = await service.submitAttempt(acquisition("u1", started.sessionId, "number-3-8:2", "2026-09-03T12:03:00Z"));
   assert.equal(evidence.ready, true);
   assert.equal(evidence.retained, false);
   assert.equal(repo.cards.size, 1);
@@ -56,7 +56,7 @@ test("service preserves first response and marks a later same-prompt response as
   const session = await repo.createSession("u1", "2026-09-03T12:00:00Z");
   await service.submitAttempt(acquisition("u1", session.id, "same", "2026-09-03T12:01:00Z", { outcome: "incorrect" }));
   await service.submitAttempt(acquisition("u1", session.id, "same", "2026-09-03T12:02:00Z"));
-  const rows = await repo.attemptsForSkill("u1", "interval.generic-number");
+  const rows = await repo.attemptsForSkill("u1", "interval.number-3-8");
   assert.equal(rows[0].outcome, "incorrect");
   assert.equal(rows[0].firstSubmission, true);
   assert.equal(rows[1].outcome, "correct");
@@ -73,16 +73,16 @@ test("only a cold independent first-submission review probe advances the schedul
   const initialCount = repo.schedulerReviews.length;
 
   const reviewSession = await repo.createSession("u1", "2026-09-04T12:00:00Z");
-  await service.submitAttempt({ userId: "u1", sessionId: reviewSession.id, skillId: "interval.generic-number",
+  await service.submitAttempt({ userId: "u1", sessionId: reviewSession.id, skillId: "interval.number-3-8",
     promptSignature: "review-a", occurredAt: "2026-09-04T12:00:00Z", outcome: "incorrect",
     independent: true, directEvidence: true, context: "review", coldProbe: true,
-    eventKind: "response", responseMode: "recognition", guidance: "none", evidenceVersion: "v2" });
+    eventKind: "response", responseMode: "constructed", guidance: "none", evidenceVersion: "v2" });
   assert.equal(repo.schedulerReviews.length, initialCount + 1);
 
-  await service.submitAttempt({ userId: "u1", sessionId: reviewSession.id, skillId: "interval.generic-number",
+  await service.submitAttempt({ userId: "u1", sessionId: reviewSession.id, skillId: "interval.number-3-8",
     promptSignature: "repair", occurredAt: "2026-09-04T12:01:00Z", outcome: "correct",
     independent: false, directEvidence: true, context: "review", coldProbe: false,
-    eventKind: "response", responseMode: "recognition", guidance: "explanation", evidenceVersion: "v2" });
+    eventKind: "response", responseMode: "constructed", guidance: "explanation", evidenceVersion: "v2" });
   assert.equal(repo.schedulerReviews.length, initialCount + 1, "relearning must not be credited as a successful cold review");
 });
 
@@ -90,5 +90,5 @@ test("previewPlan can recompute unlocked work without creating a new study sessi
   const repo = new InMemoryTutorRepository();
   const service = new TutorService({ repository: repo, scheduler: new FakeScheduler() });
   const plan = await service.previewPlan("preview-user", new Date("2026-09-03T12:00:00Z"));
-  assert.equal(plan.newSkillId, "interval.generic-number");
+  assert.equal(plan.newSkillId, "interval.number-3-8");
 });

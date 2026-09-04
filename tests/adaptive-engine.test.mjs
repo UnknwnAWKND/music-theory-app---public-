@@ -10,6 +10,7 @@ import {
   planSession,
   selectAdaptiveExercise,
   semanticExerciseSignature,
+  SKILLS,
 } from "../dist/index.js";
 
 const t0 = Date.parse("2026-09-01T12:00:00Z");
@@ -120,6 +121,8 @@ test("confusion history triggers interleaving only after both related skills are
   ]);
   assert.deepEqual(interleavingTargets(map), ["interval.m3", "interval.M3"]);
   map.set("interval.M3", { ...ready(), ready: false, state: "acquiring" });
+  assert.deepEqual(interleavingTargets(map), ["interval.m3"]);
+  map.set("interval.m3", { ...ready({ "interval.M3": 2 }), state: "retained", retained: true });
   assert.deepEqual(interleavingTargets(map), []);
 });
 
@@ -136,9 +139,8 @@ test("long-break recovery prioritizes overdue work before unnecessary new materi
 
 test("session planner can be genuinely caught up without manufacturing busywork", () => {
   const allReady = new Map();
-  const skillsText = fs.readFileSync("src/curriculum/skills.ts", "utf8");
-  for (const match of skillsText.matchAll(/s\("([^"]+)",\s*(\d+)/g)) {
-    allReady.set(match[1], { ready: true, retained: true, fragile: false, state: "retained", confusions: {} });
+  for (const skill of SKILLS) {
+    allReady.set(skill.id, { ready: true, retained: true, fragile: false, state: "retained", confusions: {} });
   }
   const plan = planSession({ evidenceBySkill: allReady, dueReviews: [], nowIso: "2026-09-03T12:00:00Z" });
   assert.equal(plan.newSkillId, undefined);

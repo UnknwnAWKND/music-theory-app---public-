@@ -2,7 +2,7 @@ name: Build Theory Tutor
 
 on:
   push:
-    branches: [main]
+    branches: [main, redesign/curriculum-v09]
   workflow_dispatch:
 
 permissions:
@@ -53,6 +53,18 @@ jobs:
         run: |
           python scripts/qa-bug-sweep.py
           python scripts/qa-finalize.py
+      - name: Apply curriculum v0.9 spiral redesign
+        run: |
+          python scripts/apply-curriculum-v09-core.py
+          python scripts/apply-curriculum-v09.py
+          python scripts/finalize-curriculum-v09-rounds.py
+          python scripts/apply-curriculum-v09-test-compat.py
+          test -f src/exercises/catalog-v09.ts
+          test -f src/practice/lessons-v09.ts
+          grep -q "interval.number-3-8" src/curriculum/skills.ts
+          grep -q "MINIMUM_PRACTICE_ROUND_SIZE = 30" src/practice/rounds.ts
+          grep -q "CURRICULUM_V09_ROUNDS" web/app.js
+          grep -q "Question \${questionNumber} of \${round.size}" web/app.js
       - name: Verify curriculum, UI, and learning engine
         run: npm test
       - name: Check common mobile and tablet widths
@@ -94,6 +106,6 @@ jobs:
           if git diff --cached --quiet; then
             echo "No generated changes"
           else
-            git commit -m "Deploy full QA bug sweep"
+            git commit -m "Deploy curriculum v0.9 spiral redesign"
             git push
           fi
