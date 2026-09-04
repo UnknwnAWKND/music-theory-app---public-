@@ -31,9 +31,14 @@ const NUMBER_LESSONS: Readonly<Record<string, Omit<LessonCard, "skillId" | "titl
     rule: "Count six letter names including the root.",
     workedExample: "C→A is a 6th: C–D–E–F–G–A.",
   },
+  "interval.number-mixed-all": {
+    summary: "Now mix every simple interval number from 2nd through octave. This is where the full number map starts becoming automatic instead of something you slowly recount every time.",
+    rule: "Work from the root to the target letter. Use the interval number first; quality and accidentals come afterward.",
+    workedExample: "From F, a 6th must use some kind of D because F–G–A–B–C–D contains six letter names.",
+  },
   "interval.generic-number": {
-    summary: "Now all learned interval numbers are mixed. The goal is to construct the correct target letter from any root without slowly recounting forever.",
-    rule: "Derive when needed, but repeated spaced practice should make common number relationships increasingly automatic.",
+    summary: "Use note pairs to recognize interval numbers quickly. This keeps older interval-number evidence useful without replacing the redesigned mixed construction work.",
+    rule: "Count letter names inclusively when you need to verify the number.",
   },
 });
 
