@@ -9,6 +9,7 @@ import type {
   StoredSchedulerReview,
   StudySessionRecord,
   UserLearningSettings,
+  UserProfile,
 } from "./types.js";
 
 export interface KeyValueStorage {
@@ -23,10 +24,11 @@ interface BrowserSnapshot {
   cards: StoredSchedulerCard[];
   schedulerReviews: StoredSchedulerReview[];
   settings: UserLearningSettings[];
+  profiles: UserProfile[];
 }
 
 const EMPTY: BrowserSnapshot = {
-  sessions: [], attempts: [], skillStates: [], cards: [], schedulerReviews: [], settings: [],
+  sessions: [], attempts: [], skillStates: [], cards: [], schedulerReviews: [], settings: [], profiles: [],
 };
 
 function clone<T>(value: T): T { return JSON.parse(JSON.stringify(value)) as T; }
@@ -50,7 +52,7 @@ export class BrowserStorageTutorRepository implements TutorRepository {
       const parsed = JSON.parse(raw) as Partial<BrowserSnapshot>;
       return {
         sessions: parsed.sessions ?? [], attempts: parsed.attempts ?? [], skillStates: parsed.skillStates ?? [],
-        cards: parsed.cards ?? [], schedulerReviews: parsed.schedulerReviews ?? [], settings: parsed.settings ?? [],
+        cards: parsed.cards ?? [], schedulerReviews: parsed.schedulerReviews ?? [], settings: parsed.settings ?? [], profiles: parsed.profiles ?? [],
       };
     } catch { return clone(EMPTY); }
   }
@@ -64,6 +66,10 @@ export class BrowserStorageTutorRepository implements TutorRepository {
     const db = this.read(); const row = db.sessions.find((x) => x.id === sessionId && x.userId === userId);
     if (!row) throw new Error(`Unknown session ${sessionId}`);
     row.completedAt = completedAt; row.completionReason = completionReason; this.write(db);
+  }
+  async recentSessions(userId: string, limit = 10): Promise<StudySessionRecord[]> {
+    return this.read().sessions.filter((x)=>x.userId===userId)
+      .sort((a,b)=>Date.parse(b.startedAt)-Date.parse(a.startedAt)).slice(0,Math.max(0,limit)).map(clone);
   }
   async appendAttempt(input: AppendAttemptInput): Promise<StoredAttempt> {
     const db = this.read(); const row: StoredAttempt = { id: uid("attempt"), ...clone(input) };
@@ -98,8 +104,17 @@ export class BrowserStorageTutorRepository implements TutorRepository {
   async acquiringSkillIds(userId: string): Promise<string[]> {
     return this.read().skillStates.filter((x)=>x.userId===userId&&x.evidence.state==="acquiring").map((x)=>x.skillId);
   }
+  async getProfile(userId: string): Promise<UserProfile|undefined> {
+    const row=this.read().profiles.find((x)=>x.userId===userId); return row?clone(row):undefined;
+  }
+  async upsertProfile(userId: string, displayName: string, createdAt?: string): Promise<void> {
+    const db=this.read(); const i=db.profiles.findIndex((x)=>x.userId===userId); const now=new Date().toISOString();
+    const row:UserProfile={userId,displayName,createdAt:i>=0?db.profiles[i].createdAt:(createdAt??now),updatedAt:now};
+    if(i>=0) db.profiles[i]=row; else db.profiles.push(row); this.write(db);
+  }
   async getSettings(userId: string): Promise<UserLearningSettings|undefined> {
-    const row=this.read().settings.find((x)=>x.userId===userId); return row?clone(row):undefined;
+    const row=this.read().settings.find((x)=>x.userId===userId);
+    return row?{...clone(row),requirePreviousLessons:row.requirePreviousLessons??true}:undefined;
   }
   async upsertSettings(settings: UserLearningSettings): Promise<void> {
     const db=this.read(); const i=db.settings.findIndex((x)=>x.userId===settings.userId);

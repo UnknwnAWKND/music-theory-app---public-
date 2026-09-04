@@ -34,6 +34,8 @@ let service;
 let authClient = null;
 let persistenceMode = "local";
 let authEmail = "";
+let userSettings = null;
+let userProfile = null;
 
 const state = {
   session: null,
@@ -50,6 +52,7 @@ const state = {
   startedPromptAt: 0,
   stoppedSkillIds: new Set(),
   fastPathPasses: 0,
+  manualStudy: null,
 };
 
 const MAX_FAST_PATH_PASSES = 4;
@@ -63,11 +66,42 @@ function skillPhase(id) { const x = SKILL_BY_ID.get(id); return x ? `Phase ${x.p
 
 function topbarHtml(label = "") {
   const sync = persistenceMode === "supabase" ? "Synced" : "Local preview";
-  return `<div class="topbar"><div class="brand">Theory Tutor</div><div class="topbar-right"><span class="phase-pill">${esc(label || sync)}</span>${persistenceMode === "supabase" ? `<button class="text-button" data-signout type="button">Sign out</button>` : ""}</div></div>`;
+  const accountActions = `<button class="text-button" data-profile type="button">Profile</button><button class="text-button" data-settings type="button">Settings</button>${persistenceMode === "supabase" ? `<button class="text-button" data-signout type="button">Logout</button>` : ""}`;
+  return `<div class="topbar"><div class="brand">Theory Tutor</div><div class="topbar-right"><span class="phase-pill">${esc(label || sync)}</span>${accountActions}</div></div>`;
 }
 
 function footerHtml() {
   return `<div class="footer">${persistenceMode === "supabase" ? "Progress is saved securely to your account." : "Preview progress is saved on this device."}</div>`;
+}
+
+function defaultLearningSettings(userId) {
+  return {
+    userId,
+    desiredRetention: 0.90,
+    maximumIntervalDays: 36500,
+    requirePreviousLessons: true,
+    curriculumVersion: "v0.7",
+    schedulerVersion: "fsrs-6",
+  };
+}
+
+function defaultDisplayName(email) {
+  const local = String(email ?? "").split("@")[0].trim();
+  return local || "Student";
+}
+
+async function ensureUserProfile(createdAt) {
+  let profile = await repo.getProfile(USER_ID);
+  if (!profile) {
+    await repo.upsertProfile(USER_ID, defaultDisplayName(authEmail), createdAt);
+    profile = await repo.getProfile(USER_ID);
+  }
+  userProfile = profile ?? {
+    userId: USER_ID,
+    displayName: defaultDisplayName(authEmail),
+    createdAt: createdAt ?? new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  };
 }
 
 async function initializeLocalRuntime() {
@@ -75,7 +109,17 @@ async function initializeLocalRuntime() {
   USER_ID = "local-preview-user";
   authEmail = "";
   repo = new BrowserStorageTutorRepository(localStorage, "music-theory-tutor:v0.7-preview");
-  const scheduler = new Fsrs6LongTermSchedulerAdapter();
+  let settings = await repo.getSettings(USER_ID);
+  if (!settings) {
+    settings = defaultLearningSettings(USER_ID);
+    await repo.upsertSettings(settings);
+  }
+  userSettings = settings;
+  await ensureUserProfile(new Date().toISOString());
+  const scheduler = new Fsrs6LongTermSchedulerAdapter({
+    desiredRetention: settings.desiredRetention,
+    maximumIntervalDays: settings.maximumIntervalDays,
+  });
   service = new TutorService({ repository: repo, scheduler });
 }
 
@@ -90,15 +134,11 @@ async function initializeSupabaseRuntime(session) {
   });
   let settings = await repo.getSettings(USER_ID);
   if (!settings) {
-    settings = {
-      userId: USER_ID,
-      desiredRetention: 0.90,
-      maximumIntervalDays: 36500,
-      curriculumVersion: "v0.7",
-      schedulerVersion: "fsrs-6",
-    };
+    settings = defaultLearningSettings(USER_ID);
     await repo.upsertSettings(settings);
   }
+  userSettings = settings;
+  await ensureUserProfile(session.user.created_at ?? new Date().toISOString());
   const scheduler = new Fsrs6LongTermSchedulerAdapter({
     desiredRetention: settings.desiredRetention,
     maximumIntervalDays: settings.maximumIntervalDays,
@@ -114,7 +154,9 @@ function resetSessionUiState() {
   state.feedback = null;
   state.stoppedSkillIds.clear();
   state.fastPathPasses = 0;
+  state.manualStudy = null;
 }
+
 
 function renderAuth(message = "", isError = false) {
   resetSessionUiState();
@@ -184,6 +226,11 @@ async function boot() {
 }
 
 root.addEventListener("click", async (ev) => {
+  const profileButton = ev.target.closest?.("[data-profile]");
+  if (profileButton) return renderProfile().catch(showFatal);
+  const settingsButton = ev.target.closest?.("[data-settings]");
+  if (settingsButton) return renderSettings().catch(showFatal);
+
   const button = ev.target.closest?.("[data-signout]");
   if (!button || !authClient) return;
   button.disabled = true;
@@ -196,6 +243,8 @@ root.addEventListener("click", async (ev) => {
     USER_ID = "";
     repo = undefined;
     service = undefined;
+    userSettings = null;
+    userProfile = null;
     renderAuth();
   } catch (err) { showFatal(err); }
 });
@@ -225,6 +274,7 @@ function planCountLabel(plan) {
 }
 
 async function loadToday() {
+  state.manualStudy = null;
   state.session = await service.startSession(USER_ID, new Date());
   state.queue = buildQueue(state.session.plan);
   state.itemIndex = 0;
@@ -302,13 +352,17 @@ function evidenceReady(evidence) {
   return Boolean(evidence?.ready || evidence?.retained || evidence?.state === "ready" || evidence?.state === "retained");
 }
 
-function skillStatus(skill, evidence, readyIds) {
+function skillStatus(skill, evidence, readyIds, accessAllowed = true) {
   if (evidence?.fragile) return { label: "Repair", cls: "repair" };
   if (evidence?.retained || evidence?.state === "retained") return { label: "Retained", cls: "retained" };
   if (evidenceReady(evidence)) return { label: "Ready", cls: "ready" };
   if (evidence?.state === "acquiring") return { label: "In progress", cls: "current" };
-  const prereqsMet = skill.prerequisites.every((id) => readyIds.has(id));
-  return prereqsMet ? { label: "Available", cls: "available" } : { label: "Locked", cls: "locked" };
+  return accessAllowed ? { label: "Available", cls: "available" } : { label: "Locked", cls: "locked" };
+}
+
+function curriculumAccessAllowed(skill, readyIds) {
+  if (userSettings?.requirePreviousLessons === false) return true;
+  return skill.prerequisites.every((id) => readyIds.has(id));
 }
 
 async function renderCurriculum() {
@@ -316,17 +370,21 @@ async function renderCurriculum() {
   const byId = new Map(records.map((record) => [record.skillId, record.evidence]));
   const readyIds = new Set(records.filter((record) => evidenceReady(record.evidence)).map((record) => record.skillId));
   const phaseHtml = [];
+  const locking = userSettings?.requirePreviousLessons !== false;
 
   for (let phase = 0; phase <= 12; phase += 1) {
     const skills = SKILLS.filter((skill) => skill.phase === phase);
     const required = skills.filter((skill) => !skill.optional);
     const complete = required.length > 0 && required.every((skill) => readyIds.has(skill.id));
-    const anyStarted = skills.some((skill) => byId.has(skill.id));
-    const anyAvailable = skills.some((skill) => skill.prerequisites.every((id) => readyIds.has(id)));
-    const phaseState = complete ? "Complete" : (anyStarted || anyAvailable) ? "Current" : "Locked";
+    const anyAccessible = skills.some((skill) => curriculumAccessAllowed(skill, readyIds));
+    const phaseState = complete ? "Complete" : (!locking || anyAccessible) ? "Current" : "Locked";
     const rows = skills.map((skill) => {
-      const status = skillStatus(skill, byId.get(skill.id), readyIds);
-      return `<div class="curriculum-skill ${status.cls}"><div class="curriculum-skill-copy"><strong>${esc(skill.title)}</strong>${skill.optional ? '<span class="optional-tag">Optional</span>' : ''}</div><span class="status-chip ${status.cls}">${esc(status.label)}</span></div>`;
+      const evidence = byId.get(skill.id);
+      const accessAllowed = curriculumAccessAllowed(skill, readyIds);
+      const status = skillStatus(skill, evidence, readyIds, accessAllowed);
+      const accessClass = accessAllowed ? "" : " access-locked";
+      const lockHint = !accessAllowed ? '<span class="curriculum-lock-note">Complete previous material to open.</span>' : '';
+      return `<button class="curriculum-skill ${status.cls}${accessClass}" type="button" ${accessAllowed ? `data-open-skill="${esc(skill.id)}"` : "disabled"}><span class="curriculum-skill-copy"><strong>${esc(skill.title)}</strong>${skill.optional ? '<span class="optional-tag">Optional</span>' : ''}${lockHint}</span><span class="status-chip ${status.cls}">${esc(status.label)}</span></button>`;
     }).join("");
     phaseHtml.push(`<section class="curriculum-phase ${phaseState.toLowerCase()}"><div class="curriculum-phase-head"><div><div class="phase-number">Phase ${phase}</div><h2>${esc(PHASE_TITLES[phase] ?? `Phase ${phase}`)}</h2></div><span class="phase-status ${phaseState.toLowerCase()}">${phaseState === "Locked" ? "🔒 Locked" : esc(phaseState)}</span></div><div class="curriculum-skills">${rows}</div></section>`);
   }
@@ -336,12 +394,127 @@ async function renderCurriculum() {
     <section class="card curriculum-intro">
       <div class="eyebrow">Full curriculum</div>
       <h1>See the whole path.</h1>
-      <p class="muted">Every phase is visible here. This is a roadmap, not a skip menu: locked material stays locked until the learning engine says its prerequisites are ready.</p>
+      <p class="muted">${locking ? "Open material as it becomes available. Locked lessons still require their prerequisites." : "Curriculum restrictions are off. You can open any lesson, but its learning status only changes when you actually study it."}</p>
       <button class="secondary curriculum-back" id="curriculumBack" type="button">Back to today</button>
     </section>
     <div class="curriculum-map">${phaseHtml.join("")}</div>
     ${footerHtml()}`;
   document.querySelector("#curriculumBack").onclick = renderToday;
+  document.querySelectorAll("[data-open-skill]").forEach((button) => {
+    button.addEventListener("click", () => openCurriculumSkill(button.dataset.openSkill).catch(showFatal));
+  });
+}
+
+function manualStudyKind(evidence) {
+  if (evidence?.fragile) return "repair";
+  if (evidence?.retained || evidenceReady(evidence)) return "review";
+  if (evidence?.state === "acquiring") return "acquisition";
+  return "new";
+}
+
+async function openCurriculumSkill(skillId) {
+  const skill = SKILL_BY_ID.get(skillId);
+  if (!skill) return;
+  const records = await repo.allSkillStates(USER_ID);
+  const readyIds = new Set(records.filter((record) => evidenceReady(record.evidence)).map((record) => record.skillId));
+  if (!curriculumAccessAllowed(skill, readyIds)) return renderCurriculum();
+  const evidence = records.find((record) => record.skillId === skillId)?.evidence;
+  const kind = manualStudyKind(evidence);
+  state.manualStudy = {
+    queue: state.queue,
+    itemIndex: state.itemIndex,
+    fastPathPasses: state.fastPathPasses,
+  };
+  state.queue = [{ skillId, kind, firstProbe: kind === "review" || kind === "repair" }];
+  state.itemIndex = 0;
+  state.fastPathPasses = 0;
+  await beginItem();
+}
+
+function formatProfileDate(value) {
+  if (!value) return "—";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "—";
+  return date.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
+}
+
+async function renderProfile(message = "") {
+  const [records, due, sessions] = await Promise.all([
+    repo.allSkillStates(USER_ID),
+    repo.dueReviews(USER_ID, new Date().toISOString()),
+    repo.recentSessions(USER_ID, 6),
+  ]);
+  const readyIds = new Set(records.filter((record) => evidenceReady(record.evidence)).map((record) => record.skillId));
+  const required = SKILLS.filter((skill) => !skill.optional);
+  const requiredReady = required.filter((skill) => readyIds.has(skill.id)).length;
+  const progress = required.length ? Math.round((requiredReady / required.length) * 100) : 0;
+  const mastered = records.filter((record) => evidenceReady(record.evidence)).length;
+  const learning = records.filter((record) => record.evidence?.state === "acquiring" || record.evidence?.fragile).length;
+  const plan = state.session?.plan ?? await service.previewPlan(USER_ID, new Date());
+  const currentSkillId = plan.acquiringSkillId ?? plan.newSkillId ?? null;
+  const currentSkill = currentSkillId ? SKILL_BY_ID.get(currentSkillId) : null;
+  const history = sessions.length ? sessions.map((session) => `<div class="history-row"><span>${esc(formatProfileDate(session.startedAt))}</span><span>${session.completedAt ? "Completed" : "Started"}</span></div>`).join("") : '<div class="muted small-copy">No study sessions yet.</div>';
+
+  root.innerHTML = `
+    ${topbarHtml("Profile")}
+    <section class="card account-card">
+      <div class="eyebrow">Profile</div>
+      <h1>${esc(userProfile?.displayName ?? defaultDisplayName(authEmail))}</h1>
+      ${message ? `<div class="auth-message">${esc(message)}</div>` : ""}
+      <form id="profileForm" class="profile-name-form">
+        <label class="field-label" for="displayName">Display name</label>
+        <div class="inline-form"><input class="answer-input" id="displayName" maxlength="80" required value="${esc(userProfile?.displayName ?? defaultDisplayName(authEmail))}"><button class="secondary compact-button" type="submit">Save</button></div>
+      </form>
+      <div class="profile-grid">
+        <div class="stat-card"><span>Current phase</span><strong>${currentSkill ? `Phase ${currentSkill.phase}` : "Caught up"}</strong></div>
+        <div class="stat-card"><span>Current lesson / block</span><strong>${currentSkill ? esc(currentSkill.title) : "None due"}</strong></div>
+        <div class="stat-card"><span>Overall progress</span><strong>${progress}%</strong></div>
+        <div class="stat-card"><span>Mastered items</span><strong>${mastered}</strong></div>
+        <div class="stat-card"><span>Currently learning</span><strong>${learning}</strong></div>
+        <div class="stat-card"><span>Reviews due</span><strong>${due.length}</strong></div>
+      </div>
+      <div class="profile-meta"><div><span>Profile ID</span><code>${esc(USER_ID)}</code></div><div><span>Created</span><strong>${esc(formatProfileDate(userProfile?.createdAt))}</strong></div></div>
+      <div class="section-title">Recent study activity</div>
+      <div class="history-list">${history}</div>
+      <div class="actions"><button class="secondary" id="profileSettings" type="button">Settings</button><button class="secondary" id="profileBack" type="button">Back to today</button></div>
+    </section>
+    ${footerHtml()}`;
+  document.querySelector("#profileBack").onclick = renderToday;
+  document.querySelector("#profileSettings").onclick = () => renderSettings().catch(showFatal);
+  document.querySelector("#profileForm").addEventListener("submit", async (ev) => {
+    ev.preventDefault();
+    const displayName = document.querySelector("#displayName").value.trim();
+    if (!displayName) return;
+    await repo.upsertProfile(USER_ID, displayName);
+    userProfile = await repo.getProfile(USER_ID);
+    await renderProfile("Profile saved.");
+  });
+}
+
+async function renderSettings(message = "") {
+  const locking = userSettings?.requirePreviousLessons !== false;
+  root.innerHTML = `
+    ${topbarHtml("Settings")}
+    <section class="card account-card">
+      <div class="eyebrow">Settings</div>
+      <h1>Learning settings</h1>
+      ${message ? `<div class="auth-message">${esc(message)}</div>` : ""}
+      <div class="setting-row">
+        <div class="setting-copy"><strong>Require Previous Lessons</strong><span>When enabled, phases and lessons unlock in order. When disabled, you can open any phase or lesson without completing earlier material.</span></div>
+        <label class="switch"><input id="requirePreviousLessons" type="checkbox" ${locking ? "checked" : ""}><span class="switch-track"></span></label>
+      </div>
+      ${locking ? "" : '<div class="setting-note">Curriculum restrictions are disabled. This changes access only; skipped material is not marked complete, READY, mastered, or retained.</div>'}
+      <div class="actions"><button class="secondary" id="settingsProfile" type="button">Profile</button><button class="secondary" id="settingsBack" type="button">Back to today</button></div>
+    </section>
+    ${footerHtml()}`;
+  document.querySelector("#settingsBack").onclick = renderToday;
+  document.querySelector("#settingsProfile").onclick = () => renderProfile().catch(showFatal);
+  document.querySelector("#requirePreviousLessons").addEventListener("change", async (ev) => {
+    const next = { ...userSettings, requirePreviousLessons: Boolean(ev.target.checked) };
+    await repo.upsertSettings(next);
+    userSettings = next;
+    await renderSettings("Setting saved.");
+  });
 }
 
 function renderToday() {
@@ -656,6 +829,14 @@ async function advanceItem() {
   const item = state.queue[state.itemIndex];
   state.exerciseIndex.set(item.skillId, (state.exerciseIndex.get(item.skillId) ?? 0) + 1);
   state.itemIndex += 1;
+  if (state.itemIndex >= state.queue.length && state.manualStudy) {
+    const previous = state.manualStudy;
+    state.manualStudy = null;
+    state.queue = previous.queue;
+    state.itemIndex = previous.itemIndex;
+    state.fastPathPasses = previous.fastPathPasses;
+    return renderCurriculum();
+  }
   if (state.itemIndex >= state.queue.length) {
     const extended = await maybeAppendFastPath(item);
     if (!extended) return finishSession();

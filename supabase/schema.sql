@@ -108,11 +108,31 @@ create table if not exists public.user_learning_settings (
   user_id uuid primary key references auth.users(id) on delete cascade,
   desired_retention double precision not null default 0.90 check (desired_retention >= 0.70 and desired_retention <= 0.99),
   maximum_interval_days integer not null default 36500 check (maximum_interval_days >= 1),
+  require_previous_lessons boolean not null default true,
   curriculum_version text not null default 'v0.7',
   scheduler_version text not null default 'fsrs-6',
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+alter table public.user_learning_settings
+  add column if not exists require_previous_lessons boolean not null default true;
+
+create table if not exists public.user_profiles (
+  user_id uuid primary key references auth.users(id) on delete cascade,
+  display_name text not null default 'Student' check (char_length(trim(display_name)) between 1 and 80),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+insert into public.user_profiles (user_id, display_name, created_at, updated_at)
+select
+  u.id,
+  coalesce(nullif(split_part(coalesce(u.email, ''), '@', 1), ''), 'Student'),
+  u.created_at,
+  now()
+from auth.users u
+on conflict (user_id) do nothing;
 
 alter table public.study_sessions enable row level security;
 alter table public.learning_attempts enable row level security;
@@ -120,6 +140,7 @@ alter table public.skill_state enable row level security;
 alter table public.scheduler_cards enable row level security;
 alter table public.scheduler_reviews enable row level security;
 alter table public.user_learning_settings enable row level security;
+alter table public.user_profiles enable row level security;
 
 -- Least-privilege Data API grants. Signed-out visitors get no learner-data access.
 revoke all on table public.study_sessions from anon, authenticated;
@@ -128,6 +149,7 @@ revoke all on table public.skill_state from anon, authenticated;
 revoke all on table public.scheduler_cards from anon, authenticated;
 revoke all on table public.scheduler_reviews from anon, authenticated;
 revoke all on table public.user_learning_settings from anon, authenticated;
+revoke all on table public.user_profiles from anon, authenticated;
 
 grant select, insert, update on table public.study_sessions to authenticated;
 grant select, insert on table public.learning_attempts to authenticated;
@@ -135,6 +157,7 @@ grant select, insert, update on table public.skill_state to authenticated;
 grant select, insert, update on table public.scheduler_cards to authenticated;
 grant select, insert on table public.scheduler_reviews to authenticated;
 grant select, insert, update on table public.user_learning_settings to authenticated;
+grant select, insert, update on table public.user_profiles to authenticated;
 
 -- Recreate policies so the schema can be safely re-applied during personal-project setup.
 drop policy if exists "study_sessions_select_own" on public.study_sessions;
@@ -153,6 +176,9 @@ drop policy if exists "scheduler_reviews_insert_own" on public.scheduler_reviews
 drop policy if exists "user_learning_settings_select_own" on public.user_learning_settings;
 drop policy if exists "user_learning_settings_insert_own" on public.user_learning_settings;
 drop policy if exists "user_learning_settings_update_own" on public.user_learning_settings;
+drop policy if exists "user_profiles_select_own" on public.user_profiles;
+drop policy if exists "user_profiles_insert_own" on public.user_profiles;
+drop policy if exists "user_profiles_update_own" on public.user_profiles;
 
 -- Read/write only the signed-in user's own mutable state.
 create policy "study_sessions_select_own" on public.study_sessions for select to authenticated using ((select auth.uid()) = user_id);
@@ -178,3 +204,8 @@ create policy "scheduler_reviews_insert_own" on public.scheduler_reviews for ins
 create policy "user_learning_settings_select_own" on public.user_learning_settings for select to authenticated using ((select auth.uid()) = user_id);
 create policy "user_learning_settings_insert_own" on public.user_learning_settings for insert to authenticated with check ((select auth.uid()) = user_id);
 create policy "user_learning_settings_update_own" on public.user_learning_settings for update to authenticated using ((select auth.uid()) = user_id) with check ((select auth.uid()) = user_id);
+
+
+create policy "user_profiles_select_own" on public.user_profiles for select to authenticated using ((select auth.uid()) = user_id);
+create policy "user_profiles_insert_own" on public.user_profiles for insert to authenticated with check ((select auth.uid()) = user_id);
+create policy "user_profiles_update_own" on public.user_profiles for update to authenticated using ((select auth.uid()) = user_id) with check ((select auth.uid()) = user_id);

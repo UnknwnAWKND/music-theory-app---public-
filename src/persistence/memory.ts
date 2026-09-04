@@ -9,6 +9,7 @@ import type {
   StoredSchedulerReview,
   StudySessionRecord,
   UserLearningSettings,
+  UserProfile,
 } from "./types.js";
 
 let counter = 0;
@@ -24,6 +25,7 @@ export class InMemoryTutorRepository implements TutorRepository {
   readonly cards = new Map<string, StoredSchedulerCard>();
   readonly schedulerReviews: StoredSchedulerReview[] = [];
   readonly settings = new Map<string, UserLearningSettings>();
+  readonly profiles = new Map<string, UserProfile>();
 
   private key(userId: string, skillId: string) {
     return `${userId}::${skillId}`;
@@ -40,6 +42,14 @@ export class InMemoryTutorRepository implements TutorRepository {
     if (!row) throw new Error(`Unknown session ${sessionId}`);
     row.completedAt = completedAt;
     row.completionReason = completionReason;
+  }
+
+  async recentSessions(userId: string, limit = 10): Promise<StudySessionRecord[]> {
+    return this.sessions
+      .filter((x) => x.userId === userId)
+      .sort((a, b) => Date.parse(b.startedAt) - Date.parse(a.startedAt))
+      .slice(0, Math.max(0, limit))
+      .map((x) => ({ ...x }));
   }
 
   async appendAttempt(input: AppendAttemptInput): Promise<StoredAttempt> {
@@ -93,9 +103,25 @@ export class InMemoryTutorRepository implements TutorRepository {
       .map((x) => x.skillId);
   }
 
+  async getProfile(userId: string): Promise<UserProfile | undefined> {
+    const row = this.profiles.get(userId);
+    return row ? { ...row } : undefined;
+  }
+
+  async upsertProfile(userId: string, displayName: string, createdAt?: string): Promise<void> {
+    const existing = this.profiles.get(userId);
+    const now = new Date().toISOString();
+    this.profiles.set(userId, {
+      userId,
+      displayName,
+      createdAt: existing?.createdAt ?? createdAt ?? now,
+      updatedAt: now,
+    });
+  }
+
   async getSettings(userId: string): Promise<UserLearningSettings | undefined> {
     const row = this.settings.get(userId);
-    return row ? { ...row } : undefined;
+    return row ? { ...row, requirePreviousLessons: row.requirePreviousLessons ?? true } : undefined;
   }
 
   async upsertSettings(settings: UserLearningSettings): Promise<void> {

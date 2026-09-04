@@ -8,6 +8,7 @@ import type {
   StoredSchedulerCard,
   StudySessionRecord,
   UserLearningSettings,
+  UserProfile,
 } from "./types.js";
 
 export interface SupabaseRestRepositoryOptions {
@@ -96,6 +97,19 @@ export class SupabaseRestTutorRepository implements TutorRepository {
       headers: { Prefer: "return=minimal" },
       body: JSON.stringify({ completed_at: completedAt, completion_reason: completionReason }),
     });
+  }
+
+  async recentSessions(userId: string, limit = 10): Promise<StudySessionRecord[]> {
+    const safeLimit = Math.max(0, Math.min(50, Math.trunc(limit)));
+    const rows = await this.request<any[]>(`study_sessions?user_id=eq.${filterValue(userId)}&order=started_at.desc&limit=${safeLimit}`);
+    return rows.map((row) => ({
+      id: row.id,
+      userId: row.user_id,
+      startedAt: row.started_at,
+      completedAt: row.completed_at ?? undefined,
+      completionReason: row.completion_reason ?? undefined,
+      plan: row.plan_snapshot ?? undefined,
+    }));
   }
 
   async appendAttempt(input: AppendAttemptInput): Promise<StoredAttempt> {
@@ -285,6 +299,32 @@ export class SupabaseRestTutorRepository implements TutorRepository {
     return rows.map((r) => r.skill_id);
   }
 
+  async getProfile(userId: string): Promise<UserProfile | undefined> {
+    const rows = await this.request<any[]>(`user_profiles?user_id=eq.${filterValue(userId)}&limit=1`);
+    const r = rows[0];
+    if (!r) return undefined;
+    return {
+      userId: r.user_id,
+      displayName: r.display_name,
+      createdAt: r.created_at,
+      updatedAt: r.updated_at,
+    };
+  }
+
+  async upsertProfile(userId: string, displayName: string, createdAt?: string): Promise<void> {
+    const body: Record<string, unknown> = {
+      user_id: userId,
+      display_name: displayName,
+      updated_at: new Date().toISOString(),
+    };
+    if (createdAt) body.created_at = createdAt;
+    await this.request<void>("user_profiles?on_conflict=user_id", {
+      method: "POST",
+      headers: { Prefer: "resolution=merge-duplicates,return=minimal" },
+      body: JSON.stringify(body),
+    });
+  }
+
   async getSettings(userId: string): Promise<UserLearningSettings | undefined> {
     const rows = await this.request<any[]>(`user_learning_settings?user_id=eq.${filterValue(userId)}&limit=1`);
     const r = rows[0];
@@ -293,6 +333,7 @@ export class SupabaseRestTutorRepository implements TutorRepository {
       userId: r.user_id,
       desiredRetention: r.desired_retention,
       maximumIntervalDays: r.maximum_interval_days,
+      requirePreviousLessons: r.require_previous_lessons ?? true,
       curriculumVersion: r.curriculum_version,
       schedulerVersion: r.scheduler_version,
     };
@@ -306,6 +347,7 @@ export class SupabaseRestTutorRepository implements TutorRepository {
         user_id: settings.userId,
         desired_retention: settings.desiredRetention,
         maximum_interval_days: settings.maximumIntervalDays,
+        require_previous_lessons: settings.requirePreviousLessons,
         curriculum_version: settings.curriculumVersion,
         scheduler_version: settings.schedulerVersion,
         updated_at: new Date().toISOString(),

@@ -37,10 +37,18 @@ export interface StoredSchedulerReview extends SchedulerReviewLog {
   eventKind: "initial-seed" | "review";
 }
 
+export interface UserProfile {
+  userId: string;
+  displayName: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface UserLearningSettings {
   userId: string;
   desiredRetention: number;
   maximumIntervalDays: number;
+  requirePreviousLessons: boolean;
   curriculumVersion: string;
   schedulerVersion: "fsrs-6";
 }
