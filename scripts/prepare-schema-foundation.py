@@ -38,6 +38,15 @@ if "  evidence_summary jsonb" not in schema:
 
 schema = schema.replace("curriculum_version text not null default 'v0.7'", "curriculum_version text not null default 'v0.8'")
 
+# The retired archive is server-maintenance history, not an app-facing learner table.
+# Persistence transform creates the table/RLS; make the client denial explicit in fresh-install schema too.
+revoke_anchor = "revoke all on table public.user_learning_settings from anon, authenticated;\n"
+archive_revoke = "revoke all on table public.retired_skill_history from anon, authenticated;\n"
+if archive_revoke not in schema:
+    if revoke_anchor not in schema:
+        raise RuntimeError("Could not locate grants section for retired archive")
+    schema = schema.replace(revoke_anchor, revoke_anchor + archive_revoke, 1)
+
 for field in (
     "submission_index integer",
     "first_submission boolean",
@@ -46,6 +55,7 @@ for field in (
     "evidence_summary jsonb",
     "ready_established_at timestamptz",
     "retained_established_at timestamptz",
+    "revoke all on table public.retired_skill_history from anon, authenticated",
 ):
     if field not in schema:
         raise RuntimeError(f"Schema preparation failed to add {field}")
