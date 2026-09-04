@@ -1,0 +1,39 @@
+import type { DerivedSkillEvidence } from "../learning/index.js";
+import type { SchedulerCardSnapshot, SchedulerReviewLog } from "../scheduler/index.js";
+import type { DueReview, SessionPlan } from "../session/index.js";
+import type { AppendAttemptInput, TutorRepository } from "./repository.js";
+import type { SkillStateRecord, StoredAttempt, StoredSchedulerCard, StoredSchedulerReview, StudySessionRecord, PhaseProgressRecord, UserLearningSettings, UserProfile } from "./types.js";
+export interface KeyValueStorage {
+    getItem(key: string): string | null;
+    setItem(key: string, value: string): void;
+}
+/**
+ * Browser-only preview persistence. Production persistence remains Supabase.
+ * This adapter intentionally stores the same repository shapes so the UI can be
+ * exercised before deployment credentials are available.
+ */
+export declare class BrowserStorageTutorRepository implements TutorRepository {
+    private readonly storage;
+    private readonly storageKey;
+    constructor(storage: KeyValueStorage, storageKey?: string);
+    private read;
+    private write;
+    createSession(userId: string, startedAt: string, plan?: SessionPlan): Promise<StudySessionRecord>;
+    completeSession(userId: string, sessionId: string, completedAt: string, completionReason: string): Promise<void>;
+    recentSessions(userId: string, limit?: number): Promise<StudySessionRecord[]>;
+    appendAttempt(input: AppendAttemptInput): Promise<StoredAttempt>;
+    attemptsForSkill(userId: string, skillId: string): Promise<StoredAttempt[]>;
+    allSkillStates(userId: string): Promise<SkillStateRecord[]>;
+    upsertSkillState(userId: string, skillId: string, evidence: DerivedSkillEvidence, lastAttemptAt?: string): Promise<void>;
+    dueReviews(userId: string, at: string): Promise<DueReview[]>;
+    getSchedulerCard(userId: string, skillId: string): Promise<StoredSchedulerCard | undefined>;
+    upsertSchedulerCard(userId: string, card: SchedulerCardSnapshot): Promise<void>;
+    appendSchedulerReview(userId: string, log: SchedulerReviewLog, eventKind: StoredSchedulerReview["eventKind"]): Promise<void>;
+    acquiringSkillIds(userId: string): Promise<string[]>;
+    phaseProgress(userId: string): Promise<PhaseProgressRecord[]>;
+    upsertPhaseProgress(record: PhaseProgressRecord): Promise<void>;
+    getProfile(userId: string): Promise<UserProfile | undefined>;
+    upsertProfile(userId: string, displayName: string, createdAt?: string): Promise<void>;
+    getSettings(userId: string): Promise<UserLearningSettings | undefined>;
+    upsertSettings(settings: UserLearningSettings): Promise<void>;
+}
