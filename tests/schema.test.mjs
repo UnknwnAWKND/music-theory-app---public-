@@ -52,7 +52,8 @@ test("session plans and scheduler seed/review event kinds are persisted", () => 
 
 test("retired Phase 0 evidence is archived outside active client-accessible learning tables", () => {
   assert.match(sql, /create table if not exists public\.retired_skill_history/i);
-  assert.match(sql, /revoke all on table public\.retired_skill_history from authenticated/i);
+  assert.match(sql, /revoke all on table public\.retired_skill_history from (?:anon,\s*)?authenticated/i);
+  assert.doesNotMatch(sql, /grant[^;]+on table public\.retired_skill_history[^;]+to authenticated/i);
   assert.match(migration, /pitch\.accidentals/);
   assert.match(migration, /pitch\.half-whole/);
   assert.match(migration, /delete from public\.learning_attempts where skill_id in \('pitch\.accidentals', 'pitch\.half-whole'\)/i);
