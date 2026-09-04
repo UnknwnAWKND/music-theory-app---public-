@@ -50,7 +50,13 @@ jobs:
       - name: Verify curriculum and learning engine
         run: npm test
       - name: Check common mobile and tablet widths
-        run: node scripts/responsive-smoke.mjs
+        shell: bash
+        run: |
+          set -euo pipefail
+          trap 'rm -rf web/core' EXIT
+          rm -rf web/core
+          cp -R dist web/core
+          node scripts/responsive-smoke.mjs
       - name: Build static site with public Supabase config
         shell: bash
         run: |
