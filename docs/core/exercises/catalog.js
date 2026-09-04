@@ -26,8 +26,16 @@ function seventhLabel(q) {
     return { major7: "major 7", minor7: "minor 7", dominant7: "dominant 7", halfDiminished7: "half-diminished 7", diminished7: "fully diminished 7" }[q];
 }
 function intervalExercise(skillId, index) {
-    if (skillId === "interval.generic-number")
-        return text(skillId, index, "C to E is what interval number?", "3rd", ["2nd", "3rd", "4th"]);
+    if (skillId === "interval.generic-number") {
+        const examples = [
+            ["C", "E", "3rd", ["2nd", "3rd", "4th"]],
+            ["F", "B", "4th", ["3rd", "4th", "5th"]],
+            ["D", "A", "5th", ["4th", "5th", "6th"]],
+            ["A", "D", "4th", ["3rd", "4th", "5th"]],
+        ];
+        const [from, to, expected, choices] = pick(examples, index);
+        return text(skillId, index, `${from} to ${to} is what interval number?`, expected, choices);
+    }
     if (skillId === "interval.quality-system")
         return text(skillId, index, "Which interval numbers can be major or minor?", "2nds, 3rds, 6ths, and 7ths", ["1sts, 4ths, 5ths, and octaves", "2nds, 3rds, 6ths, and 7ths"]);
     if (skillId === "interval.mixed-core" || skillId === "interval.spelling") {
@@ -49,8 +57,14 @@ function intervalExercise(skillId, index) {
     throw new Error(`No interval exercise for ${skillId}`);
 }
 function triadExercise(skillId, index) {
-    if (skillId === "triad.members")
-        return text(skillId, index, "A basic triad has which three note roles?", ["root", "third", "fifth"]);
+    if (skillId === "triad.members") {
+        const prompts = [
+            "A basic triad has which three note roles?",
+            "Name the three stacked chord-member roles in a basic triad.",
+            "From the root upward, which chord members define a basic triad?",
+        ];
+        return text(skillId, index, pick(prompts, index), ["root", "third", "fifth"]);
+    }
     if (skillId === "triad.symbols") {
         const examples = [["Cm", "C minor"], ["F♯", "F♯ major"], ["B°", "B diminished"], ["D+", "D augmented"]];
         const [symbol, expected] = pick(examples, index);
@@ -92,10 +106,12 @@ function majorExercise(skillId, index) {
     }
     if (skillId === "major.membership") {
         const tonic = tonicAt(index);
-        const scale = majorScale(parseNote(tonic));
+        const tonicNote = parseNote(tonic);
+        const scale = majorScale(tonicNote);
         const inScale = index % 2 === 0;
-        const note = inScale ? scale[(index + 2) % 7] : intervalAbove(scale[(index + 2) % 7], INTERVALS.m2);
-        return { id: `${skillId}:${index}`, skillId, type: "scale-membership", prompt: `Is ${formatNote(note)} diatonic to ${tonic} major?`, assessmentMode: "objective", payload: { expected: inScale ? "yes" : "no" } };
+        const chromaticIntervals = [INTERVALS.m2, INTERVALS.A4, INTERVALS.m7];
+        const note = inScale ? scale[(index + 2) % 7] : intervalAbove(tonicNote, pick(chromaticIntervals, index));
+        return { id: `${skillId}:${index}`, skillId, type: "scale-membership", prompt: `Is ${formatNote(note)} diatonic to ${tonic} major?`, assessmentMode: "objective", payload: { expected: inScale ? "yes" : "no", tonic, note: formatNote(note) } };
     }
     if (skillId === "major.degree-names") {
         const names = ["tonic", "supertonic", "mediant", "subdominant", "dominant", "submediant", "leading tone"];
@@ -237,8 +253,14 @@ function minorExercise(skillId, index) {
 function seventhExercise(skillId, index) {
     const root = rootAt(index);
     const r = parseNote(root);
-    if (skillId === "seventh.members")
-        return text(skillId, index, "What chord members make a tertian seventh chord?", ["root", "third", "fifth", "seventh"]);
+    if (skillId === "seventh.members") {
+        const prompts = [
+            "What chord members make a tertian seventh chord?",
+            "Name the four stacked chord-member roles in a basic seventh chord.",
+            "From the root upward, which chord members define a tertian seventh chord?",
+        ];
+        return text(skillId, index, pick(prompts, index), ["root", "third", "fifth", "seventh"]);
+    }
     const bySkill = { "seventh.major7": "major7", "seventh.minor7": "minor7", "seventh.dominant7": "dominant7", "seventh.halfdim7": "halfDiminished7", "seventh.dim7": "diminished7" };
     if (skillId in bySkill) {
         const q = bySkill[skillId];

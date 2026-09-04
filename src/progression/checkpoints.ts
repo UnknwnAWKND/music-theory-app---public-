@@ -99,32 +99,34 @@ const CHECKPOINT_GROUPS: Record<number, readonly CompetencyDefinition[]> = {
   ],
   8: [
     group("seventh-members", "Seventh-chord members", ["seventh.members"]),
-    group("seventh-core", "Major 7, minor 7 & dominant 7", ["seventh.maj7", "seventh.min7", "seventh.dom7"]),
+    group("seventh-core", "Major 7, minor 7 & dominant 7", ["seventh.major7", "seventh.minor7", "seventh.dominant7"]),
     group("seventh-diminished", "Diminished seventh types", ["seventh.halfdim7", "seventh.dim7"]),
-    group("seventh-diatonic", "Diatonic seventh chords", ["seventh.diatonic-major", "seventh.mixed"]),
+    group("seventh-diatonic", "Diatonic seventh chords", ["seventh.major-diatonic", "seventh.mixed"]),
   ],
   9: [
-    group("triad-inversions", "Triad inversions", ["inversion.triad", "inversion.figured-bass"]),
+    group("triad-inversions", "Triad inversions", ["inversion.triad", "inversion.slash"]),
     group("seventh-inversions", "Seventh-chord inversions", ["inversion.seventh"]),
-    group("voicing", "Voicing", ["voicing.distinction", "voicing.close-open"]),
-    group("voice-leading", "Voice leading", ["voice.common-tones", "voice.smooth"]),
+    group("voicing", "Voicing", ["voicing.distinction", "inversion.slash"]),
+    group("voice-leading", "Voice leading", ["voice.common-tones", "voice.economical"]),
   ],
   10: [
     group("key-signatures", "Key signatures", ["keys.signatures"]),
     group("circle", "Circle of Fifths", ["circle.major"]),
-    group("relatives-nearby", "Relative & nearby keys", ["circle.relatives", "circle.closely-related"]),
-    group("key-relations", "Key relationships", ["circle.transpose", "circle.analysis"]),
+    group("relatives-nearby", "Relative & nearby keys", ["circle.relative-minor", "keys.closely-related"]),
+    group("key-relations", "Key relationships", ["keys.accidental-order", "keys.minor-signatures", "keys.enharmonic"]),
   ],
   11: [
-    group("color-chords", "Suspended & added-note colors", ["color.sus", "color.add", "color.sixth"]),
-    group("extensions", "Chord extensions", ["extension.compound-intervals", "extension.9", "extension.11", "extension.13"]),
+    group("color-chords", "Suspended & added-note colors", ["color.sus", "color.add", "color.six"]),
+    group("extensions", "Chord extensions", ["extension.compound-intervals", "extension.9", "extension.11-13"]),
     group("chromatic-function", "Secondary dominants & borrowed harmony", ["secondary.V", "mixture.parallel"]),
     group("modes-modulation", "Modes & modulation", ["mode.tonic-center", "modulation.tonicization-vs-keychange"]),
   ],
 };
 
 function existing(skillIds: readonly string[]): string[] {
-  return skillIds.filter((id) => SKILL_BY_ID.has(id));
+  const missing = skillIds.filter((id) => !SKILL_BY_ID.has(id));
+  if (missing.length) throw new Error(`Checkpoint references unknown curriculum skills: ${missing.join(", ")}`);
+  return [...skillIds];
 }
 
 export function checkpointDefinition(phase: PhaseNumber): PhaseCheckpointDefinition | undefined {

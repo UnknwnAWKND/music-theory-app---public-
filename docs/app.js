@@ -57,6 +57,7 @@ const state = {
   guidanceForNext: "none",
   hintShown: false,
   submitted: false,
+  actionPending: false,
   selectedChoice: "",
   startedPromptAt: 0,
   stoppedSkillIds: new Set(),
@@ -279,6 +280,18 @@ async function renderRoute(route) {
   if (route === "edit-profile") return renderEditProfile();
   if (route.startsWith("phase:")) return renderPhase(Number(route.split(":")[1]));
   if (route.startsWith("locked-phase:")) return renderLockedPhase(Number(route.split(":")[1]));
+  if (route.startsWith("study:")) {
+    const skillId = route.slice("study:".length);
+    const item = state.queue[state.itemIndex];
+    if (item?.skillId === skillId && state.currentExercise) return renderPractice();
+    return state.manualStudy ? renderPhase(state.manualStudy.phase) : renderToday();
+  }
+  if (route.startsWith("assessment:")) {
+    const [, kind, phaseText] = route.split(":");
+    const phase = Number(phaseText);
+    if (state.assessment?.kind === kind && state.assessment?.phase === phase && state.assessment.current) return renderAssessmentQuestion();
+    return kind === "placement" ? renderLockedPhase(phase) : renderPhase(phase);
+  }
   return renderToday();
 }
 
@@ -583,7 +596,6 @@ const NEW_WORD_CARDS = Object.freeze({
   "secondary.V": [["Secondary dominant", "A dominant chord that temporarily points toward a chord other than the main tonic.", "In C major, D7 can point strongly to G."]],
   "mixture.parallel": [["Modal mixture", "Borrowing a chord from the parallel major or minor key.", "In C major, F minor can be borrowed from C minor."]],
   "mode.tonic-center": [["Mode", "A scale pattern heard around its own home note.", "D Dorian uses D as home; it is not just C major starting on D."]],
-  "modulation.tonicization-vs-keychange": [["Modulation", "A real change of musical home to a new key.", "The music leaves C major and establishes G major as the new home."]],
   "modulation.tonicization-vs-keychange": [["Tonicization", "Briefly making another chord feel like home without fully changing key.", "D7→G inside C major can briefly make G feel like home."], ["Modulation", "A stronger change where a new key becomes the musical home.", "The music leaves C major and establishes G major."]],
   "melody.chord-tones": [["Chord tone", "A note that belongs to the chord playing right now.", "Over C major, C, E, and G are chord tones."]],
   "melody.nonchord": [["Non-chord tone", "A note that is not part of the chord playing right now.", "Over C major, D can be a non-chord tone even though D belongs to the key of C major."]],
@@ -769,8 +781,8 @@ function renderAssessmentQuestion() {
       ${a.submitted ? '<button class="primary" id="assessmentContinue" type="button">Continue</button>' : '<button class="primary" id="assessmentSubmit" type="button">Check answer</button>'}
     </section>`, { className: "assessment-screen" });
   bindChoiceButtons();
-  document.querySelector("#assessmentSubmit")?.addEventListener("click", () => submitAssessmentAnswer().catch(showFatal));
-  document.querySelector("#assessmentContinue")?.addEventListener("click", () => loadAssessmentQuestion().catch(showFatal));
+  document.querySelector("#assessmentSubmit")?.addEventListener("click", () => runExclusiveAction(() => submitAssessmentAnswer()));
+  document.querySelector("#assessmentContinue")?.addEventListener("click", () => runExclusiveAction(() => loadAssessmentQuestion()));
 }
 
 async function submitAssessmentAnswer() {
@@ -911,7 +923,7 @@ async function renderProfile(message = "") {
     repo.dueReviews(USER_ID, new Date().toISOString()),
   ]);
   const summary = progressSummary(records);
-  const plan = state.session?.plan ?? await service.previewPlan(USER_ID, new Date());
+  const plan = await service.previewPlan(USER_ID, new Date());
   const currentSkillId = plan.acquiringSkillId ?? plan.newSkillId ?? null;
   const currentSkill = currentSkillId ? SKILL_BY_ID.get(currentSkillId) : null;
   const name = userProfile?.displayName ?? defaultDisplayName(authEmail);
@@ -988,6 +1000,8 @@ async function renderSettings() {
   const descriptionEl = document.querySelector("#lockingDescription");
   const saveState = document.querySelector("#settingSaveState");
   toggle.addEventListener("change", async () => {
+    if (toggle.disabled) return;
+    toggle.disabled = true;
     const checked = Boolean(toggle.checked);
     const previous = userSettings;
     const next = { ...userSettings, requirePreviousLessons: checked };
@@ -1007,6 +1021,8 @@ async function renderSettings() {
         ? "Complete lessons in order before later lessons unlock."
         : "You can open any lesson. Your actual completion and mastery progress will not change.";
       saveState.textContent = "Couldn’t save";
+    } finally {
+      toggle.disabled = false;
     }
   });
 }
@@ -1097,7 +1113,7 @@ function intervalTeachingNotes(skillId) {
 }
 
 function circleOfFifthsHtml() {
-  const keys = ["C", "G", "D", "A", "E", "B", "F♯", "D♭", "A♭", "E♭", "B♭", "F"];
+  const keys = ["C", "G", "D", "A", "E", "B", "F♯ / G♭", "C♯ / D♭", "G♯ / A♭", "E♭", "B♭", "F"];
   return `<figure class="theory-visual"><figcaption>Circle of Fifths</figcaption><div class="circle-visual" aria-label="Circle of Fifths">${keys.map((key, i) => `<span style="--i:${i}">${esc(key)}</span>`).join("")}</div></figure>`;
 }
 
@@ -1287,18 +1303,25 @@ function actionButtons(item) {
   return `<div class="answer-actions"><button class="secondary" id="hintBtn" type="button" ${state.hintShown ? "disabled" : ""}>${state.hintShown ? "Hint used" : "Need a hint?"}</button><button class="primary" id="submitBtn">Check answer</button></div>`;
 }
 
+function runExclusiveAction(action) {
+  if (state.actionPending) return;
+  state.actionPending = true;
+  document.querySelectorAll("#submitBtn,#selfYes,#selfNo,#continueBtn,#hintBtn,#assessmentSubmit,#assessmentContinue").forEach((button) => { button.disabled = true; });
+  Promise.resolve().then(action).catch(showFatal).finally(() => { state.actionPending = false; });
+}
+
 function bindPracticeHandlers(item) {
   document.querySelectorAll("[data-choice]").forEach((btn) => btn.addEventListener("click", () => {
     state.selectedChoice = btn.dataset.choice;
     document.querySelectorAll("[data-choice]").forEach((x) => x.classList.toggle("selected", x === btn));
   }));
   const input = document.querySelector("#mainAnswer");
-  if (input) input.addEventListener("keydown", (ev) => { if (ev.key === "Enter") submitObjective(item); });
-  document.querySelector("#hintBtn")?.addEventListener("click", () => useHint(item));
-  document.querySelector("#submitBtn")?.addEventListener("click", () => submitObjective(item));
-  document.querySelector("#selfYes")?.addEventListener("click", () => submitSelfCheck(item, true));
-  document.querySelector("#selfNo")?.addEventListener("click", () => submitSelfCheck(item, false));
-  document.querySelector("#continueBtn")?.addEventListener("click", () => afterFeedback(item));
+  if (input) input.addEventListener("keydown", (ev) => { if (ev.key === "Enter") { ev.preventDefault(); runExclusiveAction(() => submitObjective(item)); } });
+  document.querySelector("#hintBtn")?.addEventListener("click", () => runExclusiveAction(() => useHint(item)));
+  document.querySelector("#submitBtn")?.addEventListener("click", () => runExclusiveAction(() => submitObjective(item)));
+  document.querySelector("#selfYes")?.addEventListener("click", () => runExclusiveAction(() => submitSelfCheck(item, true)));
+  document.querySelector("#selfNo")?.addEventListener("click", () => runExclusiveAction(() => submitSelfCheck(item, false)));
+  document.querySelector("#continueBtn")?.addEventListener("click", () => runExclusiveAction(() => afterFeedback(item)));
 }
 
 function collectValues(spec) {
@@ -1571,9 +1594,15 @@ async function finishSession() {
 
 function showFatal(err) {
   console.error(err);
+  const raw = String(err?.message ?? err ?? "");
+  const message = /session expired|access token|jwt/i.test(raw)
+    ? "Your session expired. Reload and sign in again."
+    : /failed to fetch|network|offline/i.test(raw)
+      ? "We couldn’t reach the server. Check your connection and try again."
+      : "Something went wrong. Your saved progress is safe. Try again.";
   root.innerHTML = shellHtml(`
     ${topbarHtml("Something went wrong")}
-    <section class="error-panel"><div class="error-icon">${icon("xCircle", 24)}</div><p>${esc(err?.message ?? err)}</p><button class="primary" id="retry" type="button">Reload</button></section>`, { className: "error-screen" });
+    <section class="error-panel"><div class="error-icon">${icon("xCircle", 24)}</div><p>${esc(message)}</p><button class="primary" id="retry" type="button">Reload</button></section>`, { className: "error-screen" });
   document.querySelector("#retry").onclick = () => location.reload();
 }
 

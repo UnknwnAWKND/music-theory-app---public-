@@ -137,8 +137,8 @@ function currentReadiness(
       return semanticExamples.size > 1 && applications.length > 0 ? "application" : "none";
     }
     if (mode === "atomic") {
-      // Atomic facts do not always have meaningful root/key variation, but one immediately repeated answer is not enough.
-      return promptForms.size > 1 && subset.length > 1 ? "atomic-retrieval" : "none";
+      // Generated prompt IDs are not evidence of variety: the visible/semantic example must actually change.
+      return semanticExamples.size > 1 && subset.length > 1 ? "atomic-retrieval" : "none";
     }
     // Relational skills require more than one semantic example and at least one generative/discriminative/application response.
     return semanticExamples.size > 1 && strongResponses.length > 0 ? "varied-independent" : "none";
