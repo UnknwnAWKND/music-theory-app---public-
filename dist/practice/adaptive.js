@@ -61,9 +61,10 @@ export function semanticExerciseSignature(exercise) {
             attributes[key] = value;
     }
     const names = Object.keys(attributes).sort();
+    const prompt = exercise.prompt.trim().toLowerCase();
     if (!names.length)
-        return `${exercise.type}:${exercise.prompt.trim().toLowerCase()}`;
-    return `${exercise.type}:${JSON.stringify(Object.fromEntries(names.map((key) => [key, attributes[key]])))}`;
+        return `${exercise.type}:${prompt}`;
+    return `${exercise.type}:${prompt}:${JSON.stringify(Object.fromEntries(names.map((key) => [key, attributes[key]])))}`;
 }
 function acquisitionResponses(attempts) {
     return attempts.filter((attempt) => attempt.context === "acquisition" && eventKind(attempt) === "response");

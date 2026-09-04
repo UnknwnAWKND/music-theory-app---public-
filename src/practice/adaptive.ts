@@ -70,8 +70,9 @@ export function semanticExerciseSignature(exercise: Exercise): string {
     if (["string", "number", "boolean"].includes(typeof value) || (Array.isArray(value) && value.every((x) => ["string", "number"].includes(typeof x)))) attributes[key] = value;
   }
   const names = Object.keys(attributes).sort();
-  if (!names.length) return `${exercise.type}:${exercise.prompt.trim().toLowerCase()}`;
-  return `${exercise.type}:${JSON.stringify(Object.fromEntries(names.map((key) => [key, attributes[key]])))}`;
+  const prompt = exercise.prompt.trim().toLowerCase();
+  if (!names.length) return `${exercise.type}:${prompt}`;
+  return `${exercise.type}:${prompt}:${JSON.stringify(Object.fromEntries(names.map((key) => [key, attributes[key]])))}`;
 }
 
 function acquisitionResponses(attempts: readonly LearningAttempt[]) {

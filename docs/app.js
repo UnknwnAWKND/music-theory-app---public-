@@ -1356,9 +1356,10 @@ function evidenceAttributesForExercise(exercise) {
 function exampleSignatureForExercise(exercise) {
   const attributes = evidenceAttributesForExercise(exercise);
   const keys = Object.keys(attributes).sort();
-  if (!keys.length) return `${exercise.type}:${String(exercise.prompt).trim().toLowerCase()}`;
+  const prompt = String(exercise.prompt).trim().toLowerCase();
+  if (!keys.length) return `${exercise.type}:${prompt}`;
   const stable = Object.fromEntries(keys.map((key) => [key, attributes[key]]));
-  return `${exercise.type}:${JSON.stringify(stable)}`;
+  return `${exercise.type}:${prompt}:${JSON.stringify(stable)}`;
 }
 
 function activeGuidance() {
