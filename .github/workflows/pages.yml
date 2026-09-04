@@ -57,6 +57,7 @@ jobs:
         run: |
           python scripts/apply-curriculum-v09-core.py
           python scripts/apply-curriculum-v09.py
+          python scripts/apply-curriculum-v09-test-compat.py
           test -f src/exercises/catalog-v09.ts
           test -f src/practice/lessons-v09.ts
           grep -q "interval.number-3-8" src/curriculum/skills.ts
