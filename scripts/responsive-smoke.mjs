@@ -171,7 +171,12 @@ try {
   }
 } finally {
   try { client?.ws.close(); } catch {}
-  chrome.kill("SIGTERM");
-  server.kill("SIGTERM");
-  fs.rmSync(tmp, { recursive: true, force: true });
+  try { chrome.kill("SIGTERM"); } catch {}
+  try { server.kill("SIGTERM"); } catch {}
+  await sleep(300);
+  try {
+    fs.rmSync(tmp, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+  } catch (err) {
+    console.warn(`responsive smoke cleanup warning: ${err?.message ?? err}`);
+  }
 }
