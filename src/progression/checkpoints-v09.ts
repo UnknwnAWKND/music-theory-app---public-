@@ -13,18 +13,27 @@ function group(id: string, label: string, skillIds: readonly string[], critical 
 
 const GROUPS: Record<number, readonly CompetencyDefinition[]> = {
   1: [
-    group("interval-number-first-map", "Interval numbers: 3/4/5/8", ["interval.number-mix-3-4-5-8"]),
-    group("interval-number-full-map", "Full interval-number construction", ["interval.number-mixed-all"]),
-    group("interval-quality-core", "3rds, 4ths & 5ths", ["interval.m3", "interval.M3", "interval.P4", "interval.P5"]),
-    group("interval-quality-mixed", "Mixed interval quality & spelling", ["interval.mixed-core", "interval.spelling"]),
+    group("interval-number-core", "Interval-number construction", [
+      "interval.number-3-8",
+      "interval.number-4-5",
+      "interval.number-mix-3-4-5-8",
+      "interval.number-2-7",
+      "interval.number-mix-2-3-4-5-7-8",
+      "interval.number-6",
+      "interval.number-mixed-all",
+    ]),
+    group("interval-core-quality", "Core 3rds, 4ths, 5ths & octave", [
+      "interval.quality-system", "interval.M3", "interval.m3", "interval.P4", "interval.P5", "interval.P8",
+    ]),
   ],
   2: [
-    group("triad-members", "Chord members & chord tones", ["triad.members", "melody.chord-tones", "triad.root-vs-bass"]),
+    group("triad-members-spelling", "Interval spelling, chord members & chord tones", ["interval.spelling", "triad.members", "melody.chord-tones", "triad.root-vs-bass"]),
     group("triad-major-minor", "Major & minor triads", ["triad.major", "triad.minor"]),
     group("triad-dim-aug", "Diminished & augmented triads", ["interval.A4-d5", "triad.diminished", "triad.augmented"]),
     group("triad-mixed", "Mixed triads & symbols", ["triad.mixed", "triad.symbols"]),
   ],
   3: [
+    group("interval-quality-expansion", "2nd, 6th & 7th interval fluency", ["interval.M2", "interval.m2", "interval.M6", "interval.m6", "interval.M7", "interval.m7", "interval.mixed-core"]),
     group("major-formula-degrees", "Major-scale formula & degrees", ["major.formula", "scale.degree-numbers", "major.degree-intervals"]),
     group("major-construct", "Major-scale construction & spelling", ["major.spelling", "major.construct"]),
     group("major-degree-retrieval", "Key/degree retrieval", ["major.degree-to-note", "major.note-to-degree"]),
