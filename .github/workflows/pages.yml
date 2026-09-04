@@ -41,7 +41,9 @@ jobs:
           python scripts/prepare-schema-foundation.py
           python scripts/persistence-foundation.py
       - name: Apply adaptive learning engine
-        run: python scripts/apply-adaptive-learning.py
+        run: |
+          python scripts/apply-adaptive-learning.py
+          python scripts/guard-manual-cold-review.py
       - name: Verify curriculum and learning engine
         run: npm test
       - name: Check common mobile and tablet widths
