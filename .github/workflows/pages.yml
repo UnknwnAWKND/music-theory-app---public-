@@ -40,6 +40,8 @@ jobs:
           python scripts/learning-engine-foundation.py
           python scripts/prepare-schema-foundation.py
           python scripts/persistence-foundation.py
+      - name: Apply adaptive learning engine
+        run: python scripts/apply-adaptive-learning.py
       - name: Verify curriculum and learning engine
         run: npm test
       - name: Check common mobile and tablet widths
@@ -81,6 +83,6 @@ jobs:
           if git diff --cached --quiet; then
             echo "No generated changes"
           else
-            git commit -m "Deploy learning engine foundation"
+            git commit -m "Deploy adaptive learning engine"
             git push
           fi
