@@ -11,15 +11,15 @@ const mixedAll: SkillDefinition = {
   optional: false,
   priority: "foundation",
   recurrenceWeight: 5,
-  acquisitionRoundSize: 10,
+  acquisitionRoundSize: 30,
   thread: "interval",
 };
 
 export const SKILLS: readonly SkillDefinition[] = BASE_SKILLS.flatMap((skill): SkillDefinition[] => {
   if (skill.id === "interval.generic-number") {
-    // Preserve the old stable ID and its historical evidence, but do not let it
-    // falsely prove the new all-number construction competency. It is now a
-    // supplemental reverse-identification skill after the new mixed-all skill.
+    // Keep the legacy ID so old evidence is preserved, but do not let old broad
+    // interval-number history automatically prove the redesigned all-number
+    // construction competency. The new required mixed-all skill supplies that evidence.
     return [
       mixedAll,
       {
@@ -30,7 +30,7 @@ export const SKILLS: readonly SkillDefinition[] = BASE_SKILLS.flatMap((skill): S
         optional: true,
         priority: "support",
         recurrenceWeight: 1,
-        acquisitionRoundSize: 5,
+        acquisitionRoundSize: 30,
       },
     ];
   }
