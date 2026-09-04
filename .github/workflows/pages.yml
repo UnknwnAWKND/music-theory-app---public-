@@ -38,6 +38,7 @@ jobs:
         run: |
           python scripts/remove-phase0-curriculum.py
           python scripts/learning-engine-foundation.py
+          python scripts/prepare-schema-foundation.py
           python scripts/persistence-foundation.py
       - name: Verify curriculum and learning engine
         run: npm test
