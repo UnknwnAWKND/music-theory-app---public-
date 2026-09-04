@@ -57,10 +57,12 @@ jobs:
         run: |
           python scripts/apply-curriculum-v09-core.py
           python scripts/apply-curriculum-v09.py
+          python scripts/finalize-curriculum-v09-rounds.py
           python scripts/apply-curriculum-v09-test-compat.py
           test -f src/exercises/catalog-v09.ts
           test -f src/practice/lessons-v09.ts
           grep -q "interval.number-3-8" src/curriculum/skills.ts
+          grep -q "MINIMUM_PRACTICE_ROUND_SIZE = 30" src/practice/rounds.ts
           grep -q "CURRICULUM_V09_ROUNDS" web/app.js
           grep -q "Question \${questionNumber} of \${round.size}" web/app.js
       - name: Verify curriculum, UI, and learning engine
