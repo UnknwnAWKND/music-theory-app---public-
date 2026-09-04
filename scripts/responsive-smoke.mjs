@@ -15,27 +15,35 @@ fs.cpSync("web", webDir, { recursive: true });
 fs.writeFileSync(path.join(webDir, "config.js"), "window.__THEORY_TUTOR_CONFIG__ = {};\n");
 
 const server = spawn("python3", ["-m", "http.server", "4173", "--bind", "127.0.0.1", "--directory", webDir], { stdio: "ignore" });
+let chromeOutput = "";
 const chrome = spawn(command, [
-  "--headless=new",
+  "--headless",
   "--no-sandbox",
   "--disable-gpu",
+  "--disable-dev-shm-usage",
   "--hide-scrollbars",
+  "--no-first-run",
+  "--no-default-browser-check",
+  "--remote-debugging-address=127.0.0.1",
   "--remote-debugging-port=9222",
   `--user-data-dir=${path.join(tmp, "chrome")}`,
   "--remote-allow-origins=*",
   "about:blank",
-], { stdio: "ignore" });
+], { stdio: ["ignore", "pipe", "pipe"] });
+chrome.stdout?.on("data", (chunk) => { chromeOutput += chunk.toString(); });
+chrome.stderr?.on("data", (chunk) => { chromeOutput += chunk.toString(); });
 
-async function pollJson(url, timeoutMs = 8000) {
+async function pollJson(url, timeoutMs = 10000) {
   const started = Date.now();
   while (Date.now() - started < timeoutMs) {
     try {
       const response = await fetch(url);
       if (response.ok) return response.json();
     } catch {}
+    if (chrome.exitCode !== null) throw new Error(`Chrome exited with code ${chrome.exitCode}.\n${chromeOutput.slice(-5000)}`);
     await sleep(100);
   }
-  throw new Error(`Timed out waiting for ${url}`);
+  throw new Error(`Timed out waiting for ${url}.\nChrome output:\n${chromeOutput.slice(-5000)}`);
 }
 
 async function openTarget(url) {
@@ -47,7 +55,7 @@ async function openTarget(url) {
     } catch {}
     await sleep(100);
   }
-  throw new Error("Could not open Chrome debugging target");
+  throw new Error(`Could not open Chrome debugging target.\n${chromeOutput.slice(-5000)}`);
 }
 
 function connect(wsUrl) {
@@ -89,7 +97,8 @@ async function waitFor(send, selector, timeoutMs = 5000) {
     if (await evaluate(send, `Boolean(document.querySelector(${JSON.stringify(selector)}))`)) return;
     await sleep(80);
   }
-  throw new Error(`Timed out waiting for ${selector}`);
+  const snapshot = await evaluate(send, `({ body: document.body?.innerText?.slice(0, 1000), html: document.documentElement?.outerHTML?.slice(0, 1500) })`).catch(() => null);
+  throw new Error(`Timed out waiting for ${selector}. Page snapshot: ${JSON.stringify(snapshot)}`);
 }
 
 async function checkLayout(send, label, width, height) {
