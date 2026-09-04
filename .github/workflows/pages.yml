@@ -42,11 +42,11 @@ jobs:
           python scripts/persistence-foundation.py
       - name: Preserve deployed adaptive learning engine
         run: python scripts/guard-manual-cold-review.py
-      - name: Apply phase checkpoints and placement
+      - name: Preserve deployed checkpoints and placement
         run: |
-          python scripts/prepare-phase-checkpoint-transform.py
-          python scripts/apply-phase-checkpoints.py
-          python scripts/finalize-phase-checkpoints.py
+          test -f src/assessment/checkpoints.ts
+          grep -q "checkpointDefinition" web/app.js
+          grep -q "placementDefinition" web/app.js
       - name: Apply Prompt 4 UI and lesson cleanup
         run: python scripts/prompt4-ui-lesson-cleanup.py
       - name: Verify curriculum, UI, and learning engine
