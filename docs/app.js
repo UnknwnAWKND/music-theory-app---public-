@@ -518,13 +518,15 @@ async function openCurriculumSkill(skillId) {
   if (!curriculumAccessAllowed(skill, readyIds)) return renderPhase(skill.phase);
   const evidence = records.find((record) => record.skillId === skillId)?.evidence;
   const kind = manualStudyKind(evidence);
+  const dueReviews = await repo.dueReviews(USER_ID, new Date().toISOString());
+  const isActuallyDue = dueReviews.some((review) => review.skillId === skillId);
   state.manualStudy = {
     queue: state.queue,
     itemIndex: state.itemIndex,
     fastPathPasses: state.fastPathPasses,
     phase: skill.phase,
   };
-  state.queue = [{ skillId, kind, firstProbe: kind === "review" || kind === "repair" }];
+  state.queue = [{ skillId, kind, firstProbe: isActuallyDue && (kind === "review" || kind === "repair") }];
   state.itemIndex = 0;
   state.fastPathPasses = 0;
   await beginItem();
