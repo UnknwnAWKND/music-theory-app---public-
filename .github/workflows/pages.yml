@@ -48,6 +48,7 @@ jobs:
         run: |
           python scripts/prepare-phase-checkpoint-transform.py
           python scripts/apply-phase-checkpoints.py
+          python scripts/finalize-phase-checkpoints.py
       - name: Verify curriculum and learning engine
         run: npm test
       - name: Check common mobile and tablet widths
