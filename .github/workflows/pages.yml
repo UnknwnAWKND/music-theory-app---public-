@@ -24,21 +24,6 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Apply profile and settings upgrade
-        run: python scripts/add-profile-settings.py
-      - name: Commit profile/settings source upgrade
-        shell: bash
-        run: |
-          set -euo pipefail
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add src/persistence web/app.js web/styles.css supabase/schema.sql tests/profile-settings.test.mjs
-          if git diff --cached --quiet; then
-            echo "Profile/settings source already current"
-          else
-            git commit -m "Implement multi-user profiles and curriculum access settings"
-            git push
-          fi
       - name: Install build dependencies
         run: npm install --no-audit --no-fund --prefer-offline
       - name: Apply lesson clarity rules
@@ -49,6 +34,10 @@ jobs:
         run: |
           python scripts/redesign-ui.py
           python scripts/ui-polish.py
+      - name: Apply learning engine foundation
+        run: |
+          python scripts/learning-engine-foundation.py
+          python scripts/persistence-foundation.py
       - name: Verify curriculum and learning engine
         run: npm test
       - name: Check common mobile and tablet widths
@@ -90,6 +79,6 @@ jobs:
           if git diff --cached --quiet; then
             echo "No generated changes"
           else
-            git commit -m "Deploy 2026 mobile UI redesign"
+            git commit -m "Deploy learning engine foundation"
             git push
           fi
