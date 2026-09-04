@@ -1,34 +1,23 @@
 import { SKILLS, SKILL_BY_ID, type SkillDefinition } from "../curriculum/index.js";
 import type { DerivedSkillEvidence } from "../learning/index.js";
-import { interleavingTargets } from "../practice/adaptive.js";
+import { interleavingTargets } from "../practice/index.js";
 
 const CURRENT_SKILL_IDS = new Set(SKILLS.map((skill) => skill.id));
 
-export interface DueReview {
-  skillId: string;
-  dueAt: string;
-  urgency: number;
-}
-
+export interface DueReview { skillId: string; dueAt: string; urgency: number; }
 export interface SessionPlannerInput {
   evidenceBySkill: ReadonlyMap<string, DerivedSkillEvidence>;
   dueReviews: readonly DueReview[];
   acquiringSkillIds?: readonly string[];
   normalReviewBudget?: number;
   backlogReviewBudget?: number;
-  /** Optional/enrichment skills are only auto-introduced when explicitly enabled. */
   allowOptionalNew?: boolean;
-  /** Used to detect a genuinely overdue recovery period without resetting progress. */
   nowIso?: string;
   longBreakDays?: number;
-  /** Guided-mode phase gates. Omit to allow normal graph-only planning. */
   guidedPhaseAccess?: readonly number[];
-  /** Placement-validated phases may bypass older-phase prerequisite edges without fabricating READY. */
   validatedEntryPhases?: readonly number[];
-  /** When placement has validated a later phase, prefer beginning there instead of earlier untouched material. */
   preferredNewPhase?: number;
 }
-
 export interface SessionPlan {
   repairSkillIds: string[];
   reviewSkillIds: string[];
@@ -38,7 +27,7 @@ export interface SessionPlan {
   reasonNoNewSkill?: string;
 }
 
-function isReadyForPrerequisites(evidence: DerivedSkillEvidence | undefined): boolean {
+function readyForPrerequisite(evidence: DerivedSkillEvidence | undefined): boolean {
   return Boolean(evidence?.ready && !evidence.fragile);
 }
 
@@ -50,24 +39,29 @@ function nextUnlockable(
   validatedEntryPhases?: readonly number[],
 ): SkillDefinition | undefined {
   return skills.find((skill) => {
+    if (skill.contentKind === "reference" || !skill.assessed) return false;
     if (skill.optional && !allowOptional) return false;
     if (guidedPhaseAccess && !guidedPhaseAccess.includes(skill.phase)) return false;
     const current = evidenceBySkill.get(skill.id);
     if (current && current.state !== "new") return false;
     const placementValidated = validatedEntryPhases?.includes(skill.phase) ?? false;
-    return skill.prerequisites.every((dep) => {
-      const dependency = SKILLS.find((candidate) => candidate.id === dep);
+    return skill.prerequisites.every((dependencyId) => {
+      const dependency = SKILL_BY_ID.get(dependencyId);
       if (placementValidated && dependency && dependency.phase < skill.phase) return true;
-      return isReadyForPrerequisites(evidenceBySkill.get(dep));
+      return readyForPrerequisite(evidenceBySkill.get(dependencyId));
     });
   });
 }
 
+function curriculumReviewWeight(skillId: string): number {
+  const skill = SKILL_BY_ID.get(skillId);
+  if (!skill) return 1;
+  const priority = (skill.reviewPriority * 0.45) + (skill.longTermRecurrence * 0.35) + (skill.foundationality * 0.20);
+  return 1 + priority / 10;
+}
+
 function duePriority(review: DueReview): number {
-  const weight = Math.max(1, SKILL_BY_ID.get(review.skillId)?.recurrenceWeight ?? 1);
-  // Urgency still dominates. Curriculum weight breaks ties and lifts foundational
-  // work when several reviews are legitimately due; it never marks anything due early.
-  return review.urgency * (1 + (weight - 1) * 0.18);
+  return review.urgency * curriculumReviewWeight(review.skillId);
 }
 
 export function planSession(input: SessionPlannerInput): SessionPlan {
@@ -76,54 +70,36 @@ export function planSession(input: SessionPlannerInput): SessionPlan {
   const repairSkillIds = [...input.evidenceBySkill.entries()]
     .filter(([skillId, evidence]) => CURRENT_SKILL_IDS.has(skillId) && evidence.fragile)
     .map(([skillId]) => skillId)
-    .sort((a, b) => (SKILL_BY_ID.get(b)?.recurrenceWeight ?? 1) - (SKILL_BY_ID.get(a)?.recurrenceWeight ?? 1));
+    .sort((a, b) => curriculumReviewWeight(b) - curriculumReviewWeight(a));
 
   const sortedDue = [...input.dueReviews]
     .filter((review) => CURRENT_SKILL_IDS.has(review.skillId))
-    .sort((a, b) => {
-      const priorityDelta = duePriority(b) - duePriority(a);
-      if (priorityDelta !== 0) return priorityDelta;
-      return Date.parse(a.dueAt) - Date.parse(b.dueAt);
-    });
+    .sort((a, b) => duePriority(b) - duePriority(a) || Date.parse(a.dueAt) - Date.parse(b.dueAt));
   const budget = sortedDue.length > normalBudget * 2 ? backlogBudget : normalBudget;
-  const reviewSkillIds = sortedDue.slice(0, budget).map((x) => x.skillId);
+  const reviewSkillIds = sortedDue.slice(0, budget).map((review) => review.skillId);
   const nowMs = Date.parse(input.nowIso ?? new Date().toISOString());
   const longBreakMs = (input.longBreakDays ?? 14) * 86_400_000;
   const recoveringFromLongBreak = sortedDue.some((review) => nowMs - Date.parse(review.dueAt) >= longBreakMs);
-
   const acquiringSkillId = input.acquiringSkillIds?.find((id) => CURRENT_SKILL_IDS.has(id) && input.evidenceBySkill.get(id)?.state === "acquiring");
 
   let newSkillId: string | undefined;
   let reasonNoNewSkill: string | undefined;
-  if (repairSkillIds.length > 0) {
-    reasonNoNewSkill = "repair-prerequisite";
-  } else if (recoveringFromLongBreak) {
-    reasonNoNewSkill = "long-break-recovery";
-  } else if (sortedDue.length > backlogBudget) {
-    reasonNoNewSkill = "review-backlog";
-  } else if (acquiringSkillId) {
-    reasonNoNewSkill = "finish-current-acquisition";
-  } else {
-    const inferredPreferredPhase = input.preferredNewPhase ?? (input.validatedEntryPhases?.length ? Math.max(...input.validatedEntryPhases) : undefined);
-    const preferredSkills = inferredPreferredPhase
-      ? SKILLS.filter((skill) => skill.phase === inferredPreferredPhase)
-      : SKILLS;
+  if (repairSkillIds.length) reasonNoNewSkill = "repair-prerequisite";
+  else if (recoveringFromLongBreak) reasonNoNewSkill = "long-break-recovery";
+  else if (sortedDue.length > backlogBudget) reasonNoNewSkill = "review-backlog";
+  else if (acquiringSkillId) reasonNoNewSkill = "finish-current-acquisition";
+  else {
+    const preferredPhase = input.preferredNewPhase ?? (input.validatedEntryPhases?.length ? Math.max(...input.validatedEntryPhases) : undefined);
+    const preferredSkills = preferredPhase ? SKILLS.filter((skill) => skill.phase === preferredPhase) : SKILLS;
     newSkillId = nextUnlockable(input.evidenceBySkill, preferredSkills, input.allowOptionalNew ?? false, input.guidedPhaseAccess, input.validatedEntryPhases)?.id;
-    if (!newSkillId && inferredPreferredPhase) {
-      newSkillId = nextUnlockable(input.evidenceBySkill, SKILLS, input.allowOptionalNew ?? false, input.guidedPhaseAccess, input.validatedEntryPhases)?.id;
-    }
+    if (!newSkillId && preferredPhase) newSkillId = nextUnlockable(input.evidenceBySkill, SKILLS, input.allowOptionalNew ?? false, input.guidedPhaseAccess, input.validatedEntryPhases)?.id;
     if (!newSkillId) reasonNoNewSkill = "nothing-unlocked";
   }
 
-  const alreadyPlanned = new Set([
-    ...repairSkillIds,
-    ...reviewSkillIds,
-    acquiringSkillId,
-    newSkillId,
-  ].filter((x): x is string => Boolean(x)));
+  const planned = new Set([...repairSkillIds, ...reviewSkillIds, acquiringSkillId, newSkillId].filter((id): id is string => Boolean(id)));
   const interleaveSkillIds = repairSkillIds.length || recoveringFromLongBreak || sortedDue.length > backlogBudget
     ? []
-    : interleavingTargets(input.evidenceBySkill).filter((id) => !alreadyPlanned.has(id)).slice(0, 2);
+    : interleavingTargets(input.evidenceBySkill).filter((id) => CURRENT_SKILL_IDS.has(id) && !planned.has(id)).slice(0, 2);
 
   return { repairSkillIds, reviewSkillIds, acquiringSkillId, newSkillId, interleaveSkillIds, reasonNoNewSkill };
 }

@@ -1,4 +1,4 @@
-import { SKILLS, SKILL_BY_ID } from "../curriculum/index.js";
+import { CURRICULUM_PHASES, SKILLS, SKILL_BY_ID } from "../curriculum/index.js";
 import {
   deriveSkillEvidence,
   evidencePolicyForModes,
@@ -9,15 +9,8 @@ import type { AppendAttemptInput, TutorRepository } from "../persistence/index.j
 import { ratingForAttempt, type ReviewSchedulerAdapter } from "../scheduler/index.js";
 import { planSession, type SessionPlan } from "../session/index.js";
 
-export interface TutorServiceOptions {
-  repository: TutorRepository;
-  scheduler?: ReviewSchedulerAdapter;
-}
-
-export interface StartedStudySession {
-  sessionId: string;
-  plan: SessionPlan;
-}
+export interface TutorServiceOptions { repository: TutorRepository; scheduler?: ReviewSchedulerAdapter; }
+export interface StartedStudySession { sessionId: string; plan: SessionPlan; }
 
 export class TutorService {
   private readonly repository: TutorRepository;
@@ -34,16 +27,17 @@ export class TutorService {
 
   async previewPlan(userId: string, now = new Date()): Promise<SessionPlan> {
     const states = await this.repository.allSkillStates(userId);
-    const evidenceBySkill = new Map<string, DerivedSkillEvidence>(states.map((x) => [x.skillId, x.evidence]));
+    const evidenceBySkill = new Map<string, DerivedSkillEvidence>(states.map((state) => [state.skillId, state.evidence]));
     const dueReviews = await this.repository.dueReviews(userId, now.toISOString());
     const acquiringSkillIds = await this.repository.acquiringSkillIds(userId);
     const settings = await this.repository.getSettings(userId);
     const phaseProgress = await this.repository.phaseProgress(userId);
     const guided = settings?.requirePreviousLessons !== false;
-    const progressByPhase = new Map(phaseProgress.map((x) => [x.phase, x]));
-    const guidedPhaseAccess = guided ? [1, ...Array.from({ length: 11 }, (_, i) => i + 2).filter((phase) =>
-      Boolean(progressByPhase.get(phase - 1)?.checkpointPassedAt || progressByPhase.get(phase)?.validatedEntryAt))] : undefined;
-    const validatedEntryPhases = guided ? phaseProgress.filter((x) => Boolean(x.validatedEntryAt)).map((x) => x.phase) : undefined;
+    const progressByPhase = new Map(phaseProgress.map((row) => [row.phase, row]));
+    const guidedPhaseAccess = guided
+      ? CURRICULUM_PHASES.filter(({ phase }) => phase === 1 || Boolean(progressByPhase.get(phase - 1)?.checkpointPassedAt || progressByPhase.get(phase)?.validatedEntryAt)).map(({ phase }) => phase)
+      : undefined;
+    const validatedEntryPhases = guided ? phaseProgress.filter((row) => Boolean(row.validatedEntryAt)).map((row) => row.phase) : undefined;
     const preferredNewPhase = validatedEntryPhases?.length ? Math.max(...validatedEntryPhases) : undefined;
     return planSession({ evidenceBySkill, dueReviews, acquiringSkillIds, nowIso: now.toISOString(), guidedPhaseAccess, validatedEntryPhases, preferredNewPhase });
   }
@@ -55,6 +49,7 @@ export class TutorService {
   }
 
   async submitAttempt(input: AppendAttemptInput): Promise<DerivedSkillEvidence> {
+    if (!SKILL_BY_ID.has(input.skillId)) throw new Error(`Unknown active curriculum skill: ${input.skillId}`);
     const previousAttempts = await this.repository.attemptsForSkill(input.userId, input.skillId);
     const policy = this.evidencePolicy(input.skillId);
     const previousEvidence = deriveSkillEvidence(previousAttempts, policy);
@@ -74,15 +69,9 @@ export class TutorService {
         await this.repository.upsertSchedulerCard(input.userId, seeded.card);
         await this.repository.appendSchedulerReview(input.userId, seeded.log, "initial-seed");
       } else if (
-        normalized.eventKind === "response" &&
-        normalized.context === "review" &&
-        normalized.coldProbe &&
-        normalized.firstSubmission &&
-        normalized.independent &&
-        normalized.directEvidence &&
-        normalized.guidance === "none" &&
-        (normalized.outcome === "correct" || normalized.outcome === "incorrect") &&
-        existingCard
+        normalized.eventKind === "response" && normalized.context === "review" && normalized.coldProbe && normalized.firstSubmission
+        && normalized.independent && normalized.directEvidence && normalized.guidance === "none"
+        && (normalized.outcome === "correct" || normalized.outcome === "incorrect") && existingCard
       ) {
         const result = this.scheduler.schedule(existingCard, ratingForAttempt(normalized), new Date(normalized.occurredAt));
         await this.repository.upsertSchedulerCard(input.userId, result.card);
@@ -96,11 +85,10 @@ export class TutorService {
     await this.repository.completeSession(userId, sessionId, now.toISOString(), reason);
   }
 
-  /** Rebuilds the derived skill-state cache from the append-only attempt log. */
   async rebuildSkillState(userId: string): Promise<void> {
     for (const skill of SKILLS) {
       const attempts = await this.repository.attemptsForSkill(userId, skill.id);
-      if (attempts.length === 0) continue;
+      if (!attempts.length) continue;
       const evidence = deriveSkillEvidence(attempts, this.evidencePolicy(skill.id));
       await this.repository.upsertSkillState(userId, skill.id, evidence, attempts.at(-1)?.occurredAt);
     }

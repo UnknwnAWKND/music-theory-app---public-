@@ -2,21 +2,20 @@ name: Build Theory Tutor
 
 on:
   push:
-    branches: [main, redesign/curriculum-v09]
-  workflow_dispatch:
+    branches: ["main", "rebuild/**"]
+  pull_request:
+    branches: ["main"]
 
 permissions:
   contents: write
 
 concurrency:
-  group: theory-tutor-build
+  group: theory-tutor-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
   test-build-and-sync:
-    if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
-    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
         with:
@@ -24,88 +23,25 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Install build dependencies
-        run: npm install --no-audit --no-fund --prefer-offline
-      - name: Apply lesson clarity rules
-        run: |
-          python scripts/apply-lesson-clarity.py
-          python scripts/final-lesson-clarity.py
-      - name: Apply 2026 UI redesign
-        run: |
-          python scripts/redesign-ui.py
-          python scripts/ui-polish.py
-      - name: Apply learning engine foundation
-        run: |
-          python scripts/remove-phase0-curriculum.py
-          python scripts/learning-engine-foundation.py
-          python scripts/prepare-schema-foundation.py
-          python scripts/persistence-foundation.py
-      - name: Preserve deployed adaptive learning engine
-        run: python scripts/guard-manual-cold-review.py
-      - name: Preserve deployed checkpoints and placement
-        run: |
-          test -f src/progression/checkpoints.ts
-          grep -q "checkpointDefinition" web/app.js
-          grep -q "placementDefinition" web/app.js
-      - name: Apply Prompt 4 UI and lesson cleanup
-        run: python scripts/prompt4-ui-lesson-cleanup.py
-      - name: Apply full QA bug sweep
-        run: |
-          python scripts/qa-bug-sweep.py
-          python scripts/qa-finalize.py
-      - name: Apply curriculum v0.9 spiral redesign
-        run: |
-          python scripts/apply-curriculum-v09-core.py
-          python scripts/apply-curriculum-v09.py
-          python scripts/finalize-curriculum-v09-rounds.py
-          python scripts/apply-curriculum-v09-test-compat.py
-          test -f src/exercises/catalog-v09.ts
-          test -f src/practice/lessons-v09.ts
-          grep -q "interval.number-3-8" src/curriculum/skills.ts
-          grep -q "MINIMUM_PRACTICE_ROUND_SIZE = 30" src/practice/rounds.ts
-          grep -q "CURRICULUM_V09_ROUNDS" web/app.js
-          grep -q "Question \${questionNumber} of \${round.size}" web/app.js
-      - name: Verify curriculum, UI, and learning engine
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Run Block 1 baseline tests
         run: npm test
-      - name: Check common mobile and tablet widths
+      - name: Build static site
+        run: npm run build:site
+      - name: Sync tested site to docs on main
+        if: github.ref == 'refs/heads/main'
         shell: bash
         run: |
-          set -euo pipefail
-          trap 'rm -rf web/core' EXIT
-          rm -rf web/core
-          cp -R dist web/core
-          node scripts/responsive-smoke.mjs
-      - name: Build static site with public Supabase config
-        shell: bash
-        run: |
-          set -euo pipefail
-          eval "$(node - <<'NODE'
-          const fs = require('node:fs');
-          const text = fs.readFileSync('web/config.js', 'utf8');
-          const url = text.match(/supabaseUrl:\s*\"([^\"]+)\"/);
-          const key = text.match(/supabasePublishableKey:\s*\"([^\"]+)\"/);
-          if (!url || !key) process.exit(1);
-          console.log(`export SUPABASE_URL='${url[1]}'`);
-          console.log(`export SUPABASE_PUBLISHABLE_KEY='${key[1]}'`);
-          NODE
-          )"
-          npm run build:site
-      - name: Sync tested build to docs
-        shell: bash
-        run: |
-          set -euo pipefail
           rm -rf docs
           cp -R site docs
-      - name: Commit tested source and docs
-        shell: bash
-        run: |
-          set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A
+          git add -A docs
           if git diff --cached --quiet; then
-            echo "No generated changes"
-          else
-            git commit -m "Deploy curriculum v0.9 spiral redesign"
-            git push
+            echo "docs already match tested build"
+            exit 0
           fi
+          git commit -m "Deploy Block 1 empty curriculum shell"
+          git push origin HEAD:main

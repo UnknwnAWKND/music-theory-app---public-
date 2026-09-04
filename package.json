@@ -1,10 +1,10 @@
 {
   "name": "music-theory-tutor-core",
   "version": "0.7.0",
-  "private": true,
   "type": "module",
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "clean": "node -e \"import('node:fs/promises').then(({rm})=>Promise.all([rm('dist',{recursive:true,force:true}),rm('site',{recursive:true,force:true})]))\"",
+    "build": "npm run clean && tsc -p tsconfig.json",
     "test": "npm run build && node --test tests/*.test.mjs",
     "build:site": "npm run build && node scripts/build-site.mjs"
   },

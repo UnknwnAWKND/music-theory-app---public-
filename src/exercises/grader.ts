@@ -1,104 +1,65 @@
-import {
-  assessMajorScale,
-  assessMajorScaleDegree,
-  assessNote,
-  assessNoteSequence,
-  assessPitchClassAnswer,
-  assessText,
-  assessTriad,
-  type AssessmentResult,
-} from "../assessment/index.js";
+import { assessNote, assessNoteSequence } from "../assessment/index.js";
 import { parseNote } from "../theory/index.js";
-import type { Exercise } from "./types.js";
+import type { Exercise, ExerciseGrade } from "./types.js";
 
-function asStringArray(answer: unknown): string[] | null {
-  if (!Array.isArray(answer) || !answer.every((x) => typeof x === "string")) return null;
-  return answer as string[];
+function normalizeText(value: unknown, caseSensitive = false): string {
+  const text = String(value ?? "").trim().replaceAll("♯", "#").replaceAll("♭", "b").replace(/\s+/g, " ");
+  return caseSensitive ? text : text.toLowerCase();
 }
-function normalizedJson(value: unknown): string {
-  if (Array.isArray(value)) return `[${value.map(normalizedJson).join(",")}]`;
+
+function canonical(value: unknown): string {
+  if (Array.isArray(value)) return `[${value.map(canonical).join(",")}]`;
   if (value && typeof value === "object") {
-    return `{${Object.entries(value as Record<string, unknown>).sort(([a],[b]) => a.localeCompare(b)).map(([k,v]) => `${k}:${normalizedJson(v)}`).join(",")}}`;
+    return `{${Object.entries(value as Record<string, unknown>).sort(([a], [b]) => a.localeCompare(b)).map(([k, v]) => `${k}:${canonical(v)}`).join(",")}}`;
   }
-  return String(value).trim().toLowerCase().replaceAll("♯", "#").replaceAll("♭", "b").replaceAll(" ", "");
-}
-function structured(expected: unknown, answer: unknown): AssessmentResult {
-  if (normalizedJson(expected) === normalizedJson(answer)) return { correct: true, code: "correct", expected, actual: answer };
-  return { correct: false, code: "wrong-answer", expected, actual: answer };
+  return normalizeText(value);
 }
 
-function looksLikeRomanHarmonyLabel(value: unknown): value is string {
-  if (typeof value !== "string") return false;
-  const text = value.trim();
-  // Roman-numeral harmony is case-sensitive because case carries chord quality.
-  // Detect whole labels (V7/ii), progressions (I–V–vi–IV), and labels embedded
-  // in short text answers ("ii and IV").
-  return /(?:^|[\s(,→–—-])(?:[ivIV]{1,4})(?:[°ø+])?(?:maj|min|m|dim|aug)?\d*(?:\/[ivIV]{1,4}(?:[°ø+])?\d*)?(?=$|[\s),→–—-])/.test(text);
-}
+export function gradeExercise(exercise: Exercise, answer: unknown): ExerciseGrade {
+  const spec = exercise.answerSpec;
+  if (spec.kind === "self-check") throw new Error(`Exercise ${exercise.id} is not objectively gradable`);
 
-function assessCaseAwareText(expected: string, answer: unknown): AssessmentResult {
-  if (typeof answer !== "string") return { correct: false, code: "invalid-answer", expected, actual: answer };
-  if (!looksLikeRomanHarmonyLabel(expected)) return assessText(expected, answer);
-  const normalize = (x: string) => x.trim().replaceAll(" ", "").replace(/o$/i, "°");
-  const actual = normalize(answer);
-  const exp = normalize(expected);
-  if (actual === exp) return { correct: true, code: "correct", expected, actual: answer };
-  return { correct: false, code: "wrong-roman-numeral", expected, actual: answer };
-}
+  if (spec.kind === "note") {
+    if (typeof answer !== "string") return { correct: false, code: "invalid-answer", expected: spec.expected, actual: answer };
+    const candidates = [spec.expected, ...(spec.accepted ?? [])];
+    for (const candidate of candidates) {
+      const result = assessNote(parseNote(candidate), answer);
+      if (result.correct) return { ...result, detail: exercise.explanation };
+    }
+    const result = assessNote(parseNote(spec.expected), answer);
+    return { ...result, detail: result.detail ?? `Correct answer: ${spec.expected}. ${exercise.explanation}` };
+  }
 
-export function gradeExercise(exercise: Exercise, answer: unknown): AssessmentResult {
-  if (exercise.assessmentMode === "self-check" || exercise.assessmentMode === "instructional") {
-    throw new Error(`Exercise ${exercise.id} is not objectively gradable`);
+  if (spec.kind === "note-sequence") {
+    if (!Array.isArray(answer) || !answer.every((x) => typeof x === "string")) {
+      return { correct: false, code: "invalid-answer", expected: spec.expected, actual: answer };
+    }
+    const result = assessNoteSequence(spec.expected.map(parseNote), answer, spec.orderMatters ?? true);
+    return { ...result, detail: result.correct ? exercise.explanation : result.detail ?? `Correct answer: ${spec.expected.join(" ")}. ${exercise.explanation}` };
   }
-  const p = exercise.payload as Record<string, any>;
-  switch (exercise.type) {
-    case "interval-build-note":
-      return typeof answer === "string" ? assessNote(parseNote(p.expected), answer) : { correct: false, code: "invalid-answer", expected: p.expected, actual: answer };
-    case "triad-build-notes": {
-      const a = asStringArray(answer); if (!a) return { correct: false, code: "invalid-answer", expected: p, actual: answer };
-      return assessTriad(p.root, p.quality, a);
-    }
-    case "major-scale-build": {
-      const a = asStringArray(answer); if (!a) return { correct: false, code: "invalid-answer", expected: p, actual: answer };
-      return assessMajorScale(p.tonic, a);
-    }
-    case "major-degree-note":
-      return typeof answer === "string" ? assessMajorScaleDegree(p.tonic, p.degree, answer) : { correct: false, code: "invalid-answer", expected: p, actual: answer };
-    case "major-note-degree":
-      return Number(answer) === Number(p.expected) ? { correct: true, code: "correct", expected: p.expected, actual: answer } : { correct: false, code: "wrong-degree", expected: p.expected, actual: answer };
-    case "guitar-fret-note":
-      return typeof answer === "string" ? assessPitchClassAnswer(p.expectedPitchClass, answer) : { correct: false, code: "invalid-answer", expected: p.expectedPitchClass, actual: answer };
-    case "minor-scale-build": {
-      if (p.expected) { const a=asStringArray(answer); return a ? assessNoteSequence(p.expected.map(parseNote), a, true) : { correct:false, code:"invalid-answer", expected:p.expected, actual:answer }; }
-      return structured({ ascending: p.expectedAscending, descending: p.expectedDescending }, answer);
-    }
-    case "seventh-build-notes":
-    case "chord-color-build": {
-      const a=asStringArray(answer); return a && Array.isArray(p.expected) ? assessNoteSequence(p.expected.map(parseNote), a, false) : structured(p.expected ?? p, answer);
-    }
-    case "mode-scale-build":
-    case "inversion-build": {
-      const a=asStringArray(answer); return a && Array.isArray(p.expected) ? assessNoteSequence(p.expected.map(parseNote), a, true) : structured(p.expected, answer);
-    }
-    case "diatonic-chord-build": {
-      if (p.expectedNotes) { const a=asStringArray(answer); return a ? assessNoteSequence(p.expectedNotes.map(parseNote), a, false) : structured(p.expectedNotes, answer); }
-      return structured(p.expected, answer);
-    }
-    case "progression-build":
-      return structured(p.expected, answer);
-    case "key-signature":
-      return structured({ count: p.expectedCount, type: p.expectedType }, answer);
-    case "major-chord-roman":
-      return assessCaseAwareText(String(p.expected), answer);
-    case "note-identify":
-    case "concept-check":
-    case "interval-identify":
-    case "interval-inversion":
-    case "scale-membership":
-      if (Array.isArray(p.expected)) return structured(p.expected, answer);
-      return assessCaseAwareText(String(p.expected), answer);
-    default:
-      if ("expected" in p) return structured(p.expected, answer);
-      throw new Error(`No grader implemented for exercise type ${exercise.type}`);
+
+  if (spec.kind === "number") {
+    const actual = typeof answer === "number" ? answer : Number(String(answer).trim());
+    const correct = Number.isFinite(actual) && actual === spec.expected;
+    return { correct, code: correct ? "correct" : "wrong-answer", expected: spec.expected, actual: answer, detail: correct ? exercise.explanation : `Correct answer: ${spec.expected}. ${exercise.explanation}` };
   }
+
+  if (spec.kind === "number-sequence") {
+    const actual = Array.isArray(answer) ? answer.map(Number) : [];
+    const expected = [...spec.expected];
+    const left = spec.orderMatters === false ? [...actual].sort((a, b) => a - b) : actual;
+    const right = spec.orderMatters === false ? [...expected].sort((a, b) => a - b) : expected;
+    const correct = left.length === right.length && left.every((value, index) => value === right[index]);
+    return { correct, code: correct ? "correct" : "wrong-answer", expected, actual: answer, detail: correct ? exercise.explanation : `Correct answer: ${expected.join(" ")}. ${exercise.explanation}` };
+  }
+
+  if (spec.kind === "text" || spec.kind === "choice") {
+    const accepted = spec.kind === "text" ? [spec.expected, ...(spec.accepted ?? [])] : [spec.expected];
+    const actual = normalizeText(answer, spec.caseSensitive ?? false);
+    const correct = accepted.some((candidate) => normalizeText(candidate, spec.caseSensitive ?? false) === actual);
+    return { correct, code: correct ? "correct" : "wrong-answer", expected: spec.expected, actual: answer, detail: correct ? exercise.explanation : `Correct answer: ${spec.expected}. ${exercise.explanation}` };
+  }
+
+  const correct = canonical(answer) === canonical(spec.expected);
+  return { correct, code: correct ? "correct" : "wrong-answer", expected: spec.expected, actual: answer, detail: correct ? exercise.explanation : `Correct answer: ${canonical(spec.expected)}. ${exercise.explanation}` };
 }
