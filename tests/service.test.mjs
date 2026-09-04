@@ -27,49 +27,68 @@ class FakeScheduler {
   retrievability() { return null; }
 }
 
-function acquisition(userId, sessionId, signature, time) {
-  return { userId, sessionId, skillId: "pitch.accidentals", promptSignature: signature,
-    occurredAt: time, outcome: "correct", independent: true, directEvidence: true, context: "acquisition" };
+function acquisition(userId, sessionId, signature, time, overrides = {}) {
+  return { userId, sessionId, skillId: "interval.generic-number", promptSignature: signature,
+    occurredAt: time, outcome: "correct", independent: true, directEvidence: true, context: "acquisition",
+    eventKind: "response", responseMode: "recognition", guidance: "none", evidenceVersion: "v2",
+    exampleSignature: "generic-interval-number", ...overrides };
 }
 
-test("service creates a session plan, derives READY, and seeds delayed review exactly on READY transition", async () => {
+test("service establishes READY from the skill evidence profile and seeds review only on the transition", async () => {
   const repo = new InMemoryTutorRepository();
   const service = new TutorService({ repository: repo, scheduler: new FakeScheduler() });
   const started = await service.startSession("u1", new Date("2026-09-03T12:00:00Z"));
-  assert.equal(started.plan.newSkillId, "pitch.accidentals");
+  assert.equal(started.plan.newSkillId, "interval.generic-number");
 
-  await service.submitAttempt(acquisition("u1", started.sessionId, "a", "2026-09-03T12:01:00Z"));
-  await service.submitAttempt(acquisition("u1", started.sessionId, "b", "2026-09-03T12:02:00Z"));
-  const evidence = await service.submitAttempt(acquisition("u1", started.sessionId, "c", "2026-09-03T12:03:00Z"));
+  const one = await service.submitAttempt(acquisition("u1", started.sessionId, "generic:1", "2026-09-03T12:01:00Z"));
+  assert.equal(one.ready, false);
+  const evidence = await service.submitAttempt(acquisition("u1", started.sessionId, "generic:2", "2026-09-03T12:03:00Z"));
   assert.equal(evidence.ready, true);
+  assert.equal(evidence.retained, false);
   assert.equal(repo.cards.size, 1);
   assert.equal(repo.schedulerReviews.length, 1);
   assert.equal(repo.schedulerReviews[0].eventKind, "initial-seed");
 });
 
-test("only a cold independent review probe advances the scheduler", async () => {
+test("service preserves first response and marks a later same-prompt response as retry", async () => {
+  const repo = new InMemoryTutorRepository();
+  const service = new TutorService({ repository: repo, scheduler: new FakeScheduler() });
+  const session = await repo.createSession("u1", "2026-09-03T12:00:00Z");
+  await service.submitAttempt(acquisition("u1", session.id, "same", "2026-09-03T12:01:00Z", { outcome: "incorrect" }));
+  await service.submitAttempt(acquisition("u1", session.id, "same", "2026-09-03T12:02:00Z"));
+  const rows = await repo.attemptsForSkill("u1", "interval.generic-number");
+  assert.equal(rows[0].outcome, "incorrect");
+  assert.equal(rows[0].firstSubmission, true);
+  assert.equal(rows[1].outcome, "correct");
+  assert.equal(rows[1].firstSubmission, false);
+  assert.equal(rows[1].stage, "retry");
+});
+
+test("only a cold independent first-submission review probe advances the scheduler", async () => {
   const repo = new InMemoryTutorRepository();
   const service = new TutorService({ repository: repo, scheduler: new FakeScheduler() });
   const session = await repo.createSession("u1", "2026-09-03T12:00:00Z");
   await service.submitAttempt(acquisition("u1", session.id, "a", "2026-09-03T12:01:00Z"));
   await service.submitAttempt(acquisition("u1", session.id, "b", "2026-09-03T12:02:00Z"));
-  await service.submitAttempt(acquisition("u1", session.id, "c", "2026-09-03T12:03:00Z"));
   const initialCount = repo.schedulerReviews.length;
 
-  await service.submitAttempt({ userId: "u1", sessionId: session.id, skillId: "pitch.accidentals",
+  const reviewSession = await repo.createSession("u1", "2026-09-04T12:00:00Z");
+  await service.submitAttempt({ userId: "u1", sessionId: reviewSession.id, skillId: "interval.generic-number",
     promptSignature: "review-a", occurredAt: "2026-09-04T12:00:00Z", outcome: "incorrect",
-    independent: true, directEvidence: true, context: "review", coldProbe: true });
+    independent: true, directEvidence: true, context: "review", coldProbe: true,
+    eventKind: "response", responseMode: "recognition", guidance: "none", evidenceVersion: "v2" });
   assert.equal(repo.schedulerReviews.length, initialCount + 1);
 
-  await service.submitAttempt({ userId: "u1", sessionId: session.id, skillId: "pitch.accidentals",
+  await service.submitAttempt({ userId: "u1", sessionId: reviewSession.id, skillId: "interval.generic-number",
     promptSignature: "repair", occurredAt: "2026-09-04T12:01:00Z", outcome: "correct",
-    independent: true, directEvidence: true, context: "review", coldProbe: false });
-  assert.equal(repo.schedulerReviews.length, initialCount + 1);
+    independent: false, directEvidence: true, context: "review", coldProbe: false,
+    eventKind: "response", responseMode: "recognition", guidance: "explanation", evidenceVersion: "v2" });
+  assert.equal(repo.schedulerReviews.length, initialCount + 1, "relearning must not be credited as a successful cold review");
 });
 
 test("previewPlan can recompute unlocked work without creating a new study session", async () => {
   const repo = new InMemoryTutorRepository();
   const service = new TutorService({ repository: repo, scheduler: new FakeScheduler() });
   const plan = await service.previewPlan("preview-user", new Date("2026-09-03T12:00:00Z"));
-  assert.ok(plan.newSkillId);
+  assert.equal(plan.newSkillId, "interval.generic-number");
 });
