@@ -16,6 +16,7 @@ jobs:
   test-build-and-sync:
     if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
         with:
@@ -23,10 +24,23 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Install build dependencies
-        run: npm install
       - name: Apply profile and settings upgrade
         run: python scripts/add-profile-settings.py
+      - name: Commit profile/settings source upgrade
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/persistence web/app.js web/styles.css supabase/schema.sql tests/profile-settings.test.mjs
+          if git diff --cached --quiet; then
+            echo "Profile/settings source already current"
+          else
+            git commit -m "Implement multi-user profiles and curriculum access settings"
+            git push
+          fi
+      - name: Install build dependencies
+        run: npm install --no-audit --no-fund --prefer-offline
       - name: Apply lesson clarity rules
         run: |
           python scripts/apply-lesson-clarity.py
