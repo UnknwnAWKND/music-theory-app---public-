@@ -49,6 +49,8 @@ jobs:
           grep -q "placementDefinition" web/app.js
       - name: Apply Prompt 4 UI and lesson cleanup
         run: python scripts/prompt4-ui-lesson-cleanup.py
+      - name: Apply full QA bug sweep
+        run: python scripts/qa-bug-sweep.py
       - name: Verify curriculum, UI, and learning engine
         run: npm test
       - name: Check common mobile and tablet widths
@@ -90,6 +92,6 @@ jobs:
           if git diff --cached --quiet; then
             echo "No generated changes"
           else
-            git commit -m "Deploy Prompt 4 UI and lesson cleanup"
+            git commit -m "Deploy full QA bug sweep"
             git push
           fi
