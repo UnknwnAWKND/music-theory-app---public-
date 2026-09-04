@@ -53,6 +53,7 @@ jobs:
         run: |
           python scripts/qa-bug-sweep.py
           python scripts/qa-finalize.py
+          python scripts/qa-semantic-variety.py
       - name: Verify curriculum, UI, and learning engine
         run: npm test
       - name: Check common mobile and tablet widths
