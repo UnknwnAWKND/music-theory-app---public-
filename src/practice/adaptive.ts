@@ -1,3 +1,4 @@
+import { SKILL_BY_ID } from "../curriculum/index.js";
 import type { Exercise } from "../exercises/index.js";
 import type { DerivedSkillEvidence, LearningAttempt } from "../learning/index.js";
 
@@ -44,19 +45,40 @@ export function confusionPartnerFor(evidence: DerivedSkillEvidence | undefined):
 }
 
 export function inferredConfusionPartner(_attempt: LearningAttempt): string | undefined {
-  // Curriculum-specific diagnostic mappings were intentionally removed in Block 1.
   return undefined;
+}
+
+/**
+ * Curriculum recurrence is intentionally separate from scheduler due dates.
+ * READY interval skills still deserve mixed retrieval. RETAINED lowers extra
+ * spiral pressure, but never makes a foundational interval skill weight zero.
+ */
+export function longTermPracticeWeight(skillId: string, evidence?: DerivedSkillEvidence): number {
+  const skill = SKILL_BY_ID.get(skillId);
+  if (!skill) return 0;
+  const curriculum = (skill.longTermRecurrence * 0.45) + (skill.reviewPriority * 0.30) + (skill.foundationality * 0.25);
+  if (curriculum <= 0) return 0;
+  if (evidence?.fragile) return curriculum * 1.6;
+  if (!evidence?.ready) return curriculum;
+  if (evidence.retained) return Math.max(0.5, curriculum * 0.35);
+  return curriculum * 1.15;
 }
 
 export function interleavingTargets(evidenceBySkill: ReadonlyMap<string, DerivedSkillEvidence>): string[] {
   const targets = new Set<string>();
   for (const [skillId, evidence] of evidenceBySkill) {
     if (!evidence.ready || evidence.fragile) continue;
+    const skill = SKILL_BY_ID.get(skillId);
+    if (!skill) continue;
+
     const partner = confusionPartnerFor(evidence);
     if (partner && evidenceBySkill.get(partner)?.ready) {
       targets.add(skillId);
       targets.add(partner);
     }
+
+    // High-recurrence foundational skills remain eligible for mixed retrieval after READY.
+    if (skill.longTermRecurrence >= 4 && skill.foundationality >= 4) targets.add(skillId);
   }
-  return [...targets];
+  return [...targets].sort((a, b) => longTermPracticeWeight(b, evidenceBySkill.get(b)) - longTermPracticeWeight(a, evidenceBySkill.get(a)));
 }
