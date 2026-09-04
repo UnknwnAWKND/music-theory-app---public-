@@ -25,8 +25,10 @@ test("app keeps a tokenized dark-only design", () => {
   assert.doesNotMatch(css, /prefers-color-scheme:\s*light/i);
 });
 
-test("first theory lesson teaches enharmonic notes simply", () => {
-  assert.match(lessons, /Sometimes the same piano key has two different note names/);
-  assert.match(lessons, /C♯ and D♭ are the same black key on the piano/);
-  assert.doesNotMatch(lessons, /The new idea here is enharmonic spelling/);
+test("Phase 1 introduces required enharmonic vocabulary without a separate Phase 0 lesson", () => {
+  assert.match(app, /\["Enharmonic",\s*"Two note names that use the same piano key and make the same sound\./);
+  assert.match(app, /C♯ and D♭ are enharmonic names for the same black key/);
+  assert.match(lessons, /F♯ up a major 3rd is A♯, not B♭/);
+  assert.doesNotMatch(app, /Phase 0/);
+  assert.doesNotMatch(lessons, /"pitch\.accidentals"|"pitch\.half-whole"/);
 });
