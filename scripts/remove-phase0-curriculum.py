@@ -18,7 +18,7 @@ text = text.replace('[, ', '[').replace(', ,', ',').replace('[,]', '[]')
 # vocabulary now lives with interval quality in Phase 1, so preserve the intended learning order
 # by attaching major.formula to that existing prerequisite instead of leaving Phase 3 unlocked at entry.
 text = re.sub(
-    r'(s\("major\.formula",\s*3,\s*"Major scale formula",\s*)\[\s*\](,)',
+    r'(s\("major\.formula",\s*3,\s*"[^"]+",\s*)\[\s*\](,)',
     r'\1["interval.quality-system"]\2',
     text,
     count=1,
@@ -28,7 +28,7 @@ if 'pitch.accidentals' in text or 'pitch.half-whole' in text:
     raise RuntimeError("Retired Phase 0 skill IDs remain in active curriculum")
 if re.search(r'\bs\([^\n]*,\s*0\s*,', text):
     raise RuntimeError("A genuine phase-0 curriculum node remains")
-if not re.search(r's\("major\.formula",\s*3,\s*"Major scale formula",\s*\["interval\.quality-system"\]', text):
+if not re.search(r's\("major\.formula",\s*3,\s*"[^"]+",\s*\["interval\.quality-system"\]', text):
     raise RuntimeError("major.formula lost its replacement prerequisite after Phase 0 removal")
 
 path.write_text(text)
