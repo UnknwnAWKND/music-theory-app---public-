@@ -1,4 +1,4 @@
-import { SKILLS } from "./skills.js";
+import { SKILLS } from "./skills-v09.js";
 import type { GraphValidationResult, SkillDefinition } from "./types.js";
 
 export function validateSkillGraph(skills: readonly SkillDefinition[] = SKILLS): GraphValidationResult {
