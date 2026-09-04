@@ -72,6 +72,15 @@ test("every atomic curriculum skill exposes more than one semantic example in it
   }
 });
 
+test("every curriculum skill has enough semantic example variety to satisfy its readiness model", () => {
+  const broken = [];
+  for (const skill of SKILLS) {
+    const signatures = new Set(Array.from({ length: 24 }, (_, i) => semanticExerciseSignature(exerciseForSkill(skill.id, i))));
+    if (signatures.size < 2) broken.push(skill.id);
+  }
+  assert.deepEqual(broken, [], `skills with one semantic example: ${broken.join(", ")}`);
+});
+
 test("adaptive selection changes the visible generic-interval question when alternatives exist", () => {
   const first = selectAdaptiveExercise("interval.generic-number", [], 0, 8);
   const history = [attempt({ promptSignature: first.exercise.id, exampleSignature: first.semanticSignature })];
