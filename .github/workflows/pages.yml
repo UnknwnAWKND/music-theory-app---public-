@@ -44,6 +44,8 @@ jobs:
         run: |
           python scripts/apply-adaptive-learning.py
           python scripts/guard-manual-cold-review.py
+      - name: Apply phase checkpoints and placement
+        run: python scripts/apply-phase-checkpoints.py
       - name: Verify curriculum and learning engine
         run: npm test
       - name: Check common mobile and tablet widths
@@ -85,6 +87,6 @@ jobs:
           if git diff --cached --quiet; then
             echo "No generated changes"
           else
-            git commit -m "Deploy adaptive learning engine"
+            git commit -m "Deploy phase checkpoints and placement"
             git push
           fi
