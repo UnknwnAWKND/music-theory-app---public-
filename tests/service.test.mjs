@@ -31,7 +31,7 @@ function acquisition(userId, sessionId, signature, time, overrides = {}) {
   return { userId, sessionId, skillId: "interval.generic-number", promptSignature: signature,
     occurredAt: time, outcome: "correct", independent: true, directEvidence: true, context: "acquisition",
     eventKind: "response", responseMode: "recognition", guidance: "none", evidenceVersion: "v2",
-    exampleSignature: "generic-interval-number", ...overrides };
+    exampleSignature: signature, ...overrides };
 }
 
 test("service establishes READY from the skill evidence profile and seeds review only on the transition", async () => {
