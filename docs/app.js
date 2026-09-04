@@ -71,7 +71,138 @@ function esc(value) {
   return String(value ?? "").replace(/[&<>'"]/g, (ch) => ({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"}[ch]));
 }
 
-function skillTitle(id) { return SKILL_BY_ID.get(id)?.title ?? id; }
+const DISPLAY_SKILL_TITLES = Object.freeze({
+  "interval.generic-number": "Interval Numbers",
+  "interval.quality-system": "Interval Quality",
+  "interval.P1": "Perfect Unison",
+  "interval.m2": "Minor 2nd",
+  "interval.M2": "Major 2nd",
+  "interval.m3": "Minor 3rd",
+  "interval.M3": "Major 3rd",
+  "interval.P4": "Perfect 4th",
+  "interval.A4-d5": "Tritones",
+  "interval.P5": "Perfect 5th",
+  "interval.m6": "Minor 6th",
+  "interval.M6": "Major 6th",
+  "interval.m7": "Minor 7th",
+  "interval.M7": "Major 7th",
+  "interval.P8": "Octaves",
+  "interval.mixed-core": "Mixed Intervals",
+  "interval.spelling": "Interval Spelling",
+  "interval.inversion": "Interval Inversions",
+  "triad.members": "Triad Notes",
+  "triad.major": "Major Triads",
+  "triad.minor": "Minor Triads",
+  "triad.diminished": "Diminished Triads",
+  "triad.augmented": "Augmented Triads",
+  "triad.symbols": "Chord Symbols",
+  "triad.mixed": "Mixed Triads",
+  "triad.root-vs-bass": "Root vs Bass",
+  "major.formula": "Major Scale Pattern",
+  "scale.degree-numbers": "Scale Degrees",
+  "major.degree-intervals": "Scale Degree Intervals",
+  "major.spelling": "Major Scale Spelling",
+  "major.construct": "Major Scales",
+  "major.degree-to-note": "Find Scale Notes",
+  "major.note-to-degree": "Find Scale Degrees",
+  "major.membership": "Notes in a Key",
+  "major.degree-names": "Scale Degree Names",
+  "major.piano-application": "Major Scales on Piano",
+  "diatonic.definition": "Diatonic vs Chromatic",
+  "diatonic.stack-thirds": "Stacking Thirds",
+  "diatonic.major-pattern": "Diatonic Chord Pattern",
+  "roman.major-basic": "Roman Numerals",
+  "diatonic.degree-to-chord": "Degree to Chord",
+  "diatonic.chord-to-degree": "Chord to Numeral",
+  "diatonic.harmonize-key": "Harmonize a Key",
+  "diatonic.check-chord": "Diatonic or Not?",
+  "diatonic.piano-application": "Diatonic Chords on Piano",
+  "progression.absolute-relative": "Symbols vs Numerals",
+  "progression.scale-degree-vs-chord": "Note vs Chord Degrees",
+  "progression.I-IV-V": "I–IV–V",
+  "progression.transpose": "Transpose Progressions",
+  "progression.extract": "Progression Analysis",
+  "progression.ii-V-I": "ii–V–I",
+  "progression.I-V-vi-IV": "I–V–vi–IV",
+  "progression.vi-IV-I-V": "vi–IV–I–V",
+  "progression.I-vi-IV-V": "I–vi–IV–V",
+  "progression.nashville": "Nashville Numbers",
+  "melody.chord-tones": "Chord Tones",
+  "function.tonic": "Tonic Function",
+  "function.dominant": "Dominant Function",
+  "function.V-I": "V–I Resolution",
+  "function.predominant": "Predominant Function",
+  "function.basic-flow": "Functional Flow",
+  "cadence.basic": "Cadences",
+  "function.context": "Function in Context",
+  "minor.parallel-alterations": "Natural Minor Pattern",
+  "minor.natural-construct": "Natural Minor",
+  "minor.relative": "Relative Keys",
+  "minor.parallel": "Parallel Keys",
+  "minor.raised7": "Leading Tone in Minor",
+  "minor.harmonic": "Harmonic Minor",
+  "minor.V-v": "V vs v in Minor",
+  "minor.variable6-7": "Variable 6 & 7",
+  "minor.melodic": "Melodic Minor",
+  "minor.melodic-jazz": "Jazz Melodic Minor",
+  "minor.harmony": "Minor-Key Chords",
+  "seventh.members": "Seventh Chord Notes",
+  "seventh.major7": "Major 7 Chords",
+  "seventh.minor7": "Minor 7 Chords",
+  "seventh.dominant7": "Dominant 7 Chords",
+  "seventh.halfdim7": "Half-Diminished 7",
+  "seventh.dim7": "Diminished 7 Chords",
+  "seventh.mixed": "Mixed Seventh Chords",
+  "seventh.major-diatonic": "Diatonic Sevenths",
+  "seventh.minor-context": "Sevenths in Minor",
+  "inversion.triad": "Triad Inversions",
+  "inversion.slash": "Slash Chords",
+  "voicing.distinction": "Inversion vs Voicing",
+  "inversion.seventh": "Seventh Inversions",
+  "voice.common-tones": "Common Tones",
+  "voice.economical": "Smooth Voice Leading",
+  "voice.guide-tones": "Guide Tones",
+  "keys.signatures": "Key Signatures",
+  "keys.accidental-order": "Sharp & Flat Order",
+  "circle.major": "Circle of Fifths",
+  "keys.minor-signatures": "Minor Key Signatures",
+  "circle.relative-minor": "Relative Minors",
+  "keys.closely-related": "Related Keys",
+  "keys.enharmonic": "Enharmonic Keys",
+  "extension.compound-intervals": "Compound Intervals",
+  "color.sus": "Suspended Chords",
+  "color.add": "Add Chords",
+  "color.six": "6 & 6/9 Chords",
+  "extension.9": "Ninth Chords",
+  "extension.11-13": "11th & 13th Chords",
+  "melody.nonchord": "Non-Chord Tones",
+  "secondary.V": "Secondary Dominants",
+  "mixture.parallel": "Borrowed Chords",
+  "mode.tonic-center": "Modal Center",
+  "mode.major-family": "Major Modes",
+  "mode.minor-family": "Minor Modes",
+  "mode.locrian": "Locrian",
+  "modulation.tonicization-vs-keychange": "Tonicization vs Modulation",
+  "modulation.direct": "Direct Modulation",
+  "modulation.pivot": "Pivot Chord Modulation",
+  "analysis.integrated": "Harmonic Analysis",
+  "guitar.open-strings": "Open Strings",
+  "guitar.fret-notes": "Fretboard Notes",
+  "guitar.intervals": "Fretboard Intervals",
+  "guitar.triads": "Triads on Guitar",
+  "guitar.inversions": "Guitar Triad Inversions",
+  "guitar.scale-degrees": "Scale Degrees on Guitar",
+  "guitar.scales": "Scales on Guitar",
+  "guitar.diatonic-harmony": "Diatonic Chords on Guitar",
+  "guitar.sevenths": "Seventh Chords on Guitar",
+  "guitar.chord-tones": "Chord Tones on Guitar",
+  "guitar.voice-leading": "Voice Leading on Guitar",
+  "guitar.alternate-tunings": "Alternate Tunings",
+  "guitar.idea-to-neck": "Ideas to Fretboard",
+});
+
+function skillTitle(id) { return DISPLAY_SKILL_TITLES[id] ?? SKILL_BY_ID.get(id)?.title ?? id; }
+function displaySkillTitle(skill) { return skill ? skillTitle(skill.id) : ""; }
 function skillPhase(id) { const x = SKILL_BY_ID.get(id); return x ? `Phase ${x.phase}` : ""; }
 
 // UI_REDESIGN_2026
@@ -96,9 +227,9 @@ function icon(name, size = 20) {
 }
 
 function topbarHtml(title = "", options = {}) {
-  const { backTarget = "", eyebrow = "", subtitle = "", action = "" } = options;
-  return `<header class="page-header">
-    <div class="page-header-leading">${backTarget ? `<button class="icon-button" data-back="${esc(backTarget)}" type="button" aria-label="Back">${icon("back", 22)}</button>` : '<div class="brand-mark">T</div>'}</div>
+  const { backTarget = "", eyebrow = "", subtitle = "", action = "", hideLeading = false } = options;
+  return `<header class="page-header ${hideLeading ? "no-leading" : ""}">
+    ${hideLeading ? "" : `<div class="page-header-leading">${backTarget ? `<button class="icon-button" data-back="${esc(backTarget)}" type="button" aria-label="Back">${icon("back", 22)}</button>` : '<div class="brand-mark">T</div>'}</div>`}
     <div class="page-header-copy">${eyebrow ? `<div class="page-kicker">${esc(eyebrow)}</div>` : ""}<div class="page-title">${esc(title || "Theory")}</div>${subtitle ? `<div class="page-subtitle">${esc(subtitle)}</div>` : ""}</div>
     <div class="page-header-action">${action}</div>
   </header>`;
@@ -122,6 +253,50 @@ function progressBarHtml(value, label = "") {
   const pct = Math.max(0, Math.min(100, Math.round(Number(value) || 0)));
   return `<div class="progress-block">${label ? `<div class="progress-label"><span>${esc(label)}</span><strong>${pct}%</strong></div>` : ""}<div class="progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pct}"><div class="progress-bar" style="width:${pct}%"></div></div></div>`;
 }
+
+let replayingHistory = false;
+
+function routeForBackTarget(target) {
+  if (target === "home") return "home";
+  if (target === "learn") return "learn";
+  if (target === "profile") return "profile";
+  if (target?.startsWith("phase:")) return target;
+  if (target === "session") return state.manualStudy ? `phase:${state.manualStudy.phase}` : "home";
+  return "home";
+}
+
+function syncRoute(route, parent = "") {
+  if (replayingHistory) return;
+  if (history.state?.theoryRoute === route) return;
+  history.pushState({ theoryRoute: route, theoryParent: parent }, "", `#${encodeURIComponent(route)}`);
+}
+
+async function renderRoute(route) {
+  if (!route || route === "home") return renderToday();
+  if (route === "learn") return renderCurriculum();
+  if (route === "profile") return renderProfile();
+  if (route === "settings") return renderSettings();
+  if (route === "edit-profile") return renderEditProfile();
+  if (route.startsWith("phase:")) return renderPhase(Number(route.split(":")[1]));
+  if (route.startsWith("locked-phase:")) return renderLockedPhase(Number(route.split(":")[1]));
+  return renderToday();
+}
+
+async function goBack(target) {
+  const expected = routeForBackTarget(target);
+  if (history.state?.theoryParent === expected && history.length > 1) {
+    history.back();
+    return;
+  }
+  return renderRoute(expected);
+}
+
+window.addEventListener("popstate", (ev) => {
+  replayingHistory = true;
+  Promise.resolve(renderRoute(ev.state?.theoryRoute ?? "home"))
+    .catch(showFatal)
+    .finally(() => { replayingHistory = false; });
+});
 
 function footerHtml() { return ""; }
 
@@ -288,11 +463,7 @@ root.addEventListener("click", async (ev) => {
   const back = ev.target.closest?.("[data-back]");
   if (back) {
     const target = back.dataset.back;
-    if (target === "home") return renderToday().catch(showFatal);
-    if (target === "learn") return renderCurriculum().catch(showFatal);
-    if (target === "profile") return renderProfile().catch(showFatal);
-    if (target?.startsWith("phase:")) return renderPhase(Number(target.split(":")[1])).catch(showFatal);
-    if (target === "session") return leaveStudyToPrevious().catch(showFatal);
+    return goBack(target).catch(showFatal);
   }
 
   const profileButton = ev.target.closest?.("[data-profile]");
@@ -474,6 +645,7 @@ function phaseSummary(phase, byId, readyIds, phaseProgress = new Map()) {
 }
 
 async function renderCurriculum() {
+  syncRoute("learn");
   const [records, phaseProgressRows] = await Promise.all([repo.allSkillStates(USER_ID), repo.phaseProgress(USER_ID)]);
   const { byId, readyIds } = progressSummary(records);
   const phaseProgress = phaseProgressMap(phaseProgressRows);
@@ -505,6 +677,7 @@ async function renderCurriculum() {
 }
 
 async function renderPhase(phase) {
+  syncRoute(`phase:${phase}`, "learn");
   const [records, phaseProgressRows] = await Promise.all([repo.allSkillStates(USER_ID), repo.phaseProgress(USER_ID)]);
   const { byId, readyIds } = progressSummary(records);
   const phaseProgress = phaseProgressMap(phaseProgressRows);
@@ -517,7 +690,7 @@ async function renderPhase(phase) {
     const accessAllowed = curriculumAccessAllowed(skill, readyIds, phaseProgress);
     const status = skillStatus(skill, evidence, readyIds, accessAllowed);
     return `<button class="lesson-row ${status.cls}" type="button" ${accessAllowed ? `data-open-skill="${esc(skill.id)}"` : "disabled"}>
-      <span class="lesson-row-copy"><strong>${esc(skill.title)}</strong>${!accessAllowed ? '<small>Complete previous material to unlock.</small>' : skill.optional ? '<small>Optional</small>' : ""}</span>
+      <span class="lesson-row-copy"><strong>${esc(displaySkillTitle(skill))}</strong>${!accessAllowed ? '<small>Complete previous material to unlock.</small>' : skill.optional ? '<small>Optional</small>' : ""}</span>
       <span class="lesson-row-end"><span class="status-chip ${status.cls}">${esc(status.label)}</span>${accessAllowed ? icon("chevron", 17) : icon("lock", 16)}</span>
     </button>`;
   }).join("");
@@ -538,6 +711,7 @@ function checkpointCardHtml(phase, progress) {
 }
 
 async function renderLockedPhase(phase) {
+  syncRoute(`locked-phase:${phase}`, "learn");
   root.innerHTML = shellHtml(`
     ${topbarHtml(PHASE_TITLES[phase] ?? `Phase ${phase}`, { backTarget: "learn", eyebrow: `Phase ${phase}` })}
     <section class="locked-phase-panel">${icon("lock", 28)}<h1>Phase ${phase} is locked.</h1><p>Continue the earlier phases, or show that you already know the prerequisites.</p><button class="primary" data-placement type="button">Test Into Phase ${phase}</button><button class="secondary" data-back-learn type="button">Continue Earlier Phases</button></section>`, { activeNav: "learn", className: "locked-phase-screen" });
@@ -577,6 +751,8 @@ async function loadAssessmentQuestion() {
 }
 
 function renderAssessmentQuestion() {
+  const routeAssessment = state.assessment;
+  if (routeAssessment) syncRoute(`assessment:${routeAssessment.kind}:${routeAssessment.phase}`, routeAssessment.kind === "placement" ? `locked-phase:${routeAssessment.phase}` : `phase:${routeAssessment.phase}`);
   const a = state.assessment;
   const current = a?.current;
   if (!a || !current) return;
@@ -729,20 +905,18 @@ function profileMonogram() {
 }
 
 async function renderProfile(message = "") {
-  const [records, due, sessions] = await Promise.all([
+  syncRoute("profile");
+  const [records, due] = await Promise.all([
     repo.allSkillStates(USER_ID),
     repo.dueReviews(USER_ID, new Date().toISOString()),
-    repo.recentSessions(USER_ID, 4),
   ]);
   const summary = progressSummary(records);
   const plan = state.session?.plan ?? await service.previewPlan(USER_ID, new Date());
   const currentSkillId = plan.acquiringSkillId ?? plan.newSkillId ?? null;
   const currentSkill = currentSkillId ? SKILL_BY_ID.get(currentSkillId) : null;
   const name = userProfile?.displayName ?? defaultDisplayName(authEmail);
-  const history = sessions.length ? sessions.map((session) => `<div class="activity-row"><span>${esc(formatProfileDate(session.startedAt))}</span><strong>${session.completedAt ? "Studied" : "Started"}</strong></div>`).join("") : '<div class="empty-row">No study sessions yet.</div>';
-
   root.innerHTML = shellHtml(`
-    ${topbarHtml("Profile", { eyebrow: "Your learning" })}
+    ${topbarHtml("Profile", { eyebrow: "Your learning", hideLeading: true })}
     ${message ? `<div class="inline-message" role="status">${esc(message)}</div>` : ""}
     <section class="profile-hero">
       <div class="profile-avatar" aria-hidden="true">${esc(profileMonogram())}</div>
@@ -755,8 +929,7 @@ async function renderProfile(message = "") {
       <div><strong>${summary.learning}</strong><span>Learning</span></div>
       <div><strong>${due.length}</strong><span>Reviews</span></div>
     </section>
-    ${currentSkill ? `<section class="compact-section"><div class="section-heading"><span>Current learning</span></div><div class="current-learning-row"><div><span>Phase ${currentSkill.phase}</span><strong>${esc(currentSkill.title)}</strong></div><button class="icon-button" data-nav="home" type="button" aria-label="Continue from Home">${icon("chevron", 20)}</button></div></section>` : ""}
-    <section class="compact-section"><div class="section-heading"><span>Recent activity</span></div><div class="activity-list">${history}</div><div class="member-since">Member since ${esc(formatProfileDate(userProfile?.createdAt))}</div></section>
+    ${currentSkill ? `<section class="compact-section"><div class="section-heading"><span>Current learning</span></div><div class="current-learning-row"><div><span>Phase ${currentSkill.phase}</span><strong>${esc(displaySkillTitle(currentSkill))}</strong></div><button class="icon-button" data-nav="home" type="button" aria-label="Continue from Home">${icon("chevron", 20)}</button></div></section>` : ""}
     <section class="menu-list">
       <button class="menu-row" data-settings type="button"><span class="menu-row-icon">${icon("settings", 19)}</span><span>Settings</span>${icon("chevron", 18)}</button>
       ${persistenceMode === "supabase" ? `<button class="menu-row danger" data-signout type="button"><span class="menu-row-icon">${icon("logout", 19)}</span><span>Sign out</span></button>` : ""}
@@ -764,6 +937,7 @@ async function renderProfile(message = "") {
 }
 
 async function renderEditProfile(message = "") {
+  syncRoute("edit-profile", "profile");
   const name = userProfile?.displayName ?? defaultDisplayName(authEmail);
   root.innerHTML = shellHtml(`
     ${topbarHtml("Edit profile", { backTarget: "profile", subtitle: "Keep it simple." })}
@@ -785,6 +959,7 @@ async function renderEditProfile(message = "") {
 }
 
 async function renderSettings() {
+  syncRoute("settings", "profile");
   const locking = userSettings?.requirePreviousLessons !== false;
   const description = locking
     ? "Complete lessons in order before later lessons unlock."
@@ -805,7 +980,6 @@ async function renderSettings() {
       <div class="settings-title">Account</div>
       <div class="settings-surface">
         <button class="settings-link" data-edit-profile type="button"><span>${icon("edit", 18)} Edit Profile</span>${icon("chevron", 18)}</button>
-        ${authEmail ? `<div class="settings-info"><span>Email</span><strong>${esc(authEmail)}</strong></div>` : ""}
         ${persistenceMode === "supabase" ? `<button class="settings-link danger" data-signout type="button"><span>${icon("logout", 18)} Sign Out</span></button>` : ""}
       </div>
     </section>`, { className: "settings-screen" });
@@ -838,6 +1012,7 @@ async function renderSettings() {
 }
 
 async function renderToday() {
+  syncRoute("home");
   const p = state.session.plan;
   const [records, due] = await Promise.all([
     repo.allSkillStates(USER_ID),
@@ -847,7 +1022,7 @@ async function renderToday() {
   const item = state.queue[state.itemIndex] ?? null;
   const skill = item ? SKILL_BY_ID.get(item.skillId) : null;
   const kindLabel = item?.kind === "review" ? "Review due" : item?.kind === "repair" || item?.kind === "review-repair" ? "Quick repair" : "Continue learning";
-  const mainTitle = skill?.title ?? "You’re caught up.";
+  const mainTitle = skill ? displaySkillTitle(skill) : "You’re caught up.";
   const mainCopy = skill ? `${skillPhase(skill.id)} • ${planCountLabel(p)}` : "Nothing meaningful is due right now.";
 
   root.innerHTML = shellHtml(`
@@ -884,6 +1059,74 @@ async function beginItem() {
   await loadExercise(item);
 }
 
+function notePitchClass(note) {
+  const match = String(note ?? "").trim().match(/^([A-Ga-g])([#♯b♭]?)/);
+  if (!match) return null;
+  const natural = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 }[match[1].toUpperCase()];
+  const accidental = match[2] === "#" || match[2] === "♯" ? 1 : match[2] === "b" || match[2] === "♭" ? -1 : 0;
+  return (natural + accidental + 12) % 12;
+}
+
+function pianoKeyboardHtml(notes = [], caption = "Piano") {
+  const labels = new Map();
+  for (const note of notes) {
+    const pc = notePitchClass(note);
+    if (pc == null) continue;
+    const list = labels.get(pc) ?? [];
+    if (!list.includes(note)) list.push(note);
+    labels.set(pc, list);
+  }
+  const whitePcs = [0, 2, 4, 5, 7, 9, 11];
+  const blackAfter = new Map([[0,1],[2,3],[5,6],[7,8],[9,10]]);
+  return `<figure class="theory-visual"><figcaption>${esc(caption)}</figcaption><div class="teaching-keyboard" aria-label="${esc(caption)}">${whitePcs.map((pc, i) => {
+    const blackPc = blackAfter.get(pc);
+    const whiteLabel = labels.get(pc)?.join(" / ") ?? "";
+    const blackLabel = blackPc == null ? "" : labels.get(blackPc)?.join(" / ") ?? "";
+    return `<div class="teaching-white-key ${labels.has(pc) ? "highlight" : ""}">${whiteLabel ? `<span>${esc(whiteLabel)}</span>` : ""}${blackPc == null ? "" : `<div class="teaching-black-key ${labels.has(blackPc) ? "highlight" : ""}">${blackLabel ? `<span>${esc(blackLabel)}</span>` : ""}</div>`}</div>`;
+  }).join("")}</div></figure>`;
+}
+
+function intervalTeachingNotes(skillId) {
+  const map = {
+    "interval.P1": ["C"], "interval.m2": ["C", "D♭"], "interval.M2": ["C", "D"],
+    "interval.m3": ["C", "E♭"], "interval.M3": ["C", "E"], "interval.P4": ["C", "F"],
+    "interval.A4-d5": ["C", "F♯"], "interval.P5": ["C", "G"], "interval.m6": ["C", "A♭"],
+    "interval.M6": ["C", "A"], "interval.m7": ["C", "B♭"], "interval.M7": ["C", "B"],
+  };
+  return map[skillId] ?? [];
+}
+
+function circleOfFifthsHtml() {
+  const keys = ["C", "G", "D", "A", "E", "B", "F♯", "D♭", "A♭", "E♭", "B♭", "F"];
+  return `<figure class="theory-visual"><figcaption>Circle of Fifths</figcaption><div class="circle-visual" aria-label="Circle of Fifths">${keys.map((key, i) => `<span style="--i:${i}">${esc(key)}</span>`).join("")}</div></figure>`;
+}
+
+function inversionDiagramHtml() {
+  return `<figure class="theory-visual"><figcaption>Same chord, different bass note</figcaption><div class="inversion-visual"><div><small>Root</small><strong>C · E · G</strong></div><div><small>1st</small><strong>E · G · C</strong></div><div><small>2nd</small><strong>G · C · E</strong></div></div></figure>`;
+}
+
+function fretboardDiagramHtml() {
+  const strings = ["E", "A", "D", "G", "B", "E"];
+  return `<figure class="theory-visual"><figcaption>Standard tuning</figcaption><div class="fretboard-visual" aria-label="Guitar fretboard">${strings.map((s) => `<div class="fret-string"><strong>${s}</strong>${[0,1,2,3,4].map((f) => `<span>${f === 0 ? "open" : f}</span>`).join("")}</div>`).join("")}</div></figure>`;
+}
+
+function lessonVisualHtml(skill, page) {
+  if (!skill) return "";
+  if (skill.id === "interval.generic-number" && /enharmonic/i.test(`${page.title} ${page.body} ${page.example ?? ""}`)) return pianoKeyboardHtml(["C♯", "D♭"], "Same key, two names");
+  const intervalNotes = intervalTeachingNotes(skill.id);
+  if (intervalNotes.length) return pianoKeyboardHtml(intervalNotes, displaySkillTitle(skill));
+  if (skill.phase === 2) {
+    const notes = skill.id === "triad.minor" ? ["C", "E♭", "G"] : skill.id === "triad.diminished" ? ["C", "E♭", "G♭"] : skill.id === "triad.augmented" ? ["C", "E", "G♯"] : ["C", "E", "G"];
+    return pianoKeyboardHtml(notes, displaySkillTitle(skill));
+  }
+  if (skill.phase === 3) return pianoKeyboardHtml(["C", "D", "E", "F", "G", "A", "B"], "C major example");
+  if (skill.phase === 4) return pianoKeyboardHtml(["C", "E", "G"], "C major chord example");
+  if (skill.phase === 9) return inversionDiagramHtml();
+  if (skill.phase === 10) return circleOfFifthsHtml();
+  if (skill.phase === 12) return fretboardDiagramHtml();
+  return "";
+}
+
 function lessonPagesFor(item) {
   const lesson = lessonForSkill(item.skillId);
   const skill = SKILL_BY_ID.get(item.skillId);
@@ -904,18 +1147,21 @@ function lessonPagesFor(item) {
 }
 
 function renderLessonStep(item, label = "Learn", pageIndex = 0) {
+  const lessonRouteSkill = SKILL_BY_ID.get(item.skillId);
+  syncRoute(`study:${item.skillId}`, state.manualStudy ? `phase:${state.manualStudy.phase}` : "home");
   const pages = lessonPagesFor(item);
   const page = pages[Math.min(pageIndex, pages.length - 1)];
   const skill = SKILL_BY_ID.get(item.skillId);
   const pct = pages.length ? Math.round(((pageIndex + 1) / pages.length) * 100) : 100;
   state.lessonVisible = true;
   root.innerHTML = shellHtml(`
-    ${topbarHtml("Lesson", { backTarget: "session", eyebrow: skill ? `Phase ${skill.phase}` : label, subtitle: skill?.title ?? "" })}
+    ${topbarHtml("Lesson", { backTarget: "session", eyebrow: skill ? `Phase ${skill.phase}` : label, subtitle: displaySkillTitle(skill) })}
     <div class="study-progress">${progressBarHtml(pct)}</div>
     <section class="lesson-content">
       <div class="lesson-type">${esc(page.eyebrow)}</div>
       <h1>${esc(page.title)}</h1>
       <div class="lesson-copy">${esc(page.body)}</div>
+      ${lessonVisualHtml(skill, page)}
       ${page.example ? `<div class="lesson-example"><span>Example</span><strong>${esc(page.example)}</strong></div>` : ""}
       <div class="lesson-footer"><span>${pageIndex + 1} of ${pages.length}</span><button class="primary" id="lessonTry" type="button">${pageIndex < pages.length - 1 ? "Continue" : (item.kind === "review-repair" ? "Try again" : "Try it")}</button></div>
     </section>`, { className: "lesson-screen" });
@@ -1010,13 +1256,15 @@ function feedbackHtml() {
 }
 
 function renderPractice() {
+  const practiceRouteItem = state.queue[state.itemIndex];
+  if (practiceRouteItem) syncRoute(`study:${practiceRouteItem.skillId}`, state.manualStudy ? `phase:${state.manualStudy.phase}` : "home");
   const item = state.queue[state.itemIndex];
   const e = state.currentExercise;
   const skill = SKILL_BY_ID.get(item.skillId);
   const pct = Math.round(((state.itemIndex + 1) / Math.max(1, state.queue.length)) * 100);
   const contextLabel = item.kind === "review" ? "Review" : item.kind === "repair" || item.kind === "review-repair" ? "Repair" : item.kind === "new" ? "New" : "Practice";
   root.innerHTML = shellHtml(`
-    ${topbarHtml(contextLabel, { backTarget: "session", eyebrow: skill ? `Phase ${skill.phase}` : "Practice", subtitle: skill?.title ?? "" })}
+    ${topbarHtml(contextLabel, { backTarget: "session", eyebrow: skill ? `Phase ${skill.phase}` : "Practice", subtitle: displaySkillTitle(skill) })}
     <div class="study-progress">${progressBarHtml(pct)}</div>
     <section class="question-shell">
       <div class="question-meta"><span>Question ${state.itemIndex + 1} of ${state.queue.length}</span><span>${esc(contextLabel)}</span></div>
@@ -1156,7 +1404,6 @@ async function submitObjective(item) {
     solutionSeen: support === "answer-reveal",
     exampleSignature,
     exampleAttributes,
-    confusionWith: assessment.correct ? undefined : inferredConfusionPartner(item.skillId, answer),
     evidenceVersion: "v2",
     responseMs: Math.round(performance.now() - state.startedPromptAt),
     assessmentCode: assessment.code,
@@ -1221,7 +1468,7 @@ async function submitSelfCheck(item, correct) {
     outcome: correct ? "correct" : "incorrect",
     independent,
     directEvidence: true,
-    context: item.kind === "review" || item.kind === "repair" || item.kind === "review-repair" ? "review" : item.kind === "interleave" ? "transfer" : "acquisition",
+    context: item.kind === "review" || item.kind === "repair" || item.kind === "review-repair" ? "review" : "acquisition",
     coldProbe: Boolean(item.firstProbe && independent),
     evidenceSource: "self-report",
     eventKind: "response",

@@ -242,39 +242,64 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px s
 }
 
 
-/* PHASE_CHECKPOINTS_2026 */
-.assessment-card,
-.locked-phase-panel,
+/* PROMPT4_UI_LESSON_CLEANUP */
+.page-header.no-leading { grid-template-columns: minmax(0,1fr) 44px; }
+.page-header.no-leading .page-header-copy { text-align: left; }
+.page-header-copy,
+.focus-card,
+.phase-card,
+.phase-card-top,
+.lesson-row,
+.lesson-row-copy,
+.current-learning-row,
+.current-learning-row > div,
+.question-shell,
 .assessment-question,
-.assessment-results {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-}
-.assessment-card { margin-top: 14px; padding: 18px; display: grid; gap: 12px; }
-.assessment-card > div { display: grid; gap: 4px; }
-.assessment-card > div > span,
-.assessment-competency { color: var(--accent); font-size: .74rem; font-weight: 760; }
-.assessment-card strong { display: inline-flex; align-items: center; gap: 7px; font-size: 1rem; }
-.assessment-card p { margin: 0; color: var(--muted); line-height: 1.5; font-size: .82rem; }
-.assessment-card.passed { border-color: rgba(114,214,161,.22); background: var(--success-soft); }
-.assessment-card.passed > div > span,
-.assessment-card.passed strong { color: var(--success); }
-.locked-phase-panel { padding: 26px 20px; text-align: center; display: grid; justify-items: center; gap: 12px; }
-.locked-phase-panel > .ui-icon { color: var(--accent); margin-bottom: 3px; }
-.locked-phase-panel h1 { margin: 0; font-size: 1.45rem; letter-spacing: -.03em; }
-.locked-phase-panel p { margin: 0 0 6px; max-width: 36ch; color: var(--muted); line-height: 1.55; }
-.locked-phase-panel .primary,
-.locked-phase-panel .secondary { max-width: 360px; }
-.assessment-question { padding: 20px; display: grid; gap: 16px; }
-.assessment-question .prompt { margin: 0; font-size: clamp(1.25rem, 5.5vw, 1.65rem); line-height: 1.3; letter-spacing: -.02em; }
-.assessment-results { padding: 22px; display: grid; gap: 16px; }
-.assessment-results h1 { margin: 0; font-size: 1.45rem; letter-spacing: -.03em; }
-.result-columns { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 10px; }
-.result-columns > div { padding: 14px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface-2); }
-.result-columns strong { font-size: .8rem; }
-.result-columns ul { margin: 9px 0 0; padding-left: 18px; color: var(--muted); font-size: .78rem; line-height: 1.55; }
-@media (max-width: 480px) {
-  .result-columns { grid-template-columns: 1fr; }
-  .assessment-question, .assessment-results { padding: 17px; }
+.assessment-results,
+.setting-copy { min-width: 0; }
+.page-title,
+.page-subtitle,
+.focus-card h1,
+.phase-card h2,
+.lesson-row-copy strong,
+.current-learning-row strong,
+.lesson-content h1,
+.prompt,
+.assessment-results h1,
+.setting-copy strong,
+.setting-copy span { overflow-wrap: anywhere; word-break: normal; }
+.page-subtitle { white-space: normal; overflow: visible; text-overflow: clip; }
+.focus-card h1 { font-size: clamp(1.55rem, 6.5vw, 2.2rem); }
+.lesson-row-copy strong { line-height: 1.32; }
+.profile-screen .page-header { margin-bottom: 8px; }
+.profile-hero { padding-top: 0; }
+
+.theory-visual { margin: 2px 0 4px; padding: 14px; border-radius: var(--radius); background: var(--surface-2); border: 1px solid var(--border); overflow: hidden; }
+.theory-visual figcaption { margin-bottom: 11px; color: var(--muted); font-size: .72rem; font-weight: 720; }
+.teaching-keyboard { height: 126px; display: flex; position: relative; padding: 0 2px; }
+.teaching-white-key { position: relative; flex: 1 1 0; min-width: 0; height: 100%; background: #f0f1f4; border: 1px solid #aeb3bd; border-radius: 0 0 7px 7px; color: #171921; display: flex; align-items: flex-end; justify-content: center; padding: 0 2px 8px; font-size: .64rem; font-weight: 800; }
+.teaching-white-key + .teaching-white-key { margin-left: -1px; }
+.teaching-white-key.highlight { background: #d9d4ff; box-shadow: inset 0 -4px 0 var(--accent); }
+.teaching-black-key { position: absolute; z-index: 2; top: 0; right: -19%; width: 38%; height: 64%; border-radius: 0 0 5px 5px; background: #20232b; color: #fff; display: flex; align-items: flex-end; justify-content: center; padding: 0 2px 7px; font-size: .52rem; font-weight: 800; }
+.teaching-black-key.highlight { background: var(--accent); box-shadow: 0 4px 12px rgba(0,0,0,.25); }
+.inversion-visual { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 8px; }
+.inversion-visual > div { padding: 10px 8px; border-radius: 12px; background: var(--surface-3); text-align: center; min-width: 0; }
+.inversion-visual small { display: block; color: var(--muted); margin-bottom: 5px; }
+.inversion-visual strong { font-size: .72rem; overflow-wrap: anywhere; }
+.circle-visual { width: min(260px, 76vw); aspect-ratio: 1; margin: 4px auto; position: relative; border: 1px solid var(--border-strong); border-radius: 50%; }
+.circle-visual::after { content: "5ths"; position: absolute; inset: 31%; display: grid; place-items: center; border-radius: 50%; background: var(--surface-3); color: var(--muted); font-size: .72rem; }
+.circle-visual span { --angle: calc(var(--i) * 30deg - 90deg); position: absolute; left: 50%; top: 50%; width: 30px; height: 30px; margin: -15px; display: grid; place-items: center; border-radius: 50%; background: var(--surface-3); color: var(--text); font-size: .68rem; font-weight: 800; transform: rotate(var(--angle)) translate(calc(min(110px, 31vw))) rotate(calc(-1 * var(--angle))); }
+.fretboard-visual { display: grid; gap: 5px; overflow-x: auto; padding-bottom: 2px; }
+.fret-string { min-width: 300px; display: grid; grid-template-columns: 34px repeat(5,1fr); align-items: center; gap: 0; position: relative; }
+.fret-string::after { content: ""; position: absolute; left: 32px; right: 0; height: 1px; background: #808694; z-index: 0; }
+.fret-string strong, .fret-string span { position: relative; z-index: 1; }
+.fret-string strong { color: var(--accent); font-size: .72rem; }
+.fret-string span { min-height: 27px; display: grid; place-items: center; border-left: 1px solid var(--border-strong); color: var(--muted); font-size: .58rem; }
+
+@media (max-width: 390px) {
+  .app-shell { padding-left: 13px; padding-right: 13px; }
+  .lesson-content, .question-shell, .assessment-question { padding-left: 16px; padding-right: 16px; }
+  .teaching-keyboard { height: 112px; }
+  .lesson-row-end { flex: 0 0 auto; }
+  .status-chip { max-width: 78px; overflow: hidden; text-overflow: ellipsis; }
 }
