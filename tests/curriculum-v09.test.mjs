@@ -71,15 +71,17 @@ test("curriculum importance is encoded independently of READY and RETAINED", () 
   assert.ok((interval?.recurrenceWeight ?? 0) > (advanced?.recurrenceWeight ?? 0));
 });
 
-test("practice rounds use honest fixed learner-visible sizes", () => {
-  assert.equal(practiceRoundPlan("interval.number-3-8", "new").size, 10);
-  assert.equal(practiceRoundPlan("interval.number-4-5", "new").size, 8);
-  assert.equal(practiceRoundPlan("interval.number-3-8", "review").size, 5);
-  assert.equal(practiceRoundPlan("interval.number-3-8", "repair").size, 6);
-  assert.equal(practiceRoundPlan("interval.number-3-8", "interleave").size, 5);
+test("practice rounds use honest learner-visible sizes with a 30-question minimum", () => {
+  assert.equal(practiceRoundPlan("interval.number-3-8", "new").size, 30);
+  assert.equal(practiceRoundPlan("interval.number-4-5", "new").size, 30);
+  assert.equal(practiceRoundPlan("interval.number-3-8", "review").size, 30);
+  assert.equal(practiceRoundPlan("interval.number-3-8", "repair").size, 30);
+  assert.equal(practiceRoundPlan("interval.number-3-8", "interleave").size, 30);
   for (const kind of ["new", "acquisition", "review", "repair", "review-repair", "interleave"]) {
-    const size = practiceRoundPlan("interval.number-3-8", kind).size;
-    assert.ok(size >= 5 && size <= 12, `${kind} round should stay in a sensible range`);
+    const initial = practiceRoundPlan("interval.number-3-8", kind).size;
+    const followUp = practiceRoundPlan("interval.number-3-8", kind, true).size;
+    assert.ok(initial >= 30, `${kind} round must never be shorter than 30 questions`);
+    assert.ok(followUp >= 30, `${kind} follow-up round must never be shorter than 30 questions`);
   }
 });
 
