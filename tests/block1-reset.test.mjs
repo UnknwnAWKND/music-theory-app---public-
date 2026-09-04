@@ -184,3 +184,7 @@ test("old source-mutating curriculum build scripts are absent", () => {
   assert.equal(fs.existsSync("scripts/redesign-ui.py"), false);
   assert.equal(fs.existsSync("bootstrap"), false);
 });
+
+test("stale monolithic Supabase schema snapshot is absent", () => {
+  assert.equal(fs.existsSync("supabase/schema.sql"), false);
+});
