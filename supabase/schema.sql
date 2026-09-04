@@ -148,6 +148,18 @@ create table if not exists public.user_learning_settings (
 alter table public.user_learning_settings
   add column if not exists require_previous_lessons boolean not null default true;
 
+create table if not exists public.phase_progress (
+  user_id uuid not null references auth.users(id) on delete cascade,
+  phase_number integer not null check (phase_number between 1 and 12),
+  checkpoint_passed_at timestamptz,
+  checkpoint_summary jsonb not null default '{}'::jsonb,
+  validated_entry_at timestamptz,
+  validated_entry_source text check (validated_entry_source is null or validated_entry_source = 'placement'),
+  placement_summary jsonb not null default '{}'::jsonb,
+  updated_at timestamptz not null default now(),
+  primary key (user_id, phase_number)
+);
+
 create table if not exists public.user_profiles (
   user_id uuid primary key references auth.users(id) on delete cascade,
   display_name text not null default 'Student' check (char_length(trim(display_name)) between 1 and 80),
@@ -170,6 +182,7 @@ alter table public.skill_state enable row level security;
 alter table public.scheduler_cards enable row level security;
 alter table public.scheduler_reviews enable row level security;
 alter table public.user_learning_settings enable row level security;
+alter table public.phase_progress enable row level security;
 alter table public.retired_skill_history enable row level security;
 alter table public.user_profiles enable row level security;
 
@@ -180,6 +193,7 @@ revoke all on table public.skill_state from anon, authenticated;
 revoke all on table public.scheduler_cards from anon, authenticated;
 revoke all on table public.scheduler_reviews from anon, authenticated;
 revoke all on table public.user_learning_settings from anon, authenticated;
+revoke all on table public.phase_progress from anon, authenticated;
 revoke all on table public.retired_skill_history from anon, authenticated;
 revoke all on table public.user_profiles from anon, authenticated;
 
@@ -189,6 +203,7 @@ grant select, insert, update on table public.skill_state to authenticated;
 grant select, insert, update on table public.scheduler_cards to authenticated;
 grant select, insert on table public.scheduler_reviews to authenticated;
 grant select, insert, update on table public.user_learning_settings to authenticated;
+grant select, insert, update on table public.phase_progress to authenticated;
 grant select, insert, update on table public.user_profiles to authenticated;
 
 -- Recreate policies so the schema can be safely re-applied during personal-project setup.
@@ -208,6 +223,9 @@ drop policy if exists "scheduler_reviews_insert_own" on public.scheduler_reviews
 drop policy if exists "user_learning_settings_select_own" on public.user_learning_settings;
 drop policy if exists "user_learning_settings_insert_own" on public.user_learning_settings;
 drop policy if exists "user_learning_settings_update_own" on public.user_learning_settings;
+drop policy if exists "phase_progress_select_own" on public.phase_progress;
+drop policy if exists "phase_progress_insert_own" on public.phase_progress;
+drop policy if exists "phase_progress_update_own" on public.phase_progress;
 drop policy if exists "user_profiles_select_own" on public.user_profiles;
 drop policy if exists "user_profiles_insert_own" on public.user_profiles;
 drop policy if exists "user_profiles_update_own" on public.user_profiles;
@@ -237,6 +255,10 @@ create policy "user_learning_settings_select_own" on public.user_learning_settin
 create policy "user_learning_settings_insert_own" on public.user_learning_settings for insert to authenticated with check ((select auth.uid()) = user_id);
 create policy "user_learning_settings_update_own" on public.user_learning_settings for update to authenticated using ((select auth.uid()) = user_id) with check ((select auth.uid()) = user_id);
 
+
+create policy "phase_progress_select_own" on public.phase_progress for select to authenticated using ((select auth.uid()) = user_id);
+create policy "phase_progress_insert_own" on public.phase_progress for insert to authenticated with check ((select auth.uid()) = user_id);
+create policy "phase_progress_update_own" on public.phase_progress for update to authenticated using ((select auth.uid()) = user_id) with check ((select auth.uid()) = user_id);
 
 create policy "user_profiles_select_own" on public.user_profiles for select to authenticated using ((select auth.uid()) = user_id);
 create policy "user_profiles_insert_own" on public.user_profiles for insert to authenticated with check ((select auth.uid()) = user_id);

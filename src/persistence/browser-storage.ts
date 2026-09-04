@@ -8,6 +8,7 @@ import type {
   StoredSchedulerCard,
   StoredSchedulerReview,
   StudySessionRecord,
+  PhaseProgressRecord,
   UserLearningSettings,
   UserProfile,
 } from "./types.js";
@@ -25,10 +26,11 @@ interface BrowserSnapshot {
   schedulerReviews: StoredSchedulerReview[];
   settings: UserLearningSettings[];
   profiles: UserProfile[];
+  phaseProgress: PhaseProgressRecord[];
 }
 
 const EMPTY: BrowserSnapshot = {
-  sessions: [], attempts: [], skillStates: [], cards: [], schedulerReviews: [], settings: [], profiles: [],
+  sessions: [], attempts: [], skillStates: [], cards: [], schedulerReviews: [], settings: [], profiles: [], phaseProgress: [],
 };
 
 function clone<T>(value: T): T { return JSON.parse(JSON.stringify(value)) as T; }
@@ -52,7 +54,7 @@ export class BrowserStorageTutorRepository implements TutorRepository {
       const parsed = JSON.parse(raw) as Partial<BrowserSnapshot>;
       return {
         sessions: parsed.sessions ?? [], attempts: parsed.attempts ?? [], skillStates: parsed.skillStates ?? [],
-        cards: parsed.cards ?? [], schedulerReviews: parsed.schedulerReviews ?? [], settings: parsed.settings ?? [], profiles: parsed.profiles ?? [],
+        cards: parsed.cards ?? [], schedulerReviews: parsed.schedulerReviews ?? [], settings: parsed.settings ?? [], profiles: parsed.profiles ?? [], phaseProgress: parsed.phaseProgress ?? [],
       };
     } catch { return clone(EMPTY); }
   }
@@ -103,6 +105,13 @@ export class BrowserStorageTutorRepository implements TutorRepository {
   }
   async acquiringSkillIds(userId: string): Promise<string[]> {
     return this.read().skillStates.filter((x)=>x.userId===userId&&x.evidence.state==="acquiring").map((x)=>x.skillId);
+  }
+  async phaseProgress(userId: string): Promise<PhaseProgressRecord[]> {
+    return this.read().phaseProgress.filter((x)=>x.userId===userId).map(clone);
+  }
+  async upsertPhaseProgress(record: PhaseProgressRecord): Promise<void> {
+    const db=this.read(); const i=db.phaseProgress.findIndex((x)=>x.userId===record.userId&&x.phase===record.phase);
+    if(i>=0) db.phaseProgress[i]=clone(record); else db.phaseProgress.push(clone(record)); this.write(db);
   }
   async getProfile(userId: string): Promise<UserProfile|undefined> {
     const row=this.read().profiles.find((x)=>x.userId===userId); return row?clone(row):undefined;

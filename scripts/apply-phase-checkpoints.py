@@ -341,9 +341,9 @@ if assessment_code not in t:
     if anchor not in t: raise RuntimeError("Could not locate web assessment anchor")
     t = t.replace(anchor, assessment_code + anchor, 1)
 
-# Back routing understands phase:n
-old = '''  document.querySelectorAll("[data-back]").forEach((button) => button.addEventListener("click", () => {\n    const target = button.dataset.back;\n    if (target === "profile") return renderProfile().catch(showFatal);\n    if (target === "learn") return renderCurriculum().catch(showFatal);\n    return renderToday().catch(showFatal);\n  }));'''
-new = '''  document.querySelectorAll("[data-back]").forEach((button) => button.addEventListener("click", () => {\n    const target = button.dataset.back;\n    if (target === "profile") return renderProfile().catch(showFatal);\n    if (target === "learn") return renderCurriculum().catch(showFatal);\n    if (target?.startsWith("phase:")) return renderPhase(Number(target.split(":")[1])).catch(showFatal);\n    return renderToday().catch(showFatal);\n  }));'''
+# Back routing understands phase:n in the app-wide delegated navigation handler.
+old = '''    if (target === "profile") return renderProfile().catch(showFatal);\n    if (target === "session") return leaveStudyToPrevious().catch(showFatal);'''
+new = '''    if (target === "profile") return renderProfile().catch(showFatal);\n    if (target?.startsWith("phase:")) return renderPhase(Number(target.split(":")[1])).catch(showFatal);\n    if (target === "session") return leaveStudyToPrevious().catch(showFatal);'''
 t = replace_once(t, old, new, "phase back routing")
 p.write_text(t)
 

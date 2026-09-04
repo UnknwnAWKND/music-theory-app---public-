@@ -15,6 +15,12 @@ export interface SessionPlannerInput {
     /** Used to detect a genuinely overdue recovery period without resetting progress. */
     nowIso?: string;
     longBreakDays?: number;
+    /** Guided-mode phase gates. Omit to allow normal graph-only planning. */
+    guidedPhaseAccess?: readonly number[];
+    /** Placement-validated phases may bypass older-phase prerequisite edges without fabricating READY. */
+    validatedEntryPhases?: readonly number[];
+    /** When placement has validated a later phase, prefer beginning there instead of earlier untouched material. */
+    preferredNewPhase?: number;
 }
 export interface SessionPlan {
     repairSkillIds: string[];

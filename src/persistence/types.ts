@@ -44,6 +44,17 @@ export interface UserProfile {
   updatedAt: string;
 }
 
+export interface PhaseProgressRecord {
+  userId: string;
+  phase: number;
+  checkpointPassedAt?: string;
+  checkpointSummary?: Record<string, unknown>;
+  validatedEntryAt?: string;
+  validatedEntrySource?: "placement";
+  placementSummary?: Record<string, unknown>;
+  updatedAt: string;
+}
+
 export interface UserLearningSettings {
   userId: string;
   desiredRetention: number;

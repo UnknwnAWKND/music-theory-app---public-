@@ -325,6 +325,34 @@ export class SupabaseRestTutorRepository {
         const rows = await this.request(`skill_state?user_id=eq.${filterValue(userId)}&learning_state=eq.acquiring&select=skill_id`);
         return rows.map((r) => r.skill_id);
     }
+    async phaseProgress(userId) {
+        const rows = await this.request(`phase_progress?user_id=eq.${filterValue(userId)}&order=phase_number.asc`);
+        return rows.map((r) => ({
+            userId: r.user_id,
+            phase: r.phase_number,
+            checkpointPassedAt: r.checkpoint_passed_at ?? undefined,
+            checkpointSummary: r.checkpoint_summary ?? undefined,
+            validatedEntryAt: r.validated_entry_at ?? undefined,
+            validatedEntrySource: r.validated_entry_source ?? undefined,
+            placementSummary: r.placement_summary ?? undefined,
+            updatedAt: r.updated_at,
+        }));
+    }
+    async upsertPhaseProgress(record) {
+        await this.request("phase_progress?on_conflict=user_id,phase_number", {
+            method: "POST",
+            headers: { Prefer: "resolution=merge-duplicates,return=minimal" },
+            body: JSON.stringify({
+                user_id: record.userId, phase_number: record.phase,
+                checkpoint_passed_at: record.checkpointPassedAt ?? null,
+                checkpoint_summary: record.checkpointSummary ?? {},
+                validated_entry_at: record.validatedEntryAt ?? null,
+                validated_entry_source: record.validatedEntrySource ?? null,
+                placement_summary: record.placementSummary ?? {},
+                updated_at: record.updatedAt,
+            }),
+        });
+    }
     async getProfile(userId) {
         const rows = await this.request(`user_profiles?user_id=eq.${filterValue(userId)}&limit=1`);
         const r = rows[0];

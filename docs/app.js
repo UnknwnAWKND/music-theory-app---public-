@@ -11,6 +11,11 @@ import {
   decideAdaptivePractice,
   inferredConfusionPartner,
   selectAdaptiveExercise,
+  checkpointDefinition,
+  placementDefinition,
+  nextCheckpointCompetency,
+  evaluateCheckpoint,
+  recommendStartingPhase,
 } from "./core/index.js";
 import {
   answerSpecForExercise,
@@ -57,6 +62,7 @@ const state = {
   stoppedSkillIds: new Set(),
   fastPathPasses: 0,
   manualStudy: null,
+  assessment: null,
 };
 
 const MAX_FAST_PATH_PASSES = 4;
@@ -200,6 +206,7 @@ function resetSessionUiState() {
   state.stoppedSkillIds.clear();
   state.fastPathPasses = 0;
   state.manualStudy = null;
+  state.assessment = null;
 }
 
 
@@ -284,6 +291,7 @@ root.addEventListener("click", async (ev) => {
     if (target === "home") return renderToday().catch(showFatal);
     if (target === "learn") return renderCurriculum().catch(showFatal);
     if (target === "profile") return renderProfile().catch(showFatal);
+    if (target?.startsWith("phase:")) return renderPhase(Number(target.split(":")[1])).catch(showFatal);
     if (target === "session") return leaveStudyToPrevious().catch(showFatal);
   }
 
@@ -422,9 +430,23 @@ function skillStatus(skill, evidence, readyIds, accessAllowed = true) {
   return accessAllowed ? { label: "Available", cls: "available" } : { label: "Locked", cls: "locked" };
 }
 
-function curriculumAccessAllowed(skill, readyIds) {
+function phaseProgressMap(rows) { return new Map((rows ?? []).map((row) => [Number(row.phase), row])); }
+
+function guidedPhaseAllowed(phase, phaseProgress) {
   if (userSettings?.requirePreviousLessons === false) return true;
-  return skill.prerequisites.every((id) => readyIds.has(id));
+  if (phase === 1) return true;
+  return Boolean(phaseProgress.get(phase - 1)?.checkpointPassedAt || phaseProgress.get(phase)?.validatedEntryAt);
+}
+
+function curriculumAccessAllowed(skill, readyIds, phaseProgress = new Map()) {
+  if (userSettings?.requirePreviousLessons === false) return true;
+  if (!guidedPhaseAllowed(skill.phase, phaseProgress)) return false;
+  const validatedEntry = Boolean(phaseProgress.get(skill.phase)?.validatedEntryAt);
+  return skill.prerequisites.every((id) => {
+    if (readyIds.has(id)) return true;
+    const dependency = SKILL_BY_ID.get(id);
+    return Boolean(validatedEntry && dependency && dependency.phase < skill.phase);
+  });
 }
 
 function progressSummary(records) {
@@ -441,28 +463,29 @@ function progressSummary(records) {
   };
 }
 
-function phaseSummary(phase, byId, readyIds) {
+function phaseSummary(phase, byId, readyIds, phaseProgress = new Map()) {
   const skills = SKILLS.filter((skill) => skill.phase === phase);
   const required = skills.filter((skill) => !skill.optional);
   const readyCount = required.filter((skill) => evidenceReady(byId.get(skill.id))).length;
   const complete = required.length > 0 && readyCount === required.length;
   const percent = required.length ? Math.round((readyCount / required.length) * 100) : 0;
-  const canOpen = complete || skills.some((skill) => curriculumAccessAllowed(skill, readyIds));
+  const canOpen = guidedPhaseAllowed(phase, phaseProgress) && (complete || skills.some((skill) => curriculumAccessAllowed(skill, readyIds, phaseProgress)));
   return { phase, skills, required, readyCount, complete, percent, canOpen };
 }
 
 async function renderCurriculum() {
-  const records = await repo.allSkillStates(USER_ID);
+  const [records, phaseProgressRows] = await Promise.all([repo.allSkillStates(USER_ID), repo.phaseProgress(USER_ID)]);
   const { byId, readyIds } = progressSummary(records);
+  const phaseProgress = phaseProgressMap(phaseProgressRows);
   const locking = userSettings?.requirePreviousLessons !== false;
-  const summaries = Array.from({ length: 12 }, (_, index) => phaseSummary(index + 1, byId, readyIds));
+  const summaries = Array.from({ length: 12 }, (_, index) => phaseSummary(index + 1, byId, readyIds, phaseProgress));
   const firstIncomplete = summaries.find((x) => !x.complete)?.phase ?? 12;
   const cards = summaries.map((summary) => {
     const open = !locking || summary.canOpen;
     const stateName = summary.complete ? "Complete" : summary.phase === firstIncomplete ? "Current" : open ? "Available" : "Locked";
     const stateClass = stateName.toLowerCase();
     const statusIcon = summary.complete ? icon("check", 17) : stateName === "Locked" ? icon("lock", 16) : icon("chevron", 17);
-    return `<button class="phase-card ${stateClass}" type="button" ${open ? `data-open-phase="${summary.phase}"` : "disabled"}>
+    return `<button class="phase-card ${stateClass}" type="button" ${open ? `data-open-phase="${summary.phase}"` : `data-locked-phase="${summary.phase}"`}>
       <div class="phase-card-top"><div><span class="phase-label">Phase ${summary.phase}</span><h2>${esc(PHASE_TITLES[summary.phase] ?? `Phase ${summary.phase}`)}</h2></div><span class="phase-state ${stateClass}">${statusIcon}<span>${stateName}</span></span></div>
       ${progressBarHtml(summary.percent)}
       <div class="phase-card-meta"><span>${summary.readyCount} of ${summary.required.length} core lessons ready</span><strong>${summary.percent}%</strong></div>
@@ -476,18 +499,22 @@ async function renderCurriculum() {
   document.querySelectorAll("[data-open-phase]").forEach((button) => {
     button.addEventListener("click", () => renderPhase(Number(button.dataset.openPhase)).catch(showFatal));
   });
+  document.querySelectorAll("[data-locked-phase]").forEach((button) => {
+    button.addEventListener("click", () => renderLockedPhase(Number(button.dataset.lockedPhase)).catch(showFatal));
+  });
 }
 
 async function renderPhase(phase) {
-  const records = await repo.allSkillStates(USER_ID);
+  const [records, phaseProgressRows] = await Promise.all([repo.allSkillStates(USER_ID), repo.phaseProgress(USER_ID)]);
   const { byId, readyIds } = progressSummary(records);
-  const summary = phaseSummary(phase, byId, readyIds);
+  const phaseProgress = phaseProgressMap(phaseProgressRows);
+  const summary = phaseSummary(phase, byId, readyIds, phaseProgress);
   const locking = userSettings?.requirePreviousLessons !== false;
-  if (locking && !summary.canOpen) return renderCurriculum();
+  if (locking && !summary.canOpen) return renderLockedPhase(phase);
   const intro = PHASE_INTROS[phase]?.[1] ?? "Work through these lessons at your own pace.";
   const rows = summary.skills.map((skill) => {
     const evidence = byId.get(skill.id);
-    const accessAllowed = curriculumAccessAllowed(skill, readyIds);
+    const accessAllowed = curriculumAccessAllowed(skill, readyIds, phaseProgress);
     const status = skillStatus(skill, evidence, readyIds, accessAllowed);
     return `<button class="lesson-row ${status.cls}" type="button" ${accessAllowed ? `data-open-skill="${esc(skill.id)}"` : "disabled"}>
       <span class="lesson-row-copy"><strong>${esc(skill.title)}</strong>${!accessAllowed ? '<small>Complete previous material to unlock.</small>' : skill.optional ? '<small>Optional</small>' : ""}</span>
@@ -497,10 +524,154 @@ async function renderPhase(phase) {
   root.innerHTML = shellHtml(`
     ${topbarHtml(PHASE_TITLES[phase] ?? `Phase ${phase}`, { backTarget: "learn", eyebrow: `Phase ${phase}`, subtitle: intro })}
     <section class="phase-overview">${progressBarHtml(summary.percent, "Phase progress")}</section>
-    <section class="lesson-list">${rows}</section>`, { activeNav: "learn", className: "phase-screen" });
+    <section class="lesson-list">${rows}</section>
+    ${phase < 12 && summary.complete ? checkpointCardHtml(phase, phaseProgress.get(phase)) : ""}`, { activeNav: "learn", className: "phase-screen" });
   document.querySelectorAll("[data-open-skill]").forEach((button) => {
     button.addEventListener("click", () => openCurriculumSkill(button.dataset.openSkill).catch(showFatal));
   });
+  document.querySelector("[data-checkpoint]")?.addEventListener("click", () => startPhaseAssessment("checkpoint", phase).catch(showFatal));
+}
+
+function checkpointCardHtml(phase, progress) {
+  if (progress?.checkpointPassedAt) return `<section class="assessment-card passed"><div><span>Phase ${phase} checkpoint</span><strong>${icon("checkCircle", 19)} Passed</strong></div><p>Your phase knowledge is validated for progression. Reviews still continue normally.</p></section>`;
+  return `<section class="assessment-card"><div><span>Phase ${phase} complete</span><strong>Ready for your checkpoint.</strong></div><p>A short adaptive check across the important skills in this phase.</p><button class="primary" data-checkpoint type="button">Take Checkpoint</button></section>`;
+}
+
+async function renderLockedPhase(phase) {
+  root.innerHTML = shellHtml(`
+    ${topbarHtml(PHASE_TITLES[phase] ?? `Phase ${phase}`, { backTarget: "learn", eyebrow: `Phase ${phase}` })}
+    <section class="locked-phase-panel">${icon("lock", 28)}<h1>Phase ${phase} is locked.</h1><p>Continue the earlier phases, or show that you already know the prerequisites.</p><button class="primary" data-placement type="button">Test Into Phase ${phase}</button><button class="secondary" data-back-learn type="button">Continue Earlier Phases</button></section>`, { activeNav: "learn", className: "locked-phase-screen" });
+  document.querySelector("[data-placement]")?.addEventListener("click", () => startPhaseAssessment("placement", phase).catch(showFatal));
+  document.querySelector("[data-back-learn]")?.addEventListener("click", () => renderCurriculum().catch(showFatal));
+}
+
+function responseModeForDiagnostic(spec, exercise) {
+  return responseModeForEvidence(spec, exercise);
+}
+
+async function startPhaseAssessment(kind, phase) {
+  const def = kind === "checkpoint" ? checkpointDefinition(phase) : placementDefinition(phase);
+  if (!def || !def.competencies.length) return renderPhase(phase);
+  const session = await repo.createSession(USER_ID, new Date().toISOString());
+  state.assessment = { kind, phase, def, results: [], sessionId: session.id, current: null, submitted: false, feedback: null, questionNumber: 0 };
+  await loadAssessmentQuestion();
+}
+
+async function loadAssessmentQuestion() {
+  const a = state.assessment;
+  if (!a) return renderCurriculum();
+  const evaluation = evaluateCheckpoint(a.def, a.results);
+  if (evaluation.complete) return finishPhaseAssessment(evaluation);
+  const competency = nextCheckpointCompetency(a.def, a.results);
+  if (!competency) return finishPhaseAssessment(evaluation);
+  const counts = new Map();
+  a.results.filter((r) => r.competencyId === competency.id).forEach((r) => counts.set(r.skillId, (counts.get(r.skillId) ?? 0) + 1));
+  const skillId = [...competency.skillIds].sort((x, y) => (counts.get(x) ?? 0) - (counts.get(y) ?? 0))[0];
+  const history = await repo.attemptsForSkill(USER_ID, skillId);
+  const selected = selectAdaptiveExercise(skillId, history, a.questionNumber, 16);
+  a.current = { competency, skillId, exercise: selected.exercise, spec: answerSpecForExercise(selected.exercise) };
+  a.submitted = false;
+  a.feedback = null;
+  a.questionNumber += 1;
+  renderAssessmentQuestion();
+}
+
+function renderAssessmentQuestion() {
+  const a = state.assessment;
+  const current = a?.current;
+  if (!a || !current) return;
+  const placement = a.kind === "placement";
+  const title = placement ? `Test Into Phase ${a.phase}` : `Phase ${a.phase} Checkpoint`;
+  const spec = current.spec;
+  root.innerHTML = shellHtml(`
+    ${topbarHtml(title, { backTarget: placement ? "learn" : `phase:${a.phase}`, eyebrow: `${Math.min(a.questionNumber, a.def.maxItems)} of up to ${a.def.maxItems}` })}
+    <section class="assessment-question">
+      <div class="assessment-competency">${esc(current.competency.label)}</div>
+      <div class="prompt">${esc(current.exercise.prompt)}</div>
+      ${answerControls(spec)}
+      ${a.feedback ? feedbackHtml(a.feedback) : ""}
+      ${a.submitted ? '<button class="primary" id="assessmentContinue" type="button">Continue</button>' : '<button class="primary" id="assessmentSubmit" type="button">Check answer</button>'}
+    </section>`, { className: "assessment-screen" });
+  bindChoiceButtons();
+  document.querySelector("#assessmentSubmit")?.addEventListener("click", () => submitAssessmentAnswer().catch(showFatal));
+  document.querySelector("#assessmentContinue")?.addEventListener("click", () => loadAssessmentQuestion().catch(showFatal));
+}
+
+async function submitAssessmentAnswer() {
+  const a = state.assessment;
+  const current = a?.current;
+  if (!a || !current || a.submitted) return;
+  const values = collectValues(current.spec);
+  if (current.spec.kind === "choice" && !values.main) return;
+  const answer = parseAnswerFromValues(current.spec, values);
+  const assessment = gradeExercise(current.exercise, answer);
+  const responseMode = responseModeForDiagnostic(current.spec, current.exercise);
+  const occurredAt = new Date().toISOString();
+  await service.submitAttempt({
+    userId: USER_ID, skillId: current.skillId, sessionId: a.sessionId,
+    promptSignature: current.exercise.id, occurredAt,
+    outcome: assessment.correct ? "correct" : "incorrect", independent: true, directEvidence: true,
+    context: "diagnostic", coldProbe: false, evidenceSource: "objective", eventKind: "response",
+    responseMode, guidance: "none", solutionSeen: false,
+    exampleSignature: exampleSignatureForExercise(current.exercise),
+    exampleAttributes: evidenceAttributesForExercise(current.exercise), evidenceVersion: "v2",
+    assessmentCode: `${a.kind}:phase-${a.phase}:${current.competency.id}`,
+    metadata: { assessmentKind: a.kind, assessmentPhase: a.phase, competencyId: current.competency.id },
+  });
+  const expected = readableExpected(current.exercise, assessment);
+  if (!assessment.correct && expected) {
+    await service.submitAttempt({
+      userId: USER_ID, skillId: current.skillId, sessionId: a.sessionId,
+      promptSignature: current.exercise.id, occurredAt: new Date().toISOString(), outcome: "revealed",
+      independent: false, directEvidence: false, context: "diagnostic", coldProbe: false,
+      evidenceSource: "objective", eventKind: "answer-reveal", responseMode, guidance: "answer-reveal",
+      solutionSeen: true, exampleSignature: exampleSignatureForExercise(current.exercise),
+      exampleAttributes: evidenceAttributesForExercise(current.exercise), evidenceVersion: "v2",
+      assessmentCode: `${a.kind}:phase-${a.phase}:${current.competency.id}`,
+      metadata: { assessmentKind: a.kind, assessmentPhase: a.phase, competencyId: current.competency.id },
+    });
+  }
+  a.results.push({
+    competencyId: current.competency.id, skillId: current.skillId,
+    promptSignature: current.exercise.id, exampleSignature: exampleSignatureForExercise(current.exercise),
+    correct: assessment.correct, firstSubmission: true, independent: true, responseMode,
+    guidanceUsed: false, solutionSeen: false,
+  });
+  a.submitted = true;
+  a.feedback = { correct: assessment.correct, expected: assessment.correct ? "" : expected, detail: assessment.correct ? "Good — that competency is demonstrated on this example." : diagnosticDetail(assessment, expected) };
+  renderAssessmentQuestion();
+}
+
+async function finishPhaseAssessment(evaluation) {
+  const a = state.assessment;
+  if (!a) return;
+  await repo.completeSession(USER_ID, a.sessionId, new Date().toISOString(), `${a.kind}-${evaluation.passed ? "passed" : "needs-repair"}`);
+  if (evaluation.passed) {
+    const rows = await repo.phaseProgress(USER_ID);
+    const map = phaseProgressMap(rows);
+    const existing = map.get(a.phase) ?? { userId: USER_ID, phase: a.phase, updatedAt: new Date().toISOString() };
+    if (a.kind === "checkpoint") {
+      await repo.upsertPhaseProgress({ ...existing, checkpointPassedAt: new Date().toISOString(), checkpointSummary: evaluation, updatedAt: new Date().toISOString() });
+    } else {
+      await repo.upsertPhaseProgress({ ...existing, validatedEntryAt: new Date().toISOString(), validatedEntrySource: "placement", placementSummary: evaluation, updatedAt: new Date().toISOString() });
+    }
+  }
+  const recommended = a.kind === "placement" && !evaluation.passed ? recommendStartingPhase(a.phase, evaluation) : undefined;
+  const strong = evaluation.strong.length ? evaluation.strong.map((x) => `<li>${esc(x)}</li>`).join("") : "<li>Keep building these foundations.</li>";
+  const review = evaluation.review.length ? evaluation.review.map((x) => `<li>${esc(x)}</li>`).join("") : "<li>Nothing critical right now.</li>";
+  const targetPhase = a.phase;
+  const kind = a.kind;
+  state.assessment = null;
+  root.innerHTML = shellHtml(`
+    ${topbarHtml(evaluation.passed ? (kind === "checkpoint" ? "Checkpoint Passed" : `Phase ${targetPhase} Unlocked`) : "Not quite yet", { eyebrow: kind === "checkpoint" ? `Phase ${targetPhase}` : "Placement Test" })}
+    <section class="assessment-results">
+      <div class="completion-icon">${icon(evaluation.passed ? "check" : "review", 28)}</div>
+      <h1>${evaluation.passed ? "You showed the important skills." : "You’re close."}</h1>
+      <div class="result-columns"><div><strong>Strong</strong><ul>${strong}</ul></div><div><strong>Review</strong><ul>${review}</ul></div></div>
+      ${recommended ? `<div class="soft-note">Recommended starting point: Phase ${recommended} — ${esc(PHASE_TITLES[recommended] ?? "")}</div>` : ""}
+      <button class="primary" data-result-next type="button">${evaluation.passed ? (kind === "checkpoint" ? `Continue to Phase ${Math.min(12, targetPhase + 1)}` : `Open Phase ${targetPhase}`) : `Review Phase ${recommended ?? targetPhase}`}</button>
+    </section>`, { className: "assessment-results-screen" });
+  document.querySelector("[data-result-next]")?.addEventListener("click", () => renderPhase(evaluation.passed ? (kind === "checkpoint" ? Math.min(12, targetPhase + 1) : targetPhase) : (recommended ?? targetPhase)).catch(showFatal));
 }
 
 function manualStudyKind(evidence) {
@@ -513,9 +684,10 @@ function manualStudyKind(evidence) {
 async function openCurriculumSkill(skillId) {
   const skill = SKILL_BY_ID.get(skillId);
   if (!skill) return;
-  const records = await repo.allSkillStates(USER_ID);
+  const [records, phaseProgressRows] = await Promise.all([repo.allSkillStates(USER_ID), repo.phaseProgress(USER_ID)]);
   const readyIds = new Set(records.filter((record) => evidenceReady(record.evidence)).map((record) => record.skillId));
-  if (!curriculumAccessAllowed(skill, readyIds)) return renderPhase(skill.phase);
+  const phaseProgress = phaseProgressMap(phaseProgressRows);
+  if (!curriculumAccessAllowed(skill, readyIds, phaseProgress)) return renderPhase(skill.phase);
   const evidence = records.find((record) => record.skillId === skillId)?.evidence;
   const kind = manualStudyKind(evidence);
   const dueReviews = await repo.dueReviews(USER_ID, new Date().toISOString());

@@ -11,6 +11,7 @@ export class InMemoryTutorRepository {
     schedulerReviews = [];
     settings = new Map();
     profiles = new Map();
+    phaseProgressRows = new Map();
     key(userId, skillId) {
         return `${userId}::${skillId}`;
     }
@@ -74,6 +75,12 @@ export class InMemoryTutorRepository {
         return [...this.skillStates.values()]
             .filter((x) => x.userId === userId && x.evidence.state === "acquiring")
             .map((x) => x.skillId);
+    }
+    async phaseProgress(userId) {
+        return [...this.phaseProgressRows.values()].filter((x) => x.userId === userId).map((x) => ({ ...x }));
+    }
+    async upsertPhaseProgress(record) {
+        this.phaseProgressRows.set(`${record.userId}::${record.phase}`, { ...record });
     }
     async getProfile(userId) {
         const row = this.profiles.get(userId);

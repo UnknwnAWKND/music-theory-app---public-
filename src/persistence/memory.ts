@@ -8,6 +8,7 @@ import type {
   StoredSchedulerCard,
   StoredSchedulerReview,
   StudySessionRecord,
+  PhaseProgressRecord,
   UserLearningSettings,
   UserProfile,
 } from "./types.js";
@@ -26,6 +27,7 @@ export class InMemoryTutorRepository implements TutorRepository {
   readonly schedulerReviews: StoredSchedulerReview[] = [];
   readonly settings = new Map<string, UserLearningSettings>();
   readonly profiles = new Map<string, UserProfile>();
+  readonly phaseProgressRows = new Map<string, PhaseProgressRecord>();
 
   private key(userId: string, skillId: string) {
     return `${userId}::${skillId}`;
@@ -101,6 +103,14 @@ export class InMemoryTutorRepository implements TutorRepository {
     return [...this.skillStates.values()]
       .filter((x) => x.userId === userId && x.evidence.state === "acquiring")
       .map((x) => x.skillId);
+  }
+
+  async phaseProgress(userId: string): Promise<PhaseProgressRecord[]> {
+    return [...this.phaseProgressRows.values()].filter((x) => x.userId === userId).map((x) => ({ ...x }));
+  }
+
+  async upsertPhaseProgress(record: PhaseProgressRecord): Promise<void> {
+    this.phaseProgressRows.set(`${record.userId}::${record.phase}`, { ...record });
   }
 
   async getProfile(userId: string): Promise<UserProfile | undefined> {

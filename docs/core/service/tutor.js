@@ -17,7 +17,14 @@ export class TutorService {
         const evidenceBySkill = new Map(states.map((x) => [x.skillId, x.evidence]));
         const dueReviews = await this.repository.dueReviews(userId, now.toISOString());
         const acquiringSkillIds = await this.repository.acquiringSkillIds(userId);
-        return planSession({ evidenceBySkill, dueReviews, acquiringSkillIds, nowIso: now.toISOString() });
+        const settings = await this.repository.getSettings(userId);
+        const phaseProgress = await this.repository.phaseProgress(userId);
+        const guided = settings?.requirePreviousLessons !== false;
+        const progressByPhase = new Map(phaseProgress.map((x) => [x.phase, x]));
+        const guidedPhaseAccess = guided ? [1, ...Array.from({ length: 11 }, (_, i) => i + 2).filter((phase) => Boolean(progressByPhase.get(phase - 1)?.checkpointPassedAt || progressByPhase.get(phase)?.validatedEntryAt))] : undefined;
+        const validatedEntryPhases = guided ? phaseProgress.filter((x) => Boolean(x.validatedEntryAt)).map((x) => x.phase) : undefined;
+        const preferredNewPhase = validatedEntryPhases?.length ? Math.max(...validatedEntryPhases) : undefined;
+        return planSession({ evidenceBySkill, dueReviews, acquiringSkillIds, nowIso: now.toISOString(), guidedPhaseAccess, validatedEntryPhases, preferredNewPhase });
     }
     async startSession(userId, now = new Date()) {
         const plan = await this.previewPlan(userId, now);

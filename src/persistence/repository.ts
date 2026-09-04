@@ -7,6 +7,7 @@ import type {
   StoredSchedulerCard,
   StoredSchedulerReview,
   StudySessionRecord,
+  PhaseProgressRecord,
   UserLearningSettings,
   UserProfile,
 } from "./types.js";
@@ -34,6 +35,8 @@ export interface TutorRepository {
   appendSchedulerReview(userId: string, log: SchedulerReviewLog, eventKind: StoredSchedulerReview["eventKind"]): Promise<void>;
 
   acquiringSkillIds(userId: string): Promise<string[]>;
+  phaseProgress(userId: string): Promise<PhaseProgressRecord[]>;
+  upsertPhaseProgress(record: PhaseProgressRecord): Promise<void>;
   getProfile(userId: string): Promise<UserProfile | undefined>;
   upsertProfile(userId: string, displayName: string, createdAt?: string): Promise<void>;
   getSettings(userId: string): Promise<UserLearningSettings | undefined>;

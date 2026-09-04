@@ -4,14 +4,22 @@ const CURRENT_SKILL_IDS = new Set(SKILLS.map((skill) => skill.id));
 function isReadyForPrerequisites(evidence) {
     return Boolean(evidence?.ready && !evidence.fragile);
 }
-function nextUnlockable(evidenceBySkill, skills = SKILLS, allowOptional = false) {
+function nextUnlockable(evidenceBySkill, skills = SKILLS, allowOptional = false, guidedPhaseAccess, validatedEntryPhases) {
     return skills.find((skill) => {
         if (skill.optional && !allowOptional)
+            return false;
+        if (guidedPhaseAccess && !guidedPhaseAccess.includes(skill.phase))
             return false;
         const current = evidenceBySkill.get(skill.id);
         if (current && current.state !== "new")
             return false;
-        return skill.prerequisites.every((dep) => isReadyForPrerequisites(evidenceBySkill.get(dep)));
+        const placementValidated = validatedEntryPhases?.includes(skill.phase) ?? false;
+        return skill.prerequisites.every((dep) => {
+            const dependency = SKILLS.find((candidate) => candidate.id === dep);
+            if (placementValidated && dependency && dependency.phase < skill.phase)
+                return true;
+            return isReadyForPrerequisites(evidenceBySkill.get(dep));
+        });
     });
 }
 export function planSession(input) {
@@ -48,7 +56,14 @@ export function planSession(input) {
         reasonNoNewSkill = "finish-current-acquisition";
     }
     else {
-        newSkillId = nextUnlockable(input.evidenceBySkill, SKILLS, input.allowOptionalNew ?? false)?.id;
+        const inferredPreferredPhase = input.preferredNewPhase ?? (input.validatedEntryPhases?.length ? Math.max(...input.validatedEntryPhases) : undefined);
+        const preferredSkills = inferredPreferredPhase
+            ? SKILLS.filter((skill) => skill.phase === inferredPreferredPhase)
+            : SKILLS;
+        newSkillId = nextUnlockable(input.evidenceBySkill, preferredSkills, input.allowOptionalNew ?? false, input.guidedPhaseAccess, input.validatedEntryPhases)?.id;
+        if (!newSkillId && inferredPreferredPhase) {
+            newSkillId = nextUnlockable(input.evidenceBySkill, SKILLS, input.allowOptionalNew ?? false, input.guidedPhaseAccess, input.validatedEntryPhases)?.id;
+        }
         if (!newSkillId)
             reasonNoNewSkill = "nothing-unlocked";
     }

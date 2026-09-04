@@ -1,7 +1,7 @@
 import type { DerivedSkillEvidence, LearningAttempt } from "../learning/index.js";
 import type { DueReview, SessionPlan } from "../session/index.js";
 import type { SchedulerCardSnapshot, SchedulerReviewLog } from "../scheduler/index.js";
-import type { SkillStateRecord, StoredAttempt, StoredSchedulerCard, StoredSchedulerReview, StudySessionRecord, UserLearningSettings, UserProfile } from "./types.js";
+import type { SkillStateRecord, StoredAttempt, StoredSchedulerCard, StoredSchedulerReview, StudySessionRecord, PhaseProgressRecord, UserLearningSettings, UserProfile } from "./types.js";
 export interface AppendAttemptInput extends LearningAttempt {
     userId: string;
     responseMs?: number;
@@ -21,6 +21,8 @@ export interface TutorRepository {
     upsertSchedulerCard(userId: string, card: SchedulerCardSnapshot): Promise<void>;
     appendSchedulerReview(userId: string, log: SchedulerReviewLog, eventKind: StoredSchedulerReview["eventKind"]): Promise<void>;
     acquiringSkillIds(userId: string): Promise<string[]>;
+    phaseProgress(userId: string): Promise<PhaseProgressRecord[]>;
+    upsertPhaseProgress(record: PhaseProgressRecord): Promise<void>;
     getProfile(userId: string): Promise<UserProfile | undefined>;
     upsertProfile(userId: string, displayName: string, createdAt?: string): Promise<void>;
     getSettings(userId: string): Promise<UserLearningSettings | undefined>;

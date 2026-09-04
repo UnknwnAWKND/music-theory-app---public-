@@ -1,5 +1,5 @@
 const EMPTY = {
-    sessions: [], attempts: [], skillStates: [], cards: [], schedulerReviews: [], settings: [], profiles: [],
+    sessions: [], attempts: [], skillStates: [], cards: [], schedulerReviews: [], settings: [], profiles: [], phaseProgress: [],
 };
 function clone(value) { return JSON.parse(JSON.stringify(value)); }
 function uid(prefix) {
@@ -26,7 +26,7 @@ export class BrowserStorageTutorRepository {
             const parsed = JSON.parse(raw);
             return {
                 sessions: parsed.sessions ?? [], attempts: parsed.attempts ?? [], skillStates: parsed.skillStates ?? [],
-                cards: parsed.cards ?? [], schedulerReviews: parsed.schedulerReviews ?? [], settings: parsed.settings ?? [], profiles: parsed.profiles ?? [],
+                cards: parsed.cards ?? [], schedulerReviews: parsed.schedulerReviews ?? [], settings: parsed.settings ?? [], profiles: parsed.profiles ?? [], phaseProgress: parsed.phaseProgress ?? [],
             };
         }
         catch {
@@ -105,6 +105,18 @@ export class BrowserStorageTutorRepository {
     }
     async acquiringSkillIds(userId) {
         return this.read().skillStates.filter((x) => x.userId === userId && x.evidence.state === "acquiring").map((x) => x.skillId);
+    }
+    async phaseProgress(userId) {
+        return this.read().phaseProgress.filter((x) => x.userId === userId).map(clone);
+    }
+    async upsertPhaseProgress(record) {
+        const db = this.read();
+        const i = db.phaseProgress.findIndex((x) => x.userId === record.userId && x.phase === record.phase);
+        if (i >= 0)
+            db.phaseProgress[i] = clone(record);
+        else
+            db.phaseProgress.push(clone(record));
+        this.write(db);
     }
     async getProfile(userId) {
         const row = this.read().profiles.find((x) => x.userId === userId);

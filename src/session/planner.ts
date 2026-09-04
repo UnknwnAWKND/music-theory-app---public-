@@ -21,6 +21,12 @@ export interface SessionPlannerInput {
   /** Used to detect a genuinely overdue recovery period without resetting progress. */
   nowIso?: string;
   longBreakDays?: number;
+  /** Guided-mode phase gates. Omit to allow normal graph-only planning. */
+  guidedPhaseAccess?: readonly number[];
+  /** Placement-validated phases may bypass older-phase prerequisite edges without fabricating READY. */
+  validatedEntryPhases?: readonly number[];
+  /** When placement has validated a later phase, prefer beginning there instead of earlier untouched material. */
+  preferredNewPhase?: number;
 }
 
 export interface SessionPlan {
@@ -40,12 +46,20 @@ function nextUnlockable(
   evidenceBySkill: ReadonlyMap<string, DerivedSkillEvidence>,
   skills: readonly SkillDefinition[] = SKILLS,
   allowOptional = false,
+  guidedPhaseAccess?: readonly number[],
+  validatedEntryPhases?: readonly number[],
 ): SkillDefinition | undefined {
   return skills.find((skill) => {
     if (skill.optional && !allowOptional) return false;
+    if (guidedPhaseAccess && !guidedPhaseAccess.includes(skill.phase)) return false;
     const current = evidenceBySkill.get(skill.id);
     if (current && current.state !== "new") return false;
-    return skill.prerequisites.every((dep) => isReadyForPrerequisites(evidenceBySkill.get(dep)));
+    const placementValidated = validatedEntryPhases?.includes(skill.phase) ?? false;
+    return skill.prerequisites.every((dep) => {
+      const dependency = SKILLS.find((candidate) => candidate.id === dep);
+      if (placementValidated && dependency && dependency.phase < skill.phase) return true;
+      return isReadyForPrerequisites(evidenceBySkill.get(dep));
+    });
   });
 }
 
@@ -81,7 +95,14 @@ export function planSession(input: SessionPlannerInput): SessionPlan {
   } else if (acquiringSkillId) {
     reasonNoNewSkill = "finish-current-acquisition";
   } else {
-    newSkillId = nextUnlockable(input.evidenceBySkill, SKILLS, input.allowOptionalNew ?? false)?.id;
+    const inferredPreferredPhase = input.preferredNewPhase ?? (input.validatedEntryPhases?.length ? Math.max(...input.validatedEntryPhases) : undefined);
+    const preferredSkills = inferredPreferredPhase
+      ? SKILLS.filter((skill) => skill.phase === inferredPreferredPhase)
+      : SKILLS;
+    newSkillId = nextUnlockable(input.evidenceBySkill, preferredSkills, input.allowOptionalNew ?? false, input.guidedPhaseAccess, input.validatedEntryPhases)?.id;
+    if (!newSkillId && inferredPreferredPhase) {
+      newSkillId = nextUnlockable(input.evidenceBySkill, SKILLS, input.allowOptionalNew ?? false, input.guidedPhaseAccess, input.validatedEntryPhases)?.id;
+    }
     if (!newSkillId) reasonNoNewSkill = "nothing-unlocked";
   }
 
