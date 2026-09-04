@@ -27,6 +27,7 @@ function resetLocalProgress() {
   snapshot.cards = [];
   snapshot.schedulerReviews = [];
   snapshot.phaseProgress = [];
+  snapshot.retiredSkillHistory = [];
   localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(snapshot));
 }
 
@@ -39,40 +40,26 @@ async function resetSupabaseProgress() {
   if (!token) throw new Error("Your session expired. Sign in again and retry.");
 
   const base = `${String(config.supabaseUrl).replace(/\/$/, "")}/rest/v1`;
-  const userId = encodeURIComponent(session.user.id);
-  const headers = {
-    apikey: config.supabasePublishableKey,
-    Authorization: `Bearer ${token}`,
-    "Content-Type": "application/json",
-    Prefer: "return=minimal",
-  };
+  const response = await fetch(`${base}/rpc/reset_my_learning_progress`, {
+    method: "POST",
+    headers: {
+      apikey: config.supabasePublishableKey,
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: "{}",
+  });
 
-  // Delete dependent/history rows first. Keep account, profile, and learning settings.
-  const tables = [
-    "scheduler_reviews",
-    "scheduler_cards",
-    "skill_state",
-    "learning_attempts",
-    "phase_progress",
-    "study_sessions",
-  ];
-
-  for (const table of tables) {
-    const response = await fetch(`${base}/${table}?user_id=eq.${userId}`, {
-      method: "DELETE",
-      headers,
-    });
-    if (!response.ok) {
-      const detail = await response.text();
-      throw new Error(`Could not clear ${table} (${response.status}). ${detail}`);
-    }
+  if (!response.ok) {
+    const detail = await response.text();
+    throw new Error(`Could not reset progress (${response.status}). ${detail}`);
   }
 }
 
 async function handleReset(button) {
   if (resetting) return;
   const confirmed = window.confirm(
-    "Reset ALL progress?\n\nThis is for testing. It permanently deletes lesson progress, READY/RETAINED states, question history, review schedules, checkpoint/placement progress, and study-session history.\n\nYour account, profile, and settings will stay. This cannot be undone."
+    "Reset ALL progress?\n\nThis is for testing. It permanently deletes lesson progress, READY/RETAINED states, question history, review schedules, checkpoint/placement progress, retired-skill history, and study-session history.\n\nYour account, profile, and settings will stay. This cannot be undone."
   );
   if (!confirmed) return;
 
