@@ -13,7 +13,7 @@ const NUMBER_SETS: Readonly<Record<string, readonly number[]>> = Object.freeze({
   "interval.number-2-7": [2, 7],
   "interval.number-mix-2-3-4-5-7-8": [2, 3, 4, 5, 7, 8],
   "interval.number-6": [6],
-  "interval.generic-number": [2, 3, 4, 5, 6, 7, 8],
+  "interval.number-mixed-all": [2, 3, 4, 5, 6, 7, 8],
 });
 
 function pick<T>(items: readonly T[], index: number): T {
@@ -39,7 +39,7 @@ function intervalNumberExercise(skillId: string, index: number): Exercise {
   if (!numbers) throw new Error(`No interval-number set for ${skillId}`);
   const intervalNumber = pick(numbers, index);
   const root = pick(PRACTICAL_ROOTS, index * 5 + intervalNumber);
-  const mixed = skillId.includes("mix") || skillId === "interval.generic-number";
+  const mixed = skillId.includes("mix") || skillId === "interval.number-mixed-all";
   const direction: "above" | "below" = mixed && Math.abs(index) % 5 === 4 ? "below" : "above";
   const expected = targetLetter(root, intervalNumber, direction);
   const suffix = intervalNumber === 2 ? "nd" : intervalNumber === 3 ? "rd" : "th";
