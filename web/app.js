@@ -1641,6 +1641,7 @@ async function advanceItem() {
   state.exerciseIndex.set(item.skillId, (state.exerciseIndex.get(item.skillId) ?? 0) + 1);
   state.itemIndex += 1;
   state.round = null;
+  state.round = null;
   if (state.itemIndex >= state.queue.length && state.manualStudy) {
     const previous = state.manualStudy;
     state.manualStudy = null;
