@@ -1,7 +1,7 @@
+import { PHASE1_INTERVAL_GENERATORS } from "./phase1-intervals.js";
 import type { Exercise, ExerciseGenerator } from "./types.js";
 
-/** Empty by design in Block 1. Future curriculum blocks register generators here. */
-const GENERATORS = new Map<string, ExerciseGenerator>();
+const GENERATORS = new Map<string, ExerciseGenerator>(PHASE1_INTERVAL_GENERATORS);
 
 export function registerExerciseGenerator(skillId: string, generator: ExerciseGenerator): void {
   GENERATORS.set(skillId, generator);
