@@ -34,13 +34,9 @@ patch(
     'assert.equal(plan.newSkillId, "interval.number-3-8");',
 )
 
-# The redesigned question counter is deliberately round-based rather than based on
-# the number of skills queued in the session.
-patch(
-    "tests/ui-redesign.test.mjs",
-    'assert.match(app, /Question \\${state\\.itemIndex \\+ 1} of/);',
-    'assert.match(app, /Question \\${questionNumber} of \\${round\\.size}/);',
-)
+# The round-counter assertion is now maintained directly in tests/ui-redesign.test.mjs.
+# Do not rewrite it here: the v0.9 UI counts questions inside the current practice round,
+# not skills inside the session queue.
 
 # The internal skill ID is the stability contract. The long-form curriculum title is
 # allowed to improve as teaching copy evolves.
