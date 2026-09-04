@@ -133,7 +133,7 @@ export function checkpointDefinition(phase: PhaseNumber): PhaseCheckpointDefinit
   const competencies = raw
     .map((c) => ({ ...c, skillIds: existing(c.skillIds) }))
     .filter((c) => c.skillIds.length > 0);
-  const minItems = Math.max(competencies.length, competencies.length + 1);
+  const minItems = competencies.length + 1;
   const maxItems = Math.max(minItems, competencies.length * 3);
   return { phase, competencies, minItems, maxItems };
 }
@@ -160,12 +160,11 @@ export function evaluateCheckpoint(def: PhaseCheckpointDefinition, results: read
     const failures = rows.filter((r) => r.firstSubmission && r.independent && !r.correct).length;
     const distinctSkills = new Set([...strongRows, ...moderateRows].map((r) => r.skillId)).size;
     const distinctExamples = new Set([...strongRows, ...moderateRows].map((r) => r.exampleSignature)).size;
-    // Each competency must stand on its own: one strong generative retrieval on a distinct example,
-    // or two clean recognition examples. An unresolved independent failure keeps it uncertain.
     const demonstrated = failures === 0 && (strongRows.length >= 1 || (moderateRows.length >= 2 && distinctExamples >= 2));
     return { competencyId: c.id, label: c.label, demonstrated, strongEvidence: strongRows.length, moderateEvidence: moderateRows.length, failures, distinctSkills, distinctExamples };
   });
-  const passed = competencies.length > 0 && competencies.every((c) => c.demonstrated);
+  const allCompetencies = competencies.length > 0 && competencies.every((c) => c.demonstrated);
+  const passed = allCompetencies && results.length >= def.minItems;
   const complete = passed || results.length >= def.maxItems;
   return {
     passed,
@@ -178,17 +177,21 @@ export function evaluateCheckpoint(def: PhaseCheckpointDefinition, results: read
 
 export function nextCheckpointCompetency(def: PhaseCheckpointDefinition, results: readonly DiagnosticItemResult[]): CompetencyDefinition | undefined {
   const evaluation = evaluateCheckpoint(def, results);
-  if (evaluation.passed || results.length >= def.maxItems) return undefined;
+  if (evaluation.complete) return undefined;
   const unresolved = def.competencies.filter((c) => !evaluation.competencies.find((x) => x.competencyId === c.id)?.demonstrated);
+  const candidates = unresolved.length ? unresolved : def.competencies;
   const counts = new Map<string, number>();
   for (const r of results) counts.set(r.competencyId, (counts.get(r.competencyId) ?? 0) + 1);
-  return [...unresolved].sort((a, b) => (counts.get(a.id) ?? 0) - (counts.get(b.id) ?? 0))[0];
+  return [...candidates].sort((a, b) => (counts.get(a.id) ?? 0) - (counts.get(b.id) ?? 0))[0];
 }
 
 export function placementPrerequisitePhases(targetPhase: PhaseNumber): PhaseNumber[] {
   if (targetPhase <= 1) return [];
   const required = new Set<number>();
+  const seen = new Set<string>();
   const visit = (skillId: string) => {
+    if (seen.has(skillId)) return;
+    seen.add(skillId);
     const skill = SKILL_BY_ID.get(skillId);
     if (!skill) return;
     for (const depId of skill.prerequisites) {
@@ -205,10 +208,10 @@ export function placementPrerequisitePhases(targetPhase: PhaseNumber): PhaseNumb
 export function placementDefinition(targetPhase: PhaseNumber): PhaseCheckpointDefinition {
   const phases = placementPrerequisitePhases(targetPhase);
   const competencies = phases.flatMap((phase) => checkpointDefinition(phase)?.competencies ?? []);
-  // Keep placement representative rather than exhaustive: at most two critical groups per prerequisite phase.
-  const representative = phases.flatMap((phase) => (checkpointDefinition(phase)?.competencies ?? []).filter((c) => c.critical !== false).slice(0, 2));
+  // One representative critical group per prerequisite phase keeps placement broad but not exhaustive.
+  const representative = phases.flatMap((phase) => (checkpointDefinition(phase)?.competencies ?? []).filter((c) => c.critical !== false).slice(0, 1));
   const selected = representative.length ? representative : competencies;
-  const minItems = Math.max(selected.length, selected.length + 1);
+  const minItems = selected.length + 1;
   const maxItems = Math.max(minItems, selected.length * 3);
   return { phase: targetPhase, competencies: selected, minItems, maxItems };
 }
