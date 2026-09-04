@@ -436,7 +436,11 @@ test("lesson teaching has reusable piano, inversion, circle, and fretboard visua
   assert.match(app, /function circleOfFifthsHtml/);
   assert.match(app, /function fretboardDiagramHtml/);
   assert.match(app, /lessonVisualHtml\(skill, page\)/);
-  assert.doesNotMatch(app, /lessonVisualHtml\(skill, page\).*renderPractice/s);
+  const practiceStart = app.indexOf("function renderPractice()");
+  const practiceEnd = app.indexOf("function actionButtons", practiceStart);
+  assert.ok(practiceStart >= 0 && practiceEnd > practiceStart);
+  const practiceSource = app.slice(practiceStart, practiceEnd);
+  assert.doesNotMatch(practiceSource, /lessonVisualHtml\(/);
 });
 
 test("Phase 0 remains absent from the active curriculum", () => {
