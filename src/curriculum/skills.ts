@@ -1,9 +1,120 @@
 import type { SkillDefinition } from "./types.js";
 
-/**
- * Block 1 deliberately ships with no curriculum skills. Future blocks will add
- * new lesson/reference definitions to this registry from scratch.
- */
-export const CURRICULUM_VERSION = "rebuild-block1" as const;
-export const SKILLS: readonly SkillDefinition[] = Object.freeze([]);
-export const SKILL_BY_ID = new Map<string, SkillDefinition>();
+export const CURRICULUM_VERSION = "rebuild-block2-phase1" as const;
+
+const shared = {
+  phase: 1 as const,
+  contentKind: "lesson" as const,
+  assessed: true,
+  blocksPhaseCompletion: true,
+  foundationality: 5 as const,
+  automaticRecall: 5 as const,
+  reviewPriority: 5 as const,
+  longTermRecurrence: 5 as const,
+  prerequisiteImportance: 5 as const,
+};
+
+export const SKILLS: readonly SkillDefinition[] = Object.freeze([
+  {
+    ...shared,
+    id: "intervals.lesson-1-unison-octave",
+    title: "Perfect Unison & Perfect Octave",
+    prerequisites: [],
+    evidence: ["construct", "identify"],
+    tags: ["interval", "perfect", "P1", "P8", "automatic-recall"],
+    conceptualUnderstanding: 3,
+    acquisitionRoundSize: 30,
+  },
+  {
+    ...shared,
+    id: "intervals.lesson-2-perfect-fifth",
+    title: "Perfect 5th",
+    prerequisites: ["intervals.lesson-1-unison-octave"],
+    evidence: ["construct", "identify"],
+    tags: ["interval", "perfect", "P5", "automatic-recall", "cumulative"],
+    conceptualUnderstanding: 3,
+    acquisitionRoundSize: 36,
+  },
+  {
+    ...shared,
+    id: "intervals.lesson-3-perfect-fourth",
+    title: "Perfect 4th",
+    prerequisites: ["intervals.lesson-2-perfect-fifth"],
+    evidence: ["construct", "identify", "transform"],
+    tags: ["interval", "perfect", "P4", "P5", "inversion", "automatic-recall", "concept"],
+    conceptualUnderstanding: 5,
+    acquisitionRoundSize: 36,
+  },
+  {
+    ...shared,
+    id: "intervals.lesson-4-thirds",
+    title: "Major 3rd & Minor 3rd",
+    prerequisites: ["intervals.lesson-3-perfect-fourth"],
+    evidence: ["construct", "identify", "diagnose"],
+    tags: ["interval", "major-minor", "M3", "m3", "automatic-recall", "cumulative"],
+    conceptualUnderstanding: 4,
+    acquisitionRoundSize: 40,
+  },
+  {
+    ...shared,
+    id: "intervals.lesson-5-sixths",
+    title: "Major 6th & Minor 6th",
+    prerequisites: ["intervals.lesson-4-thirds"],
+    evidence: ["construct", "identify", "transform", "diagnose"],
+    tags: ["interval", "major-minor", "M6", "m6", "M3", "m3", "inversion", "automatic-recall", "cumulative"],
+    conceptualUnderstanding: 5,
+    acquisitionRoundSize: 40,
+  },
+  {
+    ...shared,
+    id: "intervals.lesson-6-seconds",
+    title: "Major 2nd & Minor 2nd",
+    prerequisites: ["intervals.lesson-5-sixths"],
+    evidence: ["construct", "identify", "diagnose"],
+    tags: ["interval", "major-minor", "M2", "m2", "automatic-recall", "cumulative"],
+    conceptualUnderstanding: 4,
+    acquisitionRoundSize: 40,
+  },
+  {
+    ...shared,
+    id: "intervals.lesson-7-sevenths",
+    title: "Major 7th & Minor 7th",
+    prerequisites: ["intervals.lesson-6-seconds"],
+    evidence: ["construct", "identify", "transform", "diagnose"],
+    tags: ["interval", "major-minor", "M7", "m7", "M2", "m2", "inversion", "automatic-recall", "cumulative"],
+    conceptualUnderstanding: 5,
+    acquisitionRoundSize: 40,
+  },
+  {
+    ...shared,
+    id: "intervals.lesson-8-tritone",
+    title: "Tritone: Augmented 4th / Diminished 5th",
+    prerequisites: ["intervals.lesson-7-sevenths"],
+    evidence: ["construct", "identify", "diagnose", "transform"],
+    tags: ["interval", "tritone", "A4", "d5", "enharmonic", "spelling", "automatic-recall", "concept"],
+    conceptualUnderstanding: 5,
+    acquisitionRoundSize: 40,
+  },
+  {
+    ...shared,
+    id: "intervals.lesson-9-inversion-capstone",
+    title: "Inversion Rule Capstone",
+    prerequisites: ["intervals.lesson-8-tritone"],
+    evidence: ["transform", "construct", "identify", "apply"],
+    tags: ["interval", "inversion", "rule-of-9", "quality-inversion", "automatic-recall", "concept", "cumulative"],
+    conceptualUnderstanding: 5,
+    acquisitionRoundSize: 36,
+  },
+  {
+    ...shared,
+    id: "intervals.lesson-10-cumulative",
+    title: "Cumulative Drilling",
+    prerequisites: ["intervals.lesson-9-inversion-capstone"],
+    evidence: ["construct", "identify", "transform", "diagnose", "apply"],
+    tags: ["interval", "cumulative", "automaticity", "spelling", "inversion", "mixed-practice"],
+    conceptualUnderstanding: 4,
+    acquisitionRoundSize: 60,
+  },
+]);
+
+export const SKILL_BY_ID = new Map(SKILLS.map((skill) => [skill.id, skill]));
