@@ -15,13 +15,16 @@ t = replace_once(t,
 '''  validatedEntryPhases?: readonly number[];\n}''',
 '''  validatedEntryPhases?: readonly number[];\n  /** When placement has validated a later phase, prefer beginning there instead of earlier untouched material. */\n  preferredNewPhase?: number;\n}''',
 "planner preferred phase input")
-t = replace_once(t,
-'''  let newSkillId: string | undefined;\n  let reasonNoNewSkill: string | undefined;''',
-'''  let newSkillId: string | undefined;\n  let reasonNoNewSkill: string | undefined;''',
-"planner new-skill anchor")
-old = '''    newSkillId = nextUnlockable(input.evidenceBySkill, SKILLS, input.allowOptionalNew ?? false, input.guidedPhaseAccess, input.validatedEntryPhases)?.id;\n    if (!newSkillId) reasonNoNewSkill = "nothing-unlocked";'''
-new = '''    const preferredSkills = input.preferredNewPhase\n      ? SKILLS.filter((skill) => skill.phase === input.preferredNewPhase)\n      : SKILLS;\n    newSkillId = nextUnlockable(input.evidenceBySkill, preferredSkills, input.allowOptionalNew ?? false, input.guidedPhaseAccess, input.validatedEntryPhases)?.id;\n    if (!newSkillId && input.preferredNewPhase) {\n      newSkillId = nextUnlockable(input.evidenceBySkill, SKILLS, input.allowOptionalNew ?? false, input.guidedPhaseAccess, input.validatedEntryPhases)?.id;\n    }\n    if (!newSkillId) reasonNoNewSkill = "nothing-unlocked";'''
-t = replace_once(t, old, new, "planner preferred phase selection")
+old = '''    const preferredSkills = input.preferredNewPhase\n      ? SKILLS.filter((skill) => skill.phase === input.preferredNewPhase)\n      : SKILLS;\n    newSkillId = nextUnlockable(input.evidenceBySkill, preferredSkills, input.allowOptionalNew ?? false, input.guidedPhaseAccess, input.validatedEntryPhases)?.id;\n    if (!newSkillId && input.preferredNewPhase) {\n      newSkillId = nextUnlockable(input.evidenceBySkill, SKILLS, input.allowOptionalNew ?? false, input.guidedPhaseAccess, input.validatedEntryPhases)?.id;\n    }\n    if (!newSkillId) reasonNoNewSkill = "nothing-unlocked";'''
+base = '''    newSkillId = nextUnlockable(input.evidenceBySkill, SKILLS, input.allowOptionalNew ?? false, input.guidedPhaseAccess, input.validatedEntryPhases)?.id;\n    if (!newSkillId) reasonNoNewSkill = "nothing-unlocked";'''
+new = '''    const inferredPreferredPhase = input.preferredNewPhase ?? (input.validatedEntryPhases?.length ? Math.max(...input.validatedEntryPhases) : undefined);\n    const preferredSkills = inferredPreferredPhase\n      ? SKILLS.filter((skill) => skill.phase === inferredPreferredPhase)\n      : SKILLS;\n    newSkillId = nextUnlockable(input.evidenceBySkill, preferredSkills, input.allowOptionalNew ?? false, input.guidedPhaseAccess, input.validatedEntryPhases)?.id;\n    if (!newSkillId && inferredPreferredPhase) {\n      newSkillId = nextUnlockable(input.evidenceBySkill, SKILLS, input.allowOptionalNew ?? false, input.guidedPhaseAccess, input.validatedEntryPhases)?.id;\n    }\n    if (!newSkillId) reasonNoNewSkill = "nothing-unlocked";'''
+if new not in t:
+    if old in t:
+        t = t.replace(old, new, 1)
+    elif base in t:
+        t = t.replace(base, new, 1)
+    else:
+        raise RuntimeError("Could not locate planner preferred phase selection")
 p.write_text(t)
 
 # Tutor service sends the latest placement target as the preferred new phase.
