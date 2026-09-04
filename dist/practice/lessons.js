@@ -36,16 +36,15 @@ export function lessonForSkill(skillId) {
     if (interval)
         return interval;
     const exact = {
-        "pitch.note-names": { summary: "On piano, the white-key letter names repeat A through G. B–C and E–F are adjacent white keys with no black key between them." },
-        "pitch.accidentals": { summary: "Sharps raise a written note by a semitone; flats lower it by a semitone. Enharmonic spellings can sound the same but have different theoretical meanings." },
-        "pitch.half-whole": { summary: "A half step is one adjacent piano key; a whole step is two half steps." },
-        "interval.generic-number": { summary: "Interval number comes from counting letter names inclusively: C–E is some kind of 3rd because C–D–E spans three letters." },
-        "interval.quality-system": { summary: "Unisons, 4ths, 5ths, and octaves use perfect/augmented/diminished qualities. 2nds, 3rds, 6ths, and 7ths use major/minor plus augmented/diminished." },
+        "pitch.accidentals": { summary: "Sometimes the same piano key has two different note names.", rule: "The name can change even when the piano key does not.", workedExample: "C♯ and D♭ are the same black key on the piano." },
+        "pitch.half-whole": { summary: "Half steps and whole steps measure distance between notes.", rule: "Half step = one piano key to the next. Whole step = two half steps.", workedExample: "E→F is a half step. F→G is a whole step." },
+        "interval.generic-number": { summary: "The interval number comes from the letter names.", rule: "Count both the starting note and ending note.", workedExample: "C→E is a 3rd because C–D–E gives you three letter names." },
+        "interval.quality-system": { summary: "The interval number tells you the letter distance. The quality tells you the exact size.", rule: "2nds, 3rds, 6ths, and 7ths can be major or minor. 1, 4, 5, and 8 use perfect.", workedExample: "C→E is a major 3rd. C→E♭ is a minor 3rd." },
         "interval.A4-d5": { summary: "A tritone spans six semitones. C–F♯ is an augmented 4th; C–G♭ is a diminished 5th. Same sounding distance, different spelling and interval identity." },
         "interval.mixed-core": { summary: "Now interval types are mixed so you must retrieve the requested relationship instead of following a blocked pattern." },
-        "interval.spelling": { summary: "Correct interval spelling uses the proper target letter first, then the accidental that creates the required semitone distance." },
+        "interval.spelling": { summary: "Correct interval construction is a two-step problem. First choose the target letter required by the interval number. Only then choose the accidental needed to produce the correct semitone distance. This prevents enharmonic answers that sound right but describe the wrong interval on paper.", rule: "Letter first, accidental second.", workedExample: "A major 3rd above F♯ must use some kind of A because F–G–A is a 3rd. The A must be raised to A♯ to make the distance 4 semitones. B♭ lands on the same key but is some kind of 4th from F, so it is spelled incorrectly for this task." },
         "interval.inversion": { summary: "Simple interval numbers invert to 9: 2↔7, 3↔6, 4↔5, 1↔8. Major↔minor, perfect↔perfect, augmented↔diminished." },
-        "triad.members": { summary: "A tertian triad has root, third, and fifth. These are chord-member roles relative to the root, not simply bottom/middle/top notes." },
+        "triad.members": { summary: "A triad has three roles: root, 3rd, and 5th.", rule: "Those names describe each note’s distance from the root.", workedExample: "In C–E–G: C is the root, E is the 3rd, and G is the 5th." },
         "triad.symbols": { summary: "Basic chord symbols encode root and quality: C = C major, Cm = C minor, C°/Cdim = diminished, C+/Caug = augmented." },
         "triad.mixed": { summary: "Distinguish and construct all four basic triad qualities from their interval structures instead of memorizing isolated shapes." },
         "triad.root-vs-bass": { summary: "The root gives a chord its harmonic identity. The bass is whichever pitch is lowest at that moment; inversions let them differ." },

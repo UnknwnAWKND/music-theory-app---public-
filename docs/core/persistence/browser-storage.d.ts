@@ -2,7 +2,7 @@ import type { DerivedSkillEvidence } from "../learning/index.js";
 import type { SchedulerCardSnapshot, SchedulerReviewLog } from "../scheduler/index.js";
 import type { DueReview, SessionPlan } from "../session/index.js";
 import type { AppendAttemptInput, TutorRepository } from "./repository.js";
-import type { SkillStateRecord, StoredAttempt, StoredSchedulerCard, StoredSchedulerReview, StudySessionRecord, UserLearningSettings } from "./types.js";
+import type { SkillStateRecord, StoredAttempt, StoredSchedulerCard, StoredSchedulerReview, StudySessionRecord, UserLearningSettings, UserProfile } from "./types.js";
 export interface KeyValueStorage {
     getItem(key: string): string | null;
     setItem(key: string, value: string): void;
@@ -20,6 +20,7 @@ export declare class BrowserStorageTutorRepository implements TutorRepository {
     private write;
     createSession(userId: string, startedAt: string, plan?: SessionPlan): Promise<StudySessionRecord>;
     completeSession(userId: string, sessionId: string, completedAt: string, completionReason: string): Promise<void>;
+    recentSessions(userId: string, limit?: number): Promise<StudySessionRecord[]>;
     appendAttempt(input: AppendAttemptInput): Promise<StoredAttempt>;
     attemptsForSkill(userId: string, skillId: string): Promise<StoredAttempt[]>;
     allSkillStates(userId: string): Promise<SkillStateRecord[]>;
@@ -29,6 +30,8 @@ export declare class BrowserStorageTutorRepository implements TutorRepository {
     upsertSchedulerCard(userId: string, card: SchedulerCardSnapshot): Promise<void>;
     appendSchedulerReview(userId: string, log: SchedulerReviewLog, eventKind: StoredSchedulerReview["eventKind"]): Promise<void>;
     acquiringSkillIds(userId: string): Promise<string[]>;
+    getProfile(userId: string): Promise<UserProfile | undefined>;
+    upsertProfile(userId: string, displayName: string, createdAt?: string): Promise<void>;
     getSettings(userId: string): Promise<UserLearningSettings | undefined>;
     upsertSettings(settings: UserLearningSettings): Promise<void>;
 }

@@ -69,6 +69,18 @@ export class SupabaseRestTutorRepository {
             body: JSON.stringify({ completed_at: completedAt, completion_reason: completionReason }),
         });
     }
+    async recentSessions(userId, limit = 10) {
+        const safeLimit = Math.max(0, Math.min(50, Math.trunc(limit)));
+        const rows = await this.request(`study_sessions?user_id=eq.${filterValue(userId)}&order=started_at.desc&limit=${safeLimit}`);
+        return rows.map((row) => ({
+            id: row.id,
+            userId: row.user_id,
+            startedAt: row.started_at,
+            completedAt: row.completed_at ?? undefined,
+            completionReason: row.completion_reason ?? undefined,
+            plan: row.plan_snapshot ?? undefined,
+        }));
+    }
     async appendAttempt(input) {
         const rows = await this.request("learning_attempts?select=*", {
             method: "POST",
@@ -248,6 +260,32 @@ export class SupabaseRestTutorRepository {
         const rows = await this.request(`skill_state?user_id=eq.${filterValue(userId)}&learning_state=eq.acquiring&select=skill_id`);
         return rows.map((r) => r.skill_id);
     }
+    async getProfile(userId) {
+        const rows = await this.request(`user_profiles?user_id=eq.${filterValue(userId)}&limit=1`);
+        const r = rows[0];
+        if (!r)
+            return undefined;
+        return {
+            userId: r.user_id,
+            displayName: r.display_name,
+            createdAt: r.created_at,
+            updatedAt: r.updated_at,
+        };
+    }
+    async upsertProfile(userId, displayName, createdAt) {
+        const body = {
+            user_id: userId,
+            display_name: displayName,
+            updated_at: new Date().toISOString(),
+        };
+        if (createdAt)
+            body.created_at = createdAt;
+        await this.request("user_profiles?on_conflict=user_id", {
+            method: "POST",
+            headers: { Prefer: "resolution=merge-duplicates,return=minimal" },
+            body: JSON.stringify(body),
+        });
+    }
     async getSettings(userId) {
         const rows = await this.request(`user_learning_settings?user_id=eq.${filterValue(userId)}&limit=1`);
         const r = rows[0];
@@ -257,6 +295,7 @@ export class SupabaseRestTutorRepository {
             userId: r.user_id,
             desiredRetention: r.desired_retention,
             maximumIntervalDays: r.maximum_interval_days,
+            requirePreviousLessons: r.require_previous_lessons ?? true,
             curriculumVersion: r.curriculum_version,
             schedulerVersion: r.scheduler_version,
         };
@@ -269,6 +308,7 @@ export class SupabaseRestTutorRepository {
                 user_id: settings.userId,
                 desired_retention: settings.desiredRetention,
                 maximum_interval_days: settings.maximumIntervalDays,
+                require_previous_lessons: settings.requirePreviousLessons,
                 curriculum_version: settings.curriculumVersion,
                 scheduler_version: settings.schedulerVersion,
                 updated_at: new Date().toISOString(),

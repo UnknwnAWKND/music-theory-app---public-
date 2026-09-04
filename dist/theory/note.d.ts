@@ -5,6 +5,7 @@ export interface Note {
     accidental: number;
 }
 export declare function mod(n: number, m: number): number;
+export declare function normalizeNoteInput(input: string): string;
 export declare function parseNote(input: string): Note;
 export declare function pitchClass(note: Note): number;
 export declare function formatNote(note: Note): string;

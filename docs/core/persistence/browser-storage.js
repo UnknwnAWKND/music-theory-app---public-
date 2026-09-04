@@ -1,5 +1,5 @@
 const EMPTY = {
-    sessions: [], attempts: [], skillStates: [], cards: [], schedulerReviews: [], settings: [],
+    sessions: [], attempts: [], skillStates: [], cards: [], schedulerReviews: [], settings: [], profiles: [],
 };
 function clone(value) { return JSON.parse(JSON.stringify(value)); }
 function uid(prefix) {
@@ -26,7 +26,7 @@ export class BrowserStorageTutorRepository {
             const parsed = JSON.parse(raw);
             return {
                 sessions: parsed.sessions ?? [], attempts: parsed.attempts ?? [], skillStates: parsed.skillStates ?? [],
-                cards: parsed.cards ?? [], schedulerReviews: parsed.schedulerReviews ?? [], settings: parsed.settings ?? [],
+                cards: parsed.cards ?? [], schedulerReviews: parsed.schedulerReviews ?? [], settings: parsed.settings ?? [], profiles: parsed.profiles ?? [],
             };
         }
         catch {
@@ -49,6 +49,10 @@ export class BrowserStorageTutorRepository {
         row.completedAt = completedAt;
         row.completionReason = completionReason;
         this.write(db);
+    }
+    async recentSessions(userId, limit = 10) {
+        return this.read().sessions.filter((x) => x.userId === userId)
+            .sort((a, b) => Date.parse(b.startedAt) - Date.parse(a.startedAt)).slice(0, Math.max(0, limit)).map(clone);
     }
     async appendAttempt(input) {
         const db = this.read();
@@ -102,9 +106,24 @@ export class BrowserStorageTutorRepository {
     async acquiringSkillIds(userId) {
         return this.read().skillStates.filter((x) => x.userId === userId && x.evidence.state === "acquiring").map((x) => x.skillId);
     }
+    async getProfile(userId) {
+        const row = this.read().profiles.find((x) => x.userId === userId);
+        return row ? clone(row) : undefined;
+    }
+    async upsertProfile(userId, displayName, createdAt) {
+        const db = this.read();
+        const i = db.profiles.findIndex((x) => x.userId === userId);
+        const now = new Date().toISOString();
+        const row = { userId, displayName, createdAt: i >= 0 ? db.profiles[i].createdAt : (createdAt ?? now), updatedAt: now };
+        if (i >= 0)
+            db.profiles[i] = row;
+        else
+            db.profiles.push(row);
+        this.write(db);
+    }
     async getSettings(userId) {
         const row = this.read().settings.find((x) => x.userId === userId);
-        return row ? clone(row) : undefined;
+        return row ? { ...clone(row), requirePreviousLessons: row.requirePreviousLessons ?? true } : undefined;
     }
     async upsertSettings(settings) {
         const db = this.read();

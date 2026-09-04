@@ -10,6 +10,7 @@ export class InMemoryTutorRepository {
     cards = new Map();
     schedulerReviews = [];
     settings = new Map();
+    profiles = new Map();
     key(userId, skillId) {
         return `${userId}::${skillId}`;
     }
@@ -24,6 +25,13 @@ export class InMemoryTutorRepository {
             throw new Error(`Unknown session ${sessionId}`);
         row.completedAt = completedAt;
         row.completionReason = completionReason;
+    }
+    async recentSessions(userId, limit = 10) {
+        return this.sessions
+            .filter((x) => x.userId === userId)
+            .sort((a, b) => Date.parse(b.startedAt) - Date.parse(a.startedAt))
+            .slice(0, Math.max(0, limit))
+            .map((x) => ({ ...x }));
     }
     async appendAttempt(input) {
         const row = { id: id("attempt"), ...input };
@@ -67,9 +75,23 @@ export class InMemoryTutorRepository {
             .filter((x) => x.userId === userId && x.evidence.state === "acquiring")
             .map((x) => x.skillId);
     }
+    async getProfile(userId) {
+        const row = this.profiles.get(userId);
+        return row ? { ...row } : undefined;
+    }
+    async upsertProfile(userId, displayName, createdAt) {
+        const existing = this.profiles.get(userId);
+        const now = new Date().toISOString();
+        this.profiles.set(userId, {
+            userId,
+            displayName,
+            createdAt: existing?.createdAt ?? createdAt ?? now,
+            updatedAt: now,
+        });
+    }
     async getSettings(userId) {
         const row = this.settings.get(userId);
-        return row ? { ...row } : undefined;
+        return row ? { ...row, requirePreviousLessons: row.requirePreviousLessons ?? true } : undefined;
     }
     async upsertSettings(settings) {
         this.settings.set(settings.userId, { ...settings });
