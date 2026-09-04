@@ -25,6 +25,8 @@ jobs:
           node-version: 22
       - name: Install build dependencies
         run: npm install
+      - name: Apply profile and settings upgrade
+        run: python scripts/add-profile-settings.py
       - name: Apply lesson clarity rules
         run: |
           python scripts/apply-lesson-clarity.py
@@ -58,10 +60,10 @@ jobs:
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add web/app.js web/styles.css src/practice/lessons.ts src/exercises/catalog.ts docs
+          git add -A
           if git diff --cached --quiet; then
             echo "No generated changes"
           else
-            git commit -m "Deploy lesson clarity and answer normalization fixes"
+            git commit -m "Deploy profile and settings update"
             git push
           fi
