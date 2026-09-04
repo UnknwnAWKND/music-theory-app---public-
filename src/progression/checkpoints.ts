@@ -50,186 +50,88 @@ export interface AssessmentEvaluation {
   recommendedPhase?: PhaseNumber;
 }
 
-function group(id: string, label: string, skillIds: readonly string[], critical = true): CompetencyDefinition {
-  return { id, label, skillIds, critical };
-}
-
-const CHECKPOINT_GROUPS: Record<number, readonly CompetencyDefinition[]> = {
-  1: [
-    group("interval-number-core", "Interval-number construction", [
-      "interval.number-3-8", "interval.number-4-5", "interval.number-mix-3-4-5-8",
-      "interval.number-2-7", "interval.number-mix-2-3-4-5-7-8", "interval.number-6", "interval.generic-number",
-    ]),
-    group("interval-core-quality", "Core 3rds, 4ths, 5ths & octave", ["interval.quality-system", "interval.M3", "interval.m3", "interval.P4", "interval.P5", "interval.P8"]),
-  ],
-  2: [
-    group("triad-members-spelling", "Interval spelling, chord members & chord tones", ["interval.spelling", "triad.members", "melody.chord-tones", "triad.root-vs-bass"]),
-    group("triad-major-minor", "Major & minor triads", ["triad.major", "triad.minor"]),
-    group("triad-dim-aug", "Diminished & augmented triads", ["interval.A4-d5", "triad.diminished", "triad.augmented"]),
-    group("triad-mixed-symbols", "Mixed triads & symbols", ["triad.mixed", "triad.symbols"]),
-  ],
-  3: [
-    group("interval-quality-expansion", "2nd, 6th & 7th interval fluency", ["interval.M2", "interval.m2", "interval.M6", "interval.m6", "interval.M7", "interval.m7", "interval.mixed-core"]),
-    group("major-formula-degrees", "Major-scale formula & degrees", ["major.formula", "scale.degree-numbers", "major.degree-intervals"]),
-    group("major-spelling", "Major-scale construction & spelling", ["major.spelling", "major.construct"]),
-    group("major-degree-retrieval", "Key/degree retrieval", ["major.degree-to-note", "major.note-to-degree"]),
-    group("major-membership", "Diatonic membership", ["major.membership"]),
-  ],
-  4: [
-    group("diatonic-building", "Build diatonic triads", ["diatonic.stack-thirds", "diatonic.major-pattern"]),
-    group("number-system", "Scale degree vs chord number", ["progression.scale-degree-vs-chord", "roman.major-basic", "progression.absolute-relative"]),
-    group("degree-chord-translation", "Degree ↔ chord", ["diatonic.degree-to-chord", "diatonic.chord-to-degree"]),
-    group("harmonize-check", "Harmonize & diagnose", ["diatonic.harmonize-key", "diatonic.check-chord", "diatonic.definition"]),
-  ],
-  5: [
-    group("iiv", "I–IV–V", ["progression.I-IV-V"]),
-    group("transpose", "Progression transposition", ["progression.transpose"]),
-    group("analysis-iivi", "Progression analysis & ii–V–I", ["progression.extract", "progression.ii-V-I"]),
-    group("chord-tone-targeting", "Chord-tone targeting", ["melody.progression-targeting"]),
-  ],
-  6: [
-    group("tonic-dominant", "Tonic & dominant", ["function.tonic", "function.dominant", "function.V-I"]),
-    group("predominant-flow", "Predominant & functional flow", ["function.predominant", "function.basic-flow"]),
-    group("cadences", "Cadences", ["cadence.basic"]),
-    group("function-context", "Function in context", ["function.context"]),
-  ],
-  7: [
-    group("minor-natural", "Natural minor & key relationships", ["minor.parallel-alterations", "minor.natural-construct", "minor.relative", "minor.parallel"]),
-    group("minor-variable", "Variable 6 & 7", ["minor.variable6-7", "minor.raised7"]),
-    group("minor-harmonic", "Harmonic minor & dominant", ["minor.harmonic", "minor.V-v"]),
-    group("minor-harmony", "Minor-key harmony", ["minor.harmony"]),
-  ],
-  8: [
-    group("seventh-members", "Seventh-chord members", ["seventh.members"]),
-    group("seventh-core", "Major 7, minor 7 & dominant 7", ["seventh.major7", "seventh.minor7", "seventh.dominant7"]),
-    group("seventh-diminished", "Diminished seventh types", ["seventh.halfdim7", "seventh.dim7"]),
-    group("seventh-diatonic", "Diatonic seventh chords", ["seventh.major-diatonic", "seventh.mixed", "seventh.minor-context"]),
-  ],
-  9: [
-    group("triad-inversions", "Triad inversions", ["inversion.triad", "inversion.slash"]),
-    group("seventh-inversions", "Seventh-chord inversions", ["inversion.seventh"]),
-    group("voicing", "Voicing", ["voicing.distinction", "inversion.slash"]),
-    group("voice-leading", "Voice leading", ["voice.common-tones", "voice.economical", "voice.guide-tones"]),
-  ],
-  10: [
-    group("key-signatures", "Key signatures", ["keys.signatures"]),
-    group("circle", "Circle of Fifths", ["circle.major"]),
-    group("relatives-nearby", "Relative & nearby keys", ["circle.relative-minor", "keys.closely-related"]),
-    group("minor-key-signatures", "Minor key signatures", ["keys.minor-signatures"]),
-  ],
-  11: [
-    group("color-chords", "Suspended & added-note colors", ["color.sus", "color.add"]),
-    group("extensions", "Practical chord extensions", ["extension.compound-intervals", "extension.9"]),
-    group("chromatic-function", "Secondary dominants & borrowed harmony", ["secondary.V", "mixture.parallel"]),
-    group("center-analysis", "Tonal center & integrated analysis", ["mode.tonic-center", "analysis.integrated"]),
-  ],
-};
-
-function existing(skillIds: readonly string[]): string[] {
-  const missing = skillIds.filter((id) => !SKILL_BY_ID.has(id));
-  if (missing.length) throw new Error(`Checkpoint references unknown curriculum skills: ${missing.join(", ")}`);
-  return [...skillIds];
-}
-
-export function checkpointDefinition(phase: PhaseNumber): PhaseCheckpointDefinition | undefined {
-  if (phase === 12) return undefined;
-  const raw = CHECKPOINT_GROUPS[phase] ?? [];
-  const competencies = raw
-    .map((c) => ({ ...c, skillIds: existing(c.skillIds) }))
-    .filter((c) => c.skillIds.length > 0);
-  const minItems = competencies.length + 1;
-  const maxItems = Math.max(minItems, competencies.length * 3);
-  return { phase, competencies, minItems, maxItems };
+/** Block 1 contains no checkpoint competency content. Machinery stays available. */
+export function checkpointDefinition(_phase: PhaseNumber): PhaseCheckpointDefinition | undefined {
+  return undefined;
 }
 
 export function allCheckpointDefinitions(): PhaseCheckpointDefinition[] {
-  return Array.from({ length: 11 }, (_, i) => checkpointDefinition((i + 1) as PhaseNumber)!).filter(Boolean);
+  return [];
 }
 
-function isStrong(r: DiagnosticItemResult): boolean {
-  return r.correct && r.firstSubmission && r.independent && !r.guidanceUsed && !r.solutionSeen
-    && ["constructed", "discrimination", "application"].includes(r.responseMode);
+function isStrong(result: DiagnosticItemResult): boolean {
+  return result.correct && result.firstSubmission && result.independent && !result.guidanceUsed && !result.solutionSeen
+    && ["constructed", "discrimination", "application"].includes(result.responseMode);
 }
 
-function isModerate(r: DiagnosticItemResult): boolean {
-  return r.correct && r.firstSubmission && r.independent && !r.guidanceUsed && !r.solutionSeen
-    && r.responseMode === "recognition";
+function isModerate(result: DiagnosticItemResult): boolean {
+  return result.correct && result.firstSubmission && result.independent && !result.guidanceUsed && !result.solutionSeen
+    && result.responseMode === "recognition";
 }
 
-export function evaluateCheckpoint(def: PhaseCheckpointDefinition, results: readonly DiagnosticItemResult[]): AssessmentEvaluation {
-  const competencies = def.competencies.map((c): CompetencyAssessment => {
-    const rows = results.filter((r) => r.competencyId === c.id);
-    const strongRows = rows.filter(isStrong);
-    const moderateRows = rows.filter(isModerate);
-    const failures = rows.filter((r) => r.firstSubmission && r.independent && !r.correct).length;
-    const distinctSkills = new Set([...strongRows, ...moderateRows].map((r) => r.skillId)).size;
-    const distinctExamples = new Set([...strongRows, ...moderateRows].map((r) => r.exampleSignature)).size;
-    const demonstrated = failures === 0 && (strongRows.length >= 1 || (moderateRows.length >= 2 && distinctExamples >= 2));
-    return { competencyId: c.id, label: c.label, demonstrated, strongEvidence: strongRows.length, moderateEvidence: moderateRows.length, failures, distinctSkills, distinctExamples };
+export function evaluateCheckpoint(definition: PhaseCheckpointDefinition, results: readonly DiagnosticItemResult[]): AssessmentEvaluation {
+  const competencies = definition.competencies.map((competency): CompetencyAssessment => {
+    const rows = results.filter((result) => result.competencyId === competency.id);
+    const strong = rows.filter(isStrong);
+    const moderate = rows.filter(isModerate);
+    const failures = rows.filter((result) => result.firstSubmission && result.independent && !result.correct).length;
+    const distinctSkills = new Set([...strong, ...moderate].map((result) => result.skillId)).size;
+    const distinctExamples = new Set([...strong, ...moderate].map((result) => result.exampleSignature)).size;
+    const demonstrated = failures === 0 && (strong.length >= 1 || (moderate.length >= 2 && distinctExamples >= 2));
+    return { competencyId: competency.id, label: competency.label, demonstrated, strongEvidence: strong.length, moderateEvidence: moderate.length, failures, distinctSkills, distinctExamples };
   });
-  const allCompetencies = competencies.length > 0 && competencies.every((c) => c.demonstrated);
-  const passed = allCompetencies && results.length >= def.minItems;
-  const complete = passed || results.length >= def.maxItems;
+  const hasContent = competencies.length > 0;
+  const passed = hasContent && competencies.every((competency) => competency.demonstrated) && results.length >= definition.minItems;
+  const complete = passed || (hasContent && results.length >= definition.maxItems);
   return {
     passed,
     complete,
-    strong: competencies.filter((c) => c.demonstrated).map((c) => c.label),
-    review: competencies.filter((c) => !c.demonstrated).map((c) => c.label),
+    strong: competencies.filter((competency) => competency.demonstrated).map((competency) => competency.label),
+    review: competencies.filter((competency) => !competency.demonstrated).map((competency) => competency.label),
     competencies,
   };
 }
 
-export function nextCheckpointCompetency(def: PhaseCheckpointDefinition, results: readonly DiagnosticItemResult[]): CompetencyDefinition | undefined {
-  const evaluation = evaluateCheckpoint(def, results);
+export function nextCheckpointCompetency(definition: PhaseCheckpointDefinition, results: readonly DiagnosticItemResult[]): CompetencyDefinition | undefined {
+  if (!definition.competencies.length) return undefined;
+  const evaluation = evaluateCheckpoint(definition, results);
   if (evaluation.complete) return undefined;
-  const unresolved = def.competencies.filter((c) => !evaluation.competencies.find((x) => x.competencyId === c.id)?.demonstrated);
-  const candidates = unresolved.length ? unresolved : def.competencies;
+  const unresolved = definition.competencies.filter((competency) => !evaluation.competencies.find((row) => row.competencyId === competency.id)?.demonstrated);
+  const candidates = unresolved.length ? unresolved : definition.competencies;
   const counts = new Map<string, number>();
-  for (const r of results) counts.set(r.competencyId, (counts.get(r.competencyId) ?? 0) + 1);
+  for (const result of results) counts.set(result.competencyId, (counts.get(result.competencyId) ?? 0) + 1);
   return [...candidates].sort((a, b) => (counts.get(a.id) ?? 0) - (counts.get(b.id) ?? 0))[0];
 }
 
+/** Placement prerequisites remain graph-derived; there is no old hand-written map. */
 export function placementPrerequisitePhases(targetPhase: PhaseNumber): PhaseNumber[] {
-  if (targetPhase <= 1) return [];
-  const required = new Set<number>();
+  const required = new Set<PhaseNumber>();
   const seen = new Set<string>();
   const visit = (skillId: string) => {
     if (seen.has(skillId)) return;
     seen.add(skillId);
     const skill = SKILL_BY_ID.get(skillId);
     if (!skill) return;
-    for (const depId of skill.prerequisites) {
-      const dep = SKILL_BY_ID.get(depId);
-      if (!dep) continue;
-      if (dep.phase < targetPhase) required.add(dep.phase);
-      visit(depId);
+    for (const dependencyId of skill.prerequisites) {
+      const dependency = SKILL_BY_ID.get(dependencyId);
+      if (!dependency) continue;
+      if (dependency.phase < targetPhase) required.add(dependency.phase);
+      visit(dependencyId);
     }
   };
-  SKILLS.filter((s) => s.phase === targetPhase && !s.optional).forEach((s) => visit(s.id));
-  return [...required].sort((a, b) => a - b) as PhaseNumber[];
+  SKILLS.filter((skill) => skill.phase === targetPhase && !skill.optional).forEach((skill) => visit(skill.id));
+  return [...required].sort((a, b) => a - b);
 }
 
 export function placementDefinition(targetPhase: PhaseNumber): PhaseCheckpointDefinition {
-  const phases = placementPrerequisitePhases(targetPhase);
-  const competencies = phases.flatMap((phase) => checkpointDefinition(phase)?.competencies ?? []);
-  // One representative critical group per prerequisite phase keeps placement diagnostic rather than grindy.
-  const representative = phases.flatMap((phase) => (checkpointDefinition(phase)?.competencies ?? []).filter((c) => c.critical !== false).slice(0, 1));
-  const selected = representative.length ? representative : competencies;
-  const minItems = selected.length + 1;
-  const maxItems = Math.max(minItems, selected.length * 3);
-  return { phase: targetPhase, competencies: selected, minItems, maxItems };
+  return { phase: targetPhase, competencies: [], minItems: 1, maxItems: 1 };
 }
 
 export function recommendStartingPhase(targetPhase: PhaseNumber, evaluation: AssessmentEvaluation): PhaseNumber {
-  const weak = new Set(evaluation.review);
-  for (const phase of placementPrerequisitePhases(targetPhase)) {
-    const def = checkpointDefinition(phase);
-    if (def?.competencies.some((c) => weak.has(c.label))) return phase;
-  }
-  return targetPhase;
+  return evaluation.recommendedPhase ?? targetPhase;
 }
 
 export function phaseCoreReady(phase: PhaseNumber, readySkillIds: ReadonlySet<string>): boolean {
-  const required = SKILLS.filter((s) => s.phase === phase && !s.optional);
-  return required.length > 0 && required.every((s) => readySkillIds.has(s.id));
+  const required = SKILLS.filter((skill) => skill.phase === phase && !skill.optional && skill.assessed && skill.blocksPhaseCompletion);
+  return required.length > 0 && required.every((skill) => readySkillIds.has(skill.id));
 }

@@ -1,33 +1,19 @@
-import { cp, mkdir, rm, writeFile } from "node:fs/promises";
-import { resolve } from "node:path";
+import { cp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
+import { existsSync } from "node:fs";
 
-const root = resolve(process.cwd());
-const site = resolve(root, "site");
-await rm(site, { recursive: true, force: true });
-await mkdir(site, { recursive: true });
-await cp(resolve(root, "web"), site, { recursive: true });
-await cp(resolve(root, "dist"), resolve(site, "core"), { recursive: true });
+const OUT = "site";
+await rm(OUT, { recursive: true, force: true });
+await mkdir(OUT, { recursive: true });
+await cp("web", OUT, { recursive: true });
+await cp("dist", `${OUT}/core`, { recursive: true });
 
-const supabaseUrl = String(process.env.SUPABASE_URL ?? "").trim();
-const publishableKey = String(
-  process.env.SUPABASE_PUBLISHABLE_KEY
-  ?? process.env.SUPABASE_ANON_KEY
-  ?? "",
-).trim();
-
-if (Boolean(supabaseUrl) !== Boolean(publishableKey)) {
-  throw new Error("Set both SUPABASE_URL and SUPABASE_PUBLISHABLE_KEY (or legacy SUPABASE_ANON_KEY), or neither for local preview mode.");
+const sourceConfig = existsSync("web/config.js") ? await readFile("web/config.js", "utf8") : "";
+const url = process.env.SUPABASE_URL?.trim();
+const key = process.env.SUPABASE_PUBLISHABLE_KEY?.trim();
+if (url && key) {
+  await writeFile(`${OUT}/config.js`, `globalThis.__THEORY_TUTOR_CONFIG__ = Object.freeze({\n  buildVersion: \"rebuild-block1\",\n  supabaseUrl: ${JSON.stringify(url)},\n  supabasePublishableKey: ${JSON.stringify(key)},\n});\n`);
+} else if (!sourceConfig.trim()) {
+  await writeFile(`${OUT}/config.js`, `globalThis.__THEORY_TUTOR_CONFIG__ = Object.freeze({ buildVersion: \"rebuild-block1\", supabaseUrl: \"\", supabasePublishableKey: \"\" });\n`);
 }
 
-const browserConfig = {
-  buildVersion: "v0.7",
-  supabaseUrl,
-  supabasePublishableKey: publishableKey,
-};
-await writeFile(
-  resolve(site, "config.js"),
-  `window.__THEORY_TUTOR_CONFIG__ = Object.freeze(${JSON.stringify(browserConfig, null, 2)});\n`,
-  "utf8",
-);
-
-console.log(`Built static site at ${site} (${supabaseUrl ? "Supabase persistence" : "local preview persistence"})`);
+console.log("Built clean Block 1 site in ./site");
