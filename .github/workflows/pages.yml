@@ -46,7 +46,9 @@ jobs:
           python scripts/apply-lesson-clarity.py
           python scripts/final-lesson-clarity.py
       - name: Apply 2026 UI redesign
-        run: python scripts/redesign-ui.py
+        run: |
+          python scripts/redesign-ui.py
+          python scripts/ui-polish.py
       - name: Verify curriculum and learning engine
         run: npm test
       - name: Check common mobile and tablet widths
