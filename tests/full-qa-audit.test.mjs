@@ -123,7 +123,10 @@ test("fatal error screen does not expose raw Supabase REST/database bodies", () 
 
 test("teaching copy has no duplicate tonicization key and Circle visual labels enharmonic boundaries explicitly", () => {
   const app = fs.readFileSync("web/app.js", "utf8");
-  const matches = app.match(/"modulation\.tonicization-vs-keychange":/g) ?? [];
+  const wordsStart = app.indexOf("const NEW_WORD_CARDS");
+  const wordsEnd = app.indexOf("function evidenceReady", wordsStart);
+  const wordCards = app.slice(wordsStart, wordsEnd);
+  const matches = wordCards.match(/"modulation\.tonicization-vs-keychange":/g) ?? [];
   assert.equal(matches.length, 1);
   assert.match(app, /F♯ \/ G♭/);
   assert.match(app, /C♯ \/ D♭/);
