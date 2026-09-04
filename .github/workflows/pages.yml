@@ -52,7 +52,6 @@ jobs:
       - name: Apply full QA bug sweep
         run: |
           python scripts/qa-bug-sweep.py
-          python scripts/qa-semantic-variety.py
           python scripts/qa-finalize.py
       - name: Verify curriculum, UI, and learning engine
         run: npm test
