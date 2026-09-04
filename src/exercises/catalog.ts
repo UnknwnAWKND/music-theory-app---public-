@@ -67,15 +67,6 @@ function seventhLabel(q: SeventhQuality) {
   return ({ major7: "major 7", minor7: "minor 7", dominant7: "dominant 7", halfDiminished7: "half-diminished 7", diminished7: "fully diminished 7" } as const)[q];
 }
 
-function pitchExercise(skillId: string, index: number): Exercise {
-  if (skillId === "pitch.accidentals") {
-    const pairs = [["C♯", "D♭"], ["D♯", "E♭"], ["F♯", "G♭"], ["G♯", "A♭"], ["A♯", "B♭"]] as const;
-    const pair = pick(pairs, index);
-    return text(skillId, index, `What is another name for ${pair[0]}?`, pair[1]);
-  }
-  return text(skillId, index, index % 2 ? "How many semitones are in a whole step?" : "How many semitones are in a half step?", index % 2 ? "2" : "1", ["1", "2", "3"]);
-}
-
 function intervalExercise(skillId: string, index: number): Exercise {
   if (skillId === "interval.generic-number") return text(skillId, index, "C to E is what interval number?", "3rd", ["2nd", "3rd", "4th"]);
   if (skillId === "interval.quality-system") return text(skillId, index, "Which interval numbers can be major or minor?", "2nds, 3rds, 6ths, and 7ths", ["1sts, 4ths, 5ths, and octaves", "2nds, 3rds, 6ths, and 7ths"]);
@@ -301,7 +292,6 @@ function guitarExercise(skillId:string,index:number):Exercise{
 
 export function exerciseForSkill(skillId: string, index = 0): Exercise {
   if (!SKILL_BY_ID.has(skillId)) throw new Error(`Unknown skill: ${skillId}`);
-  if (skillId.startsWith("pitch.")) return pitchExercise(skillId,index);
   if (skillId.startsWith("interval.")) return intervalExercise(skillId,index);
   if (skillId.startsWith("triad.")) return triadExercise(skillId,index);
   if (skillId.startsWith("major.") || skillId==="scale.degree-numbers") return majorExercise(skillId,index);

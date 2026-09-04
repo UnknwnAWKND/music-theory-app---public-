@@ -1,5 +1,5 @@
-import { SKILLS } from "../curriculum/index.js";
-import { deriveSkillEvidence } from "../learning/index.js";
+import { SKILLS, SKILL_BY_ID } from "../curriculum/index.js";
+import { deriveSkillEvidence, evidencePolicyForModes, normalizeLearningAttempt, } from "../learning/index.js";
 import { ratingForAttempt } from "../scheduler/index.js";
 import { planSession } from "../session/index.js";
 export class TutorService {
@@ -8,6 +8,9 @@ export class TutorService {
     constructor(options) {
         this.repository = options.repository;
         this.scheduler = options.scheduler;
+    }
+    evidencePolicy(skillId) {
+        return evidencePolicyForModes(SKILL_BY_ID.get(skillId)?.evidence ?? []);
     }
     async previewPlan(userId, now = new Date()) {
         const states = await this.repository.allSkillStates(userId);
@@ -23,26 +26,32 @@ export class TutorService {
     }
     async submitAttempt(input) {
         const previousAttempts = await this.repository.attemptsForSkill(input.userId, input.skillId);
-        const previousEvidence = deriveSkillEvidence(previousAttempts);
-        await this.repository.appendAttempt(input);
+        const policy = this.evidencePolicy(input.skillId);
+        const previousEvidence = deriveSkillEvidence(previousAttempts, policy);
+        const normalizedAttempt = normalizeLearningAttempt(input, previousAttempts);
+        const normalized = { ...input, ...normalizedAttempt };
+        await this.repository.appendAttempt(normalized);
         const attempts = await this.repository.attemptsForSkill(input.userId, input.skillId);
-        const evidence = deriveSkillEvidence(attempts);
-        await this.repository.upsertSkillState(input.userId, input.skillId, evidence, input.occurredAt);
+        const evidence = deriveSkillEvidence(attempts, policy);
+        await this.repository.upsertSkillState(input.userId, input.skillId, evidence, normalized.occurredAt);
         if (this.scheduler) {
             const existingCard = await this.repository.getSchedulerCard(input.userId, input.skillId);
             const transitionedToReady = !previousEvidence.ready && evidence.ready;
             if (transitionedToReady && !existingCard) {
-                const seeded = this.scheduler.initializeAfterAcquisition(input.skillId, new Date(input.occurredAt));
+                const seeded = this.scheduler.initializeAfterAcquisition(input.skillId, new Date(normalized.occurredAt));
                 await this.repository.upsertSchedulerCard(input.userId, seeded.card);
                 await this.repository.appendSchedulerReview(input.userId, seeded.log, "initial-seed");
             }
-            else if (input.context === "review" &&
-                input.coldProbe &&
-                input.independent &&
-                input.directEvidence &&
-                (input.outcome === "correct" || input.outcome === "incorrect") &&
+            else if (normalized.eventKind === "response" &&
+                normalized.context === "review" &&
+                normalized.coldProbe &&
+                normalized.firstSubmission &&
+                normalized.independent &&
+                normalized.directEvidence &&
+                normalized.guidance === "none" &&
+                (normalized.outcome === "correct" || normalized.outcome === "incorrect") &&
                 existingCard) {
-                const result = this.scheduler.schedule(existingCard, ratingForAttempt(input), new Date(input.occurredAt));
+                const result = this.scheduler.schedule(existingCard, ratingForAttempt(normalized), new Date(normalized.occurredAt));
                 await this.repository.upsertSchedulerCard(input.userId, result.card);
                 await this.repository.appendSchedulerReview(input.userId, result.log, "review");
             }
@@ -58,7 +67,7 @@ export class TutorService {
             const attempts = await this.repository.attemptsForSkill(userId, skill.id);
             if (attempts.length === 0)
                 continue;
-            const evidence = deriveSkillEvidence(attempts);
+            const evidence = deriveSkillEvidence(attempts, this.evidencePolicy(skill.id));
             await this.repository.upsertSkillState(userId, skill.id, evidence, attempts.at(-1)?.occurredAt);
         }
     }

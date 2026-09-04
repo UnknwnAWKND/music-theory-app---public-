@@ -36,8 +36,6 @@ export function lessonForSkill(skillId) {
     if (interval)
         return interval;
     const exact = {
-        "pitch.accidentals": { summary: "Sometimes the same piano key has two different note names.", rule: "The name can change even when the piano key does not.", workedExample: "C♯ and D♭ are the same black key on the piano." },
-        "pitch.half-whole": { summary: "Half steps and whole steps measure distance between notes.", rule: "Half step = one piano key to the next. Whole step = two half steps.", workedExample: "E→F is a half step. F→G is a whole step." },
         "interval.generic-number": { summary: "The interval number comes from the letter names.", rule: "Count both the starting note and ending note.", workedExample: "C→E is a 3rd because C–D–E gives you three letter names." },
         "interval.quality-system": { summary: "The interval number tells you the letter distance. The quality tells you the exact size.", rule: "2nds, 3rds, 6ths, and 7ths can be major or minor. 1, 4, 5, and 8 use perfect.", workedExample: "C→E is a major 3rd. C→E♭ is a minor 3rd." },
         "interval.A4-d5": { summary: "A tritone spans six semitones. C–F♯ is an augmented 4th; C–G♭ is a diminished 5th. Same sounding distance, different spelling and interval identity." },

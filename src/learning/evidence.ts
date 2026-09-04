@@ -215,7 +215,7 @@ export function normalizeLearningAttempt(
     firstSubmission: first,
     stage,
     guidance: support,
-    solutionSeen: input.solutionSeen ?? support === "answer-reveal" || kind === "answer-reveal" || input.outcome === "revealed",
+    solutionSeen: input.solutionSeen ?? (support === "answer-reveal" || kind === "answer-reveal" || input.outcome === "revealed"),
     coldProbe,
     priorRelevantExposureAt,
     elapsedSinceRelevantExposureMs,
@@ -364,7 +364,7 @@ export function nextAcquisitionAction(
   const responses = attempts.filter((x) => x.context === "acquisition" && isResponse(x));
   if (responses.length === 0) return "continue-independent";
   const latest = responses.at(-1)!;
-  if (latest.outcome === "correct" && guidance(latest) === "none") return "continue-independent";
+  if (latest.outcome === "correct") return "continue-independent";
   if (guidance(latest) !== "none" || latest.outcome === "hinted" || latest.outcome === "revealed") return "scaffold-and-retry";
 
   const sessionAttempts = responses.filter((x) => x.sessionId === latest.sessionId);

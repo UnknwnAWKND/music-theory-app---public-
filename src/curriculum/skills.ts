@@ -11,28 +11,24 @@ const s = (
 ): SkillDefinition => ({ id, phase, title, prerequisites, evidence, tags, optional });
 
 export const SKILLS: readonly SkillDefinition[] = [
-  // Entry / foundations
-  s("pitch.accidentals", 0, "Sharps, flats, and enharmonic spellings", [], ["identify", "diagnose"], ["pitch", "spelling"]),
-  s("pitch.half-whole", 0, "Half steps and whole steps", [], ["construct", "identify"], ["pitch"]),
-
   // Phase 1 — intervals
   s("interval.generic-number", 1, "Generic interval number", [], ["identify"], ["interval", "spelling"]),
-  s("interval.quality-system", 1, "Perfect/major/minor/augmented/diminished quality system", ["interval.generic-number", "pitch.half-whole"], ["identify", "diagnose"], ["interval"]),
-  s("interval.P1", 1, "Construct perfect unison", ["interval.quality-system", "pitch.accidentals"], ["construct", "identify"], ["interval"]),
-  s("interval.m2", 1, "Construct minor 2nd", ["interval.quality-system", "pitch.accidentals"], ["construct", "identify"], ["interval"]),
-  s("interval.M2", 1, "Construct major 2nd", ["interval.quality-system", "pitch.accidentals"], ["construct", "identify"], ["interval"]),
-  s("interval.m3", 1, "Construct minor 3rd", ["interval.quality-system", "pitch.accidentals"], ["construct", "identify"], ["interval"]),
-  s("interval.M3", 1, "Construct major 3rd", ["interval.quality-system", "pitch.accidentals"], ["construct", "identify"], ["interval"]),
-  s("interval.P4", 1, "Construct perfect 4th", ["interval.quality-system", "pitch.accidentals"], ["construct", "identify"], ["interval"]),
-  s("interval.A4-d5", 1, "Distinguish augmented 4th and diminished 5th", ["interval.P4", "interval.quality-system", "pitch.accidentals"], ["construct", "identify", "diagnose"], ["interval", "spelling"]),
-  s("interval.P5", 1, "Construct perfect 5th", ["interval.quality-system", "pitch.accidentals"], ["construct", "identify"], ["interval"]),
-  s("interval.m6", 1, "Construct minor 6th", ["interval.quality-system", "pitch.accidentals"], ["construct", "identify"], ["interval"]),
-  s("interval.M6", 1, "Construct major 6th", ["interval.quality-system", "pitch.accidentals"], ["construct", "identify"], ["interval"]),
-  s("interval.m7", 1, "Construct minor 7th", ["interval.quality-system", "pitch.accidentals"], ["construct", "identify"], ["interval"]),
-  s("interval.M7", 1, "Construct major 7th", ["interval.quality-system", "pitch.accidentals"], ["construct", "identify"], ["interval"]),
+  s("interval.quality-system", 1, "Perfect/major/minor/augmented/diminished quality system", ["interval.generic-number", ], ["identify", "diagnose"], ["interval"]),
+  s("interval.P1", 1, "Construct perfect unison", ["interval.quality-system", ], ["construct", "identify"], ["interval"]),
+  s("interval.m2", 1, "Construct minor 2nd", ["interval.quality-system", ], ["construct", "identify"], ["interval"]),
+  s("interval.M2", 1, "Construct major 2nd", ["interval.quality-system", ], ["construct", "identify"], ["interval"]),
+  s("interval.m3", 1, "Construct minor 3rd", ["interval.quality-system", ], ["construct", "identify"], ["interval"]),
+  s("interval.M3", 1, "Construct major 3rd", ["interval.quality-system", ], ["construct", "identify"], ["interval"]),
+  s("interval.P4", 1, "Construct perfect 4th", ["interval.quality-system", ], ["construct", "identify"], ["interval"]),
+  s("interval.A4-d5", 1, "Distinguish augmented 4th and diminished 5th", ["interval.P4", "interval.quality-system", ], ["construct", "identify", "diagnose"], ["interval", "spelling"]),
+  s("interval.P5", 1, "Construct perfect 5th", ["interval.quality-system", ], ["construct", "identify"], ["interval"]),
+  s("interval.m6", 1, "Construct minor 6th", ["interval.quality-system", ], ["construct", "identify"], ["interval"]),
+  s("interval.M6", 1, "Construct major 6th", ["interval.quality-system", ], ["construct", "identify"], ["interval"]),
+  s("interval.m7", 1, "Construct minor 7th", ["interval.quality-system", ], ["construct", "identify"], ["interval"]),
+  s("interval.M7", 1, "Construct major 7th", ["interval.quality-system", ], ["construct", "identify"], ["interval"]),
   s("interval.P8", 1, "Construct perfect octave", ["interval.quality-system"], ["construct", "identify"], ["interval"]),
   s("interval.mixed-core", 1, "Mixed simple interval construction", ["interval.P1", "interval.m2", "interval.M2", "interval.m3", "interval.M3", "interval.P4", "interval.A4-d5", "interval.P5", "interval.m6", "interval.M6", "interval.m7", "interval.M7", "interval.P8"], ["construct", "identify"], ["interval"]),
-  s("interval.spelling", 1, "Correctly spell simple intervals", ["interval.mixed-core", "pitch.accidentals"], ["construct", "diagnose"], ["interval", "spelling"]),
+  s("interval.spelling", 1, "Correctly spell simple intervals", ["interval.mixed-core", ], ["construct", "diagnose"], ["interval", "spelling"]),
   s("interval.inversion", 1, "Invert simple intervals", ["interval.mixed-core"], ["translate", "identify"], ["interval"]),
 
   // Phase 2 — triads
@@ -46,10 +42,10 @@ export const SKILLS: readonly SkillDefinition[] = [
   s("triad.root-vs-bass", 2, "Distinguish chord root from bass note", ["triad.members"], ["identify", "diagnose"], ["chord"]),
 
   // Phase 3 — major scales
-  s("major.formula", 3, "Major-scale W-W-H-W-W-W-H formula", ["pitch.half-whole"], ["construct", "identify"], ["scale"]),
+  s("major.formula", 3, "Major-scale W-W-H-W-W-W-H formula", ["interval.quality-system"], ["construct", "identify"], ["scale"]),
   s("scale.degree-numbers", 3, "Scale degrees 1–7", ["major.formula"], ["translate", "identify"], ["scale", "degree"]),
   s("major.degree-intervals", 3, "Major scale degrees as tonic intervals", ["major.formula", "scale.degree-numbers", "interval.mixed-core"], ["translate", "construct"], ["scale", "degree", "interval"]),
-  s("major.spelling", 3, "Spell major scales with one of each letter", ["major.formula", "pitch.accidentals", "interval.spelling"], ["construct", "diagnose"], ["scale", "spelling"]),
+  s("major.spelling", 3, "Spell major scales with one of each letter", ["major.formula", "interval.spelling"], ["construct", "diagnose"], ["scale", "spelling"]),
   s("major.construct", 3, "Construct major scales from any practical tonic", ["major.formula", "major.spelling"], ["construct", "diagnose"], ["scale"]),
   s("major.degree-to-note", 3, "Retrieve a note from key + scale degree", ["major.construct", "scale.degree-numbers"], ["translate"], ["scale", "degree"]),
   s("major.note-to-degree", 3, "Retrieve scale degree from key + note", ["major.construct", "scale.degree-numbers"], ["translate"], ["scale", "degree"]),
@@ -129,7 +125,7 @@ export const SKILLS: readonly SkillDefinition[] = [
   s("keys.minor-signatures", 10, "Minor key signatures via relative major", ["keys.signatures", "minor.relative"], ["identify", "translate"], ["keys", "minor"]),
   s("circle.relative-minor", 10, "Place relative minors on the circle", ["circle.major", "keys.minor-signatures"], ["translate", "identify"], ["circle", "minor"]),
   s("keys.closely-related", 10, "Identify closely related keys", ["circle.relative-minor"], ["identify", "translate"], ["keys", "modulation"]),
-  s("keys.enharmonic", 10, "Understand enharmonic key regions", ["circle.major", "pitch.accidentals"], ["identify", "diagnose"], ["keys", "spelling"]),
+  s("keys.enharmonic", 10, "Understand enharmonic key regions", ["circle.major", ], ["identify", "diagnose"], ["keys", "spelling"]),
 
   // Phase 11 — advanced practical harmony
   s("extension.compound-intervals", 11, "Compound intervals for 9ths, 11ths, and 13ths", ["interval.mixed-core"], ["translate", "identify", "construct"], ["advanced", "interval", "extension"]),
@@ -153,7 +149,7 @@ export const SKILLS: readonly SkillDefinition[] = [
 
   // Phase 12 — guitar transfer
   s("guitar.open-strings", 12, "Standard-tuning open strings", ["analysis.integrated"], ["identify", "apply"], ["guitar"]),
-  s("guitar.fret-notes", 12, "Locate notes across the fretboard", ["guitar.open-strings", "pitch.accidentals", "pitch.half-whole"], ["construct", "identify", "apply"], ["guitar"]),
+  s("guitar.fret-notes", 12, "Locate notes across the fretboard", ["guitar.open-strings", ], ["construct", "identify", "apply"], ["guitar"]),
   s("guitar.intervals", 12, "Map intervals from arbitrary fretboard roots", ["guitar.fret-notes", "interval.mixed-core"], ["construct", "identify", "apply"], ["guitar", "interval"]),
   s("guitar.triads", 12, "Build triads across string sets", ["guitar.intervals", "triad.mixed"], ["construct", "apply"], ["guitar", "chord"]),
   s("guitar.inversions", 12, "Map triad inversions across the neck", ["guitar.triads", "inversion.triad"], ["construct", "identify", "apply"], ["guitar", "inversion"]),

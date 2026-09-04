@@ -47,6 +47,7 @@ const state = {
   feedback: null,
   lessonVisible: false,
   supportedNext: false,
+  guidanceForNext: "none",
   submitted: false,
   selectedChoice: "",
   startedPromptAt: 0,
@@ -121,7 +122,7 @@ function defaultLearningSettings(userId) {
     desiredRetention: 0.90,
     maximumIntervalDays: 36500,
     requirePreviousLessons: true,
-    curriculumVersion: "v0.7",
+    curriculumVersion: "v0.8",
     schedulerVersion: "fsrs-6",
   };
 }
@@ -342,7 +343,6 @@ async function loadToday() {
 }
 
 const PHASE_TITLES = Object.freeze({
-  0: "Foundations",
   1: "Intervals",
   2: "Triads",
   3: "Major scales",
@@ -358,7 +358,6 @@ const PHASE_TITLES = Object.freeze({
 });
 
 const PHASE_INTROS = Object.freeze({
-  0: ["This phase is about note names that share the same piano key.", "You will learn when one sound can have more than one correct name."],
   1: ["This phase is about intervals.", "Intervals tell you the distance between two notes. They are the building blocks for scales and chords."],
   2: ["This phase is about triads.", "Triads are simple three-note chords. You will learn how their notes are built from the root."],
   3: ["This phase is about major scales.", "You will learn the pattern behind every major key instead of memorizing unrelated note lists."],
@@ -374,9 +373,8 @@ const PHASE_INTROS = Object.freeze({
 });
 
 const NEW_WORD_CARDS = Object.freeze({
-  "pitch.accidentals": [["Enharmonic", "Two note names that use the same piano key and make the same sound.", "C♯ and D♭ are enharmonic. They are two names for the same black key."]],
-  "interval.generic-number": [["Interval", "The distance between two notes.", "C to E is an interval."]],
-  "interval.quality-system": [["Quality", "The word that tells you the exact size of an interval.", "A 3rd can be major or minor. Major and minor are qualities."]],
+  "interval.generic-number": [["Interval", "The distance between two notes.", "C to E is an interval."], ["Accidental", "A sharp or flat attached to a note name.", "F♯ means F sharp. B♭ means B flat."], ["Enharmonic", "Two note names that use the same piano key and make the same sound.", "C♯ and D♭ are enharmonic names for the same black key."]],
+  "interval.quality-system": [["Half step", "The distance from one piano key to the very next key.", "E to F is one half step."], ["Whole step", "Two half steps.", "F to G is one whole step."], ["Quality", "The word that tells you the exact size of an interval.", "A 3rd can be major or minor. Major and minor are qualities."]],
   "triad.members": [["Triad", "A three-note chord built from a root, a 3rd, and a 5th.", "C–E–G is a C major triad."]],
   "scale.degree-numbers": [["Scale degree", "A number that tells you where a note sits inside a scale.", "In C major, C is 1 and G is 5."]],
   "diatonic.definition": [["Diatonic", "A note or chord that belongs to the current key.", "In C major, C, D, E, F, G, A, and B are diatonic."], ["Chromatic", "A note that is outside the current key.", "In C major, F♯ is chromatic."]],
@@ -452,7 +450,7 @@ async function renderCurriculum() {
   const records = await repo.allSkillStates(USER_ID);
   const { byId, readyIds } = progressSummary(records);
   const locking = userSettings?.requirePreviousLessons !== false;
-  const summaries = Array.from({ length: 13 }, (_, phase) => phaseSummary(phase, byId, readyIds));
+  const summaries = Array.from({ length: 12 }, (_, index) => phaseSummary(index + 1, byId, readyIds));
   const firstIncomplete = summaries.find((x) => !x.complete)?.phase ?? 12;
   const cards = summaries.map((summary) => {
     const open = !locking || summary.canOpen;
@@ -696,6 +694,7 @@ async function beginItem() {
   state.feedback = null;
   state.submitted = false;
   state.supportedNext = false;
+  state.guidanceForNext = "none";
   state.selectedChoice = "";
   const item = state.queue[state.itemIndex];
   if (item.kind === "new" || item.kind === "acquisition" || item.kind === "review-repair") {
@@ -743,7 +742,25 @@ function renderLessonStep(item, label = "Learn", pageIndex = 0) {
   document.querySelector("#lessonTry").onclick = async () => {
     if (pageIndex < pages.length - 1) return renderLessonStep(item, label, pageIndex + 1);
     state.lessonVisible = false;
+    state.guidanceForNext = "explanation";
     if (item.kind === "review-repair") state.supportedNext = true;
+    await service.submitAttempt({
+      userId: USER_ID,
+      skillId: item.skillId,
+      sessionId: state.session.sessionId,
+      promptSignature: `lesson:${item.skillId}:${pageIndex}`,
+      occurredAt: new Date().toISOString(),
+      outcome: "exposed",
+      independent: false,
+      directEvidence: false,
+      context: item.kind === "review" || item.kind === "repair" || item.kind === "review-repair" ? "review" : "acquisition",
+      eventKind: "explanation",
+      guidance: "explanation",
+      solutionSeen: false,
+      evidenceSource: "objective",
+      evidenceVersion: "v2",
+      metadata: { lessonExposure: true },
+    });
     await loadExercise(item);
   };
 }
@@ -858,6 +875,41 @@ function collectValues(spec) {
   return { main: document.querySelector("#mainAnswer")?.value ?? "" };
 }
 
+function responseModeForEvidence(spec, exercise) {
+  if (spec.kind === "self-check") return "application";
+  if (spec.kind === "choice") {
+    const skill = SKILL_BY_ID.get(exercise.skillId);
+    return skill?.evidence?.includes("diagnose") ? "discrimination" : "recognition";
+  }
+  return "constructed";
+}
+
+function evidenceAttributesForExercise(exercise) {
+  const payload = exercise?.payload ?? {};
+  const keys = ["root", "tonic", "note", "interval", "quality", "degree", "mode", "romans", "expectedRoot", "expectedQuality", "naturalKeyIndex"];
+  const attributes = {};
+  for (const key of keys) {
+    const value = payload[key];
+    if (["string", "number", "boolean"].includes(typeof value) || (Array.isArray(value) && value.every((x) => ["string", "number"].includes(typeof x)))) {
+      attributes[key] = value;
+    }
+  }
+  return attributes;
+}
+
+function exampleSignatureForExercise(exercise) {
+  const attributes = evidenceAttributesForExercise(exercise);
+  const keys = Object.keys(attributes).sort();
+  if (!keys.length) return `${exercise.type}:${String(exercise.prompt).trim().toLowerCase()}`;
+  const stable = Object.fromEntries(keys.map((key) => [key, attributes[key]]));
+  return `${exercise.type}:${JSON.stringify(stable)}`;
+}
+
+function activeGuidance() {
+  if (state.supportedNext) return "explanation";
+  return state.guidanceForNext || "none";
+}
+
 async function submitObjective(item) {
   const values = collectValues(state.currentSpec);
   if (state.currentSpec.kind === "choice" && !values.main) return;
@@ -865,9 +917,14 @@ async function submitObjective(item) {
   let assessment;
   try { assessment = gradeExercise(state.currentExercise, answer); }
   catch (err) { return showFatal(err); }
-  const independent = !state.supportedNext;
+  const support = activeGuidance();
+  const independent = support === "none";
   const occurredAt = new Date().toISOString();
-  const evidence = await service.submitAttempt({
+  const context = item.kind === "review" || item.kind === "repair" || item.kind === "review-repair" ? "review" : "acquisition";
+  const responseMode = responseModeForEvidence(state.currentSpec, state.currentExercise);
+  const exampleSignature = exampleSignatureForExercise(state.currentExercise);
+  const exampleAttributes = evidenceAttributesForExercise(state.currentExercise);
+  let evidence = await service.submitAttempt({
     userId: USER_ID,
     skillId: item.skillId,
     sessionId: state.session.sessionId,
@@ -876,9 +933,16 @@ async function submitObjective(item) {
     outcome: assessment.correct ? "correct" : "incorrect",
     independent,
     directEvidence: true,
-    context: item.kind === "review" || item.kind === "repair" || item.kind === "review-repair" ? "review" : "acquisition",
+    context,
     coldProbe: Boolean(item.firstProbe && independent),
     evidenceSource: "objective",
+    eventKind: "response",
+    responseMode,
+    guidance: support,
+    solutionSeen: support === "answer-reveal",
+    exampleSignature,
+    exampleAttributes,
+    evidenceVersion: "v2",
     responseMs: Math.round(performance.now() - state.startedPromptAt),
     assessmentCode: assessment.code,
     metadata: { exerciseType: state.currentExercise.type },
@@ -886,6 +950,33 @@ async function submitObjective(item) {
   item.firstProbe = false;
   state.submitted = true;
   const expected = readableExpected(state.currentExercise, assessment);
+  if (!assessment.correct && expected) {
+    evidence = await service.submitAttempt({
+      userId: USER_ID,
+      skillId: item.skillId,
+      sessionId: state.session.sessionId,
+      promptSignature: state.currentExercise.id,
+      occurredAt: new Date().toISOString(),
+      outcome: "revealed",
+      independent: false,
+      directEvidence: false,
+      context,
+      coldProbe: false,
+      evidenceSource: "objective",
+      eventKind: "answer-reveal",
+      responseMode,
+      guidance: "answer-reveal",
+      solutionSeen: true,
+      exampleSignature,
+      exampleAttributes,
+      evidenceVersion: "v2",
+      assessmentCode: "answer-revealed-after-error",
+      metadata: { exerciseType: state.currentExercise.type },
+    });
+    state.guidanceForNext = "answer-reveal";
+  } else {
+    state.guidanceForNext = "none";
+  }
   state.feedback = {
     correct: assessment.correct,
     expected: assessment.correct ? "" : expected,
@@ -904,7 +995,8 @@ function diagnosticDetail(assessment, expected) {
 }
 
 async function submitSelfCheck(item, correct) {
-  const independent = !state.supportedNext;
+  const support = activeGuidance();
+  const independent = support === "none";
   const evidence = await service.submitAttempt({
     userId: USER_ID,
     skillId: item.skillId,
@@ -917,16 +1009,24 @@ async function submitSelfCheck(item, correct) {
     context: item.kind === "review" || item.kind === "repair" || item.kind === "review-repair" ? "review" : "acquisition",
     coldProbe: Boolean(item.firstProbe && independent),
     evidenceSource: "self-report",
+    eventKind: "response",
+    responseMode: "application",
+    guidance: support,
+    solutionSeen: false,
+    exampleSignature: exampleSignatureForExercise(state.currentExercise),
+    exampleAttributes: evidenceAttributesForExercise(state.currentExercise),
+    evidenceVersion: "v2",
     responseMs: Math.round(performance.now() - state.startedPromptAt),
     assessmentCode: correct ? "self-check-correct" : "self-check-not-yet",
     metadata: { exerciseType: state.currentExercise.type },
   });
   item.firstProbe = false;
   state.submitted = true;
+  state.guidanceForNext = "none";
   state.feedback = {
     correct,
     expected: "",
-    detail: correct ? (evidence.ready ? "Recorded as self-reported readiness evidence." : "Recorded. You'll get another varied application before this becomes ready.") : "No problem. Review the relationship and try a different version rather than grinding the identical task.",
+    detail: correct ? (evidence.ready ? "Recorded as application evidence." : "Recorded. A later varied application can strengthen readiness evidence.") : "No problem. Review the relationship and try a different version rather than grinding the identical task.",
     evidence,
   };
   renderPractice();
@@ -965,23 +1065,7 @@ async function afterFeedback(item) {
   await loadExercise(item);
 }
 
-async function cleanAcquisitionPass(item) {
-  if (item.kind !== "new" && item.kind !== "acquisition") return false;
-  const attempts = (await repo.attemptsForSkill(USER_ID, item.skillId)).filter((x) => x.sessionId === state.session.sessionId && x.context === "acquisition");
-  const direct = attempts.filter((x) => x.directEvidence && x.independent);
-  return direct.length >= 3 && direct.every((x) => x.outcome === "correct") && new Set(direct.map((x) => x.promptSignature)).size >= 3;
-}
-
-async function maybeAppendFastPath(completedItem) {
-  if (state.fastPathPasses >= MAX_FAST_PATH_PASSES) return false;
-  if (!(await cleanAcquisitionPass(completedItem))) return false;
-  const refreshed = await service.previewPlan(USER_ID, new Date());
-  if (refreshed.repairSkillIds.length || refreshed.reviewSkillIds.length || refreshed.acquiringSkillId || !refreshed.newSkillId) return false;
-  if (state.queue.some((x) => x.skillId === refreshed.newSkillId)) return false;
-  state.queue.push({ skillId: refreshed.newSkillId, kind: "new", firstProbe: false });
-  state.fastPathPasses += 1;
-  return true;
-}
+async function maybeAppendFastPath() { return false; }
 
 async function advanceItem() {
   const item = state.queue[state.itemIndex];

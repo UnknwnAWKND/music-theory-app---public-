@@ -14,6 +14,7 @@ export declare class TutorService {
     private readonly repository;
     private readonly scheduler?;
     constructor(options: TutorServiceOptions);
+    private evidencePolicy;
     previewPlan(userId: string, now?: Date): Promise<SessionPlan>;
     startSession(userId: string, now?: Date): Promise<StartedStudySession>;
     submitAttempt(input: AppendAttemptInput): Promise<DerivedSkillEvidence>;

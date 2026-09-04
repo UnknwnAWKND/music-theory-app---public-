@@ -25,7 +25,7 @@ create table if not exists public.learning_attempts (
   skill_id text not null,
   prompt_signature text not null,
   occurred_at timestamptz not null default now(),
-  outcome text not null check (outcome in ('correct','incorrect','hinted','revealed')),
+  outcome text not null check (outcome in ('correct','incorrect','hinted','revealed','exposed')),
   independent boolean not null,
   direct_evidence boolean not null,
   evidence_context text not null check (evidence_context in ('acquisition','review','transfer','diagnostic')),
@@ -34,8 +34,34 @@ create table if not exists public.learning_attempts (
   assessment_code text,
   metadata jsonb not null default '{}'::jsonb,
   evidence_source text not null default 'objective' check (evidence_source in ('objective','self-report')),
+  event_kind text not null default 'response' check (event_kind in ('response','hint','explanation','answer-reveal')),
+  submission_index integer check (submission_index is null or submission_index >= 1),
+  first_submission boolean,
+  attempt_stage text check (attempt_stage is null or attempt_stage in ('initial','retry','relearning')),
+  response_mode text check (response_mode is null or response_mode in ('recognition','constructed','discrimination','application')),
+  guidance text not null default 'none' check (guidance in ('none','hint','explanation','answer-reveal')),
+  solution_seen boolean not null default false,
+  example_signature text,
+  example_attributes jsonb not null default '{}'::jsonb,
+  confusion_with text,
+  prior_relevant_exposure_at timestamptz,
+  elapsed_since_relevant_exposure_ms bigint check (elapsed_since_relevant_exposure_ms is null or elapsed_since_relevant_exposure_ms >= 0),
+  evidence_version text not null default 'v2' check (evidence_version in ('legacy-v1','v2')),
   created_at timestamptz not null default now(),
   foreign key (session_id, user_id) references public.study_sessions(id, user_id) on delete restrict
+);
+
+create table if not exists public.retired_skill_history (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  skill_id text not null,
+  retired_reason text not null,
+  retired_at timestamptz not null default now(),
+  attempts jsonb not null default '[]'::jsonb,
+  skill_state jsonb,
+  scheduler_card jsonb,
+  scheduler_reviews jsonb not null default '[]'::jsonb,
+  unique (user_id, skill_id)
 );
 
 create index if not exists learning_attempts_user_skill_time_idx
@@ -58,6 +84,10 @@ create table if not exists public.skill_state (
   successful_delayed_reviews integer not null default 0 check (successful_delayed_reviews >= 0),
   last_direct_outcome text check (last_direct_outcome is null or last_direct_outcome in ('correct','incorrect')),
   evidence_basis text not null default 'none' check (evidence_basis in ('none','objective','self-report','mixed')),
+  evidence_summary jsonb not null default '{}'::jsonb,
+  evidence_version text not null default 'v2' check (evidence_version in ('legacy-v1','v2')),
+  ready_established_at timestamptz,
+  retained_established_at timestamptz,
   last_attempt_at timestamptz,
   updated_at timestamptz not null default now(),
   primary key (user_id, skill_id)
@@ -109,7 +139,7 @@ create table if not exists public.user_learning_settings (
   desired_retention double precision not null default 0.90 check (desired_retention >= 0.70 and desired_retention <= 0.99),
   maximum_interval_days integer not null default 36500 check (maximum_interval_days >= 1),
   require_previous_lessons boolean not null default true,
-  curriculum_version text not null default 'v0.7',
+  curriculum_version text not null default 'v0.8',
   scheduler_version text not null default 'fsrs-6',
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
@@ -140,6 +170,7 @@ alter table public.skill_state enable row level security;
 alter table public.scheduler_cards enable row level security;
 alter table public.scheduler_reviews enable row level security;
 alter table public.user_learning_settings enable row level security;
+alter table public.retired_skill_history enable row level security;
 alter table public.user_profiles enable row level security;
 
 -- Least-privilege Data API grants. Signed-out visitors get no learner-data access.
@@ -149,6 +180,7 @@ revoke all on table public.skill_state from anon, authenticated;
 revoke all on table public.scheduler_cards from anon, authenticated;
 revoke all on table public.scheduler_reviews from anon, authenticated;
 revoke all on table public.user_learning_settings from anon, authenticated;
+revoke all on table public.retired_skill_history from anon, authenticated;
 revoke all on table public.user_profiles from anon, authenticated;
 
 grant select, insert, update on table public.study_sessions to authenticated;
