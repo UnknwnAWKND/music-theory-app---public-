@@ -8,15 +8,16 @@ type SkillOptions = {
 };
 
 function inferredOptions(phase: SkillDefinition["phase"], tags: readonly string[] = [], optional = false): SkillOptions {
-  if (tags.includes("interval")) return { priority: "foundation", recurrenceWeight: 5, acquisitionRoundSize: 10, thread: "interval" };
-  if (tags.includes("degree")) return { priority: "foundation", recurrenceWeight: 4, acquisitionRoundSize: 8, thread: "number-system" };
-  if (tags.includes("scale") && phase <= 3) return { priority: "foundation", recurrenceWeight: 4, acquisitionRoundSize: 8, thread: "scale" };
-  if (tags.includes("chord") && phase <= 4) return { priority: "foundation", recurrenceWeight: 4, acquisitionRoundSize: 8, thread: "triad" };
-  if (tags.includes("function")) return { priority: "core", recurrenceWeight: 3, acquisitionRoundSize: 8, thread: "function" };
-  if (tags.includes("melody")) return { priority: "foundation", recurrenceWeight: 4, acquisitionRoundSize: 8, thread: "chord-tone" };
-  if (tags.includes("guitar")) return { priority: "core", recurrenceWeight: 2, acquisitionRoundSize: 6, thread: "guitar" };
-  if (phase === 11 || optional) return { priority: "extension", recurrenceWeight: 1, acquisitionRoundSize: 6 };
-  return { priority: "core", recurrenceWeight: 2, acquisitionRoundSize: 8 };
+  if (tags.includes("number")) return { priority: "foundation", recurrenceWeight: 5, acquisitionRoundSize: 30, thread: "interval" };
+  if (tags.includes("interval")) return { priority: "foundation", recurrenceWeight: 5, acquisitionRoundSize: 30, thread: "interval" };
+  if (tags.includes("degree")) return { priority: "foundation", recurrenceWeight: 4, acquisitionRoundSize: 30, thread: "number-system" };
+  if (tags.includes("scale") && phase <= 3) return { priority: "foundation", recurrenceWeight: 4, acquisitionRoundSize: 30, thread: "scale" };
+  if (tags.includes("chord") && phase <= 4) return { priority: "foundation", recurrenceWeight: 4, acquisitionRoundSize: 30, thread: "triad" };
+  if (tags.includes("function")) return { priority: "core", recurrenceWeight: 3, acquisitionRoundSize: 30, thread: "function" };
+  if (tags.includes("melody")) return { priority: "foundation", recurrenceWeight: 4, acquisitionRoundSize: 30, thread: "chord-tone" };
+  if (tags.includes("guitar")) return { priority: "core", recurrenceWeight: 2, acquisitionRoundSize: 30, thread: "guitar" };
+  if (phase === 11 || optional) return { priority: "extension", recurrenceWeight: 1, acquisitionRoundSize: 30 };
+  return { priority: "core", recurrenceWeight: 2, acquisitionRoundSize: 30 };
 }
 
 const s = (
@@ -42,36 +43,36 @@ const s = (
 
 export const SKILLS: readonly SkillDefinition[] = [
   // Phase 1 — interval foundations. Numbers arrive in small contrasting sets, then quality is layered on.
-  s("interval.number-3-8", 1, "Interval numbers: 3rds and octaves", [], ["construct", "identify"], ["interval", "number"]),
+  s("interval.number-3-8", 1, "Interval numbers: 3rds and octaves", [], ["construct", "identify"], ["interval", "number"], false, { acquisitionRoundSize: 30 }),
   s("interval.number-4-5", 1, "Interval numbers: 4ths and 5ths", ["interval.number-3-8"], ["construct", "identify", "diagnose"], ["interval", "number"]),
   s("interval.number-mix-3-4-5-8", 1, "Mix 3rds, 4ths, 5ths, and octaves", ["interval.number-4-5"], ["construct", "identify"], ["interval", "number"]),
   s("interval.number-2-7", 1, "Interval numbers: 2nds and 7ths", ["interval.number-mix-3-4-5-8"], ["construct", "identify", "diagnose"], ["interval", "number"]),
   s("interval.number-mix-2-3-4-5-7-8", 1, "Mix 2nds, 3rds, 4ths, 5ths, 7ths, and octaves", ["interval.number-2-7"], ["construct", "identify"], ["interval", "number"]),
-  s("interval.number-6", 1, "Interval numbers: 6ths", ["interval.number-mix-2-3-4-5-7-8"], ["construct", "identify"], ["interval", "number"]),
+  s("interval.number-6", 1, "Interval numbers: 6ths", ["interval.number-mix-2-3-4-5-7-8"], ["construct", "identify"], ["interval", "number"], false, { acquisitionRoundSize: 30 }),
   // Keep this stable legacy ID: old attempt history remains valid as evidence for broad generic-number work.
-  s("interval.generic-number", 1, "Mixed interval numbers", ["interval.number-6"], ["construct", "identify", "diagnose"], ["interval", "number"]),
+  s("interval.generic-number", 1, "Mixed interval numbers", ["interval.number-6"], ["construct", "identify", "diagnose"], ["interval", "number"], false, { acquisitionRoundSize: 30 }),
   s("interval.quality-system", 1, "Major/minor and perfect interval families", ["interval.generic-number"], ["identify", "diagnose"], ["interval", "quality"]),
   s("interval.M3", 1, "Construct major 3rds", ["interval.quality-system"], ["construct", "identify"], ["interval"]),
   s("interval.m3", 1, "Distinguish and construct minor 3rds", ["interval.M3"], ["construct", "identify", "diagnose"], ["interval"]),
   s("interval.P4", 1, "Construct perfect 4ths", ["interval.m3"], ["construct", "identify"], ["interval"]),
   s("interval.P5", 1, "Distinguish and construct perfect 5ths", ["interval.P4"], ["construct", "identify", "diagnose"], ["interval"]),
-  s("interval.M2", 1, "Construct major 2nds", ["interval.P5"], ["construct", "identify"], ["interval"]),
-  s("interval.m2", 1, "Distinguish major and minor 2nds", ["interval.M2"], ["construct", "identify", "diagnose"], ["interval"]),
-  s("interval.M7", 1, "Construct major 7ths", ["interval.m2"], ["construct", "identify"], ["interval"]),
-  s("interval.m7", 1, "Distinguish major and minor 7ths", ["interval.M7"], ["construct", "identify", "diagnose"], ["interval"]),
-  s("interval.M6", 1, "Construct major 6ths", ["interval.m7"], ["construct", "identify"], ["interval"]),
-  s("interval.m6", 1, "Distinguish major and minor 6ths", ["interval.M6"], ["construct", "identify", "diagnose"], ["interval"]),
-  s("interval.P8", 1, "Construct perfect octaves", ["interval.m6"], ["construct", "identify"], ["interval"]),
-  s("interval.P1", 1, "Understand perfect unison", ["interval.P8"], ["construct", "identify"], ["interval"], true, { priority: "support", recurrenceWeight: 1, acquisitionRoundSize: 5 }),
-  s("interval.mixed-core", 1, "Mixed major/minor/perfect interval construction", ["interval.m3", "interval.P5", "interval.m2", "interval.m7", "interval.m6", "interval.P8"], ["construct", "identify", "diagnose"], ["interval"]),
-  s("interval.spelling", 1, "Correctly spell practical simple intervals", ["interval.mixed-core"], ["construct", "diagnose"], ["interval", "spelling"]),
+  s("interval.M2", 3, "Construct major 2nds", ["interval.P5"], ["construct", "identify"], ["interval"]),
+  s("interval.m2", 3, "Distinguish major and minor 2nds", ["interval.M2"], ["construct", "identify", "diagnose"], ["interval"]),
+  s("interval.M7", 3, "Construct major 7ths", ["interval.m2"], ["construct", "identify"], ["interval"]),
+  s("interval.m7", 3, "Distinguish major and minor 7ths", ["interval.M7"], ["construct", "identify", "diagnose"], ["interval"]),
+  s("interval.M6", 3, "Construct major 6ths", ["interval.m7"], ["construct", "identify"], ["interval"]),
+  s("interval.m6", 3, "Distinguish major and minor 6ths", ["interval.M6"], ["construct", "identify", "diagnose"], ["interval"]),
+  s("interval.P8", 1, "Construct perfect octaves", ["interval.P5"], ["construct", "identify"], ["interval"]),
+  s("interval.P1", 1, "Understand perfect unison", ["interval.P8"], ["construct", "identify"], ["interval"], true, { priority: "support", recurrenceWeight: 1, acquisitionRoundSize: 30 }),
+  s("interval.mixed-core", 3, "Mixed major/minor/perfect interval construction", ["interval.m3", "interval.P5", "interval.m2", "interval.m7", "interval.m6", "interval.P8"], ["construct", "identify", "diagnose"], ["interval"]),
+  s("interval.spelling", 2, "Correctly spell practical chord-building intervals", ["interval.M3", "interval.m3", "interval.P4", "interval.P5", "interval.P8"], ["construct", "diagnose"], ["interval", "spelling"]),
 
   // Phase 2 — triads and chord-tone thinking. Tritone/aug-dim spelling arrives only when it is actually needed.
   s("triad.members", 2, "Root, third, and fifth", ["interval.M3", "interval.m3", "interval.P5"], ["identify"], ["chord"]),
   s("triad.major", 2, "Construct major triads from intervals", ["triad.members", "interval.M3", "interval.P5", "interval.spelling"], ["construct", "identify", "transform"], ["chord"]),
   s("triad.minor", 2, "Construct minor triads from intervals", ["triad.members", "interval.m3", "interval.P5", "interval.spelling"], ["construct", "identify", "transform"], ["chord"]),
   s("melody.chord-tones", 2, "Recognize chord tones against major and minor triads", ["triad.major", "triad.minor"], ["identify", "apply"], ["melody", "harmony", "thread"]),
-  s("interval.A4-d5", 2, "Augmented 4th and diminished 5th", ["interval.spelling", "interval.P4", "interval.P5"], ["construct", "identify", "diagnose"], ["interval", "spelling"], false, { priority: "support", recurrenceWeight: 2, acquisitionRoundSize: 6, thread: "interval" }),
+  s("interval.A4-d5", 2, "Augmented 4th and diminished 5th", ["interval.spelling", "interval.P4", "interval.P5"], ["construct", "identify", "diagnose"], ["interval", "spelling"], false, { priority: "support", recurrenceWeight: 2, acquisitionRoundSize: 30, thread: "interval" }),
   s("triad.diminished", 2, "Construct diminished triads", ["triad.minor", "interval.A4-d5"], ["construct", "identify", "transform"], ["chord"]),
   s("triad.augmented", 2, "Construct augmented triads", ["triad.major", "interval.quality-system", "interval.spelling"], ["construct", "identify", "transform"], ["chord"]),
   s("triad.symbols", 2, "Read basic triad chord symbols", ["triad.major", "triad.minor", "triad.diminished", "triad.augmented"], ["translate", "identify"], ["chord", "notation"]),
@@ -87,7 +88,7 @@ export const SKILLS: readonly SkillDefinition[] = [
   s("major.degree-to-note", 3, "Retrieve a note from key + scale degree", ["major.construct", "scale.degree-numbers"], ["translate", "construct"], ["scale", "degree"]),
   s("major.note-to-degree", 3, "Retrieve scale degree from key + note", ["major.construct", "scale.degree-numbers"], ["translate"], ["scale", "degree"]),
   s("major.membership", 3, "Identify diatonic notes in a major key", ["major.construct"], ["identify", "diagnose"], ["scale"]),
-  s("major.degree-names", 3, "Recognize traditional scale-degree names", ["scale.degree-numbers"], ["identify"], ["scale", "terminology"], true, { priority: "support", recurrenceWeight: 1, acquisitionRoundSize: 5 }),
+  s("major.degree-names", 3, "Recognize traditional scale-degree names", ["scale.degree-numbers"], ["identify"], ["scale", "terminology"], true, { priority: "support", recurrenceWeight: 1, acquisitionRoundSize: 30 }),
   s("major.piano-application", 3, "Map major scales and degrees to piano", ["major.construct", "major.degree-to-note"], ["apply"], ["scale", "piano"]),
 
   // Phase 4 — diatonic harmony and the number system are one dependency cluster, not separate memorization topics.
@@ -133,7 +134,7 @@ export const SKILLS: readonly SkillDefinition[] = [
   s("minor.harmonic", 7, "Construct harmonic minor", ["minor.raised7", "minor.natural-construct"], ["construct", "diagnose"], ["minor", "scale"]),
   s("minor.V-v", 7, "Distinguish v and V in minor", ["minor.harmonic", "triad.major", "triad.minor"], ["construct", "identify", "apply"], ["minor", "harmony"]),
   s("minor.harmony", 7, "Core minor-key triad vocabulary with variable 6 and 7", ["minor.V-v", "minor.variable6-7", "triad.mixed"], ["construct", "translate", "identify", "diagnose"], ["minor", "harmony"]),
-  s("minor.melodic", 7, "Construct the classical melodic-minor scale form", ["minor.variable6-7"], ["construct", "identify"], ["minor", "scale"], true, { priority: "support", recurrenceWeight: 1, acquisitionRoundSize: 6, thread: "scale" }),
+  s("minor.melodic", 7, "Construct the classical melodic-minor scale form", ["minor.variable6-7"], ["construct", "identify"], ["minor", "scale"], true, { priority: "support", recurrenceWeight: 1, acquisitionRoundSize: 30, thread: "scale" }),
   s("minor.melodic-jazz", 7, "Recognize the jazz melodic-minor convention", ["minor.melodic"], ["construct", "identify"], ["minor", "scale", "jazz"], true),
 
   // Phase 8 — seventh chords built generatively from triads + interval sevenths.
@@ -148,7 +149,7 @@ export const SKILLS: readonly SkillDefinition[] = [
   s("seventh.minor-context", 8, "Use seventh chords in minor context", ["seventh.mixed", "minor.harmony"], ["construct", "translate", "apply"], ["seventh", "minor"]),
 
   // Phase 9 — inversions and voice leading. Interval inversion belongs here, not in first exposure.
-  s("interval.inversion", 9, "Invert simple intervals", ["interval.mixed-core"], ["translate", "identify"], ["interval"], true, { priority: "support", recurrenceWeight: 1, acquisitionRoundSize: 5, thread: "interval" }),
+  s("interval.inversion", 9, "Invert simple intervals", ["interval.mixed-core"], ["translate", "identify"], ["interval"], true, { priority: "support", recurrenceWeight: 1, acquisitionRoundSize: 30, thread: "interval" }),
   s("inversion.triad", 9, "Triad root position, first inversion, second inversion", ["triad.root-vs-bass", "triad.mixed"], ["identify", "construct"], ["inversion"]),
   s("inversion.slash", 9, "Read and construct slash chords", ["inversion.triad", "triad.symbols"], ["translate", "construct"], ["inversion", "notation"]),
   s("voicing.distinction", 9, "Distinguish inversion from voicing", ["inversion.triad"], ["identify", "diagnose"], ["voicing"]),
@@ -159,15 +160,15 @@ export const SKILLS: readonly SkillDefinition[] = [
 
   // Phase 10 — key organization.
   s("keys.signatures", 10, "Understand major key signatures", ["major.construct", "major.spelling"], ["identify", "construct"], ["keys"]),
-  s("keys.accidental-order", 10, "Order of sharps and flats", ["keys.signatures"], ["identify", "construct"], ["keys"], true, { priority: "support", recurrenceWeight: 1, acquisitionRoundSize: 5 }),
+  s("keys.accidental-order", 10, "Order of sharps and flats", ["keys.signatures"], ["identify", "construct"], ["keys"], true, { priority: "support", recurrenceWeight: 1, acquisitionRoundSize: 30 }),
   s("circle.major", 10, "Major-key Circle of Fifths", ["keys.signatures", "interval.P5"], ["translate", "identify"], ["circle", "keys"]),
   s("keys.minor-signatures", 10, "Minor key signatures via relative major", ["keys.signatures", "minor.relative"], ["identify", "translate"], ["keys", "minor"]),
   s("circle.relative-minor", 10, "Place relative minors on the circle", ["circle.major", "keys.minor-signatures"], ["translate", "identify"], ["circle", "minor"]),
   s("keys.closely-related", 10, "Identify closely related keys", ["circle.relative-minor"], ["identify", "translate"], ["keys", "modulation"]),
-  s("keys.enharmonic", 10, "Understand enharmonic key regions", ["circle.major"], ["identify", "diagnose"], ["keys", "spelling"], true, { priority: "support", recurrenceWeight: 1, acquisitionRoundSize: 5 }),
+  s("keys.enharmonic", 10, "Understand enharmonic key regions", ["circle.major"], ["identify", "diagnose"], ["keys", "spelling"], true, { priority: "support", recurrenceWeight: 1, acquisitionRoundSize: 30 }),
 
   // Phase 11 — advanced practical harmony. Useful, but intentionally not weighted like foundations.
-  s("extension.compound-intervals", 11, "Compound intervals for 9ths, 11ths, and 13ths", ["interval.mixed-core"], ["translate", "identify", "construct"], ["advanced", "interval", "extension"], false, { priority: "support", recurrenceWeight: 1, acquisitionRoundSize: 6, thread: "interval" }),
+  s("extension.compound-intervals", 11, "Compound intervals for 9ths, 11ths, and 13ths", ["interval.mixed-core"], ["translate", "identify", "construct"], ["advanced", "interval", "extension"], false, { priority: "support", recurrenceWeight: 1, acquisitionRoundSize: 30, thread: "interval" }),
   s("color.sus", 11, "sus2 and sus4 chords", ["triad.members", "interval.M2", "interval.P4", "interval.P5"], ["construct", "identify", "apply", "diagnose"], ["advanced", "chord-color"]),
   s("color.add", 11, "add2/add9 chords on major and minor triads", ["triad.major", "triad.minor", "extension.compound-intervals"], ["construct", "identify", "diagnose"], ["advanced", "chord-color"]),
   s("extension.9", 11, "Major, minor, and dominant 9th chords", ["seventh.major7", "seventh.minor7", "seventh.dominant7", "color.add", "extension.compound-intervals"], ["construct", "identify", "diagnose"], ["advanced", "extension"]),

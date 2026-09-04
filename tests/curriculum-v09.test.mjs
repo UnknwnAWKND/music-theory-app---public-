@@ -90,7 +90,7 @@ test("question counter counts the current round, not the session skill queue", (
   assert.match(app, /Question \$\{questionNumber\} of \$\{round\.size\}/);
   assert.doesNotMatch(app, /Question \$\{state\.itemIndex \+ 1\} of \$\{state\.queue\.length\}/);
   assert.match(app, /Round \$\{round\.number\}/);
-  assert.match(app, /One more short round/);
+  assert.match(app, /One more round/);
 });
 
 test("round completion is explicitly separated from mastery", () => {

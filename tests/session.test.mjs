@@ -49,7 +49,7 @@ test("session planner caps normal review batch at six", () => {
 
 test("with no repair, backlog, or current acquisition, planner picks Phase 1 entry skill", () => {
   const plan = planSession({ evidenceBySkill: new Map(), dueReviews: [] });
-  assert.equal(plan.newSkillId, "interval.generic-number");
+  assert.equal(plan.newSkillId, "interval.number-3-8");
 });
 
 test("retired skill IDs are ignored by the current session planner", () => {
@@ -59,7 +59,7 @@ test("retired skill IDs are ignored by the current session planner", () => {
   });
   assert.deepEqual(plan.repairSkillIds, []);
   assert.deepEqual(plan.reviewSkillIds, []);
-  assert.equal(plan.newSkillId, "interval.generic-number");
+  assert.equal(plan.newSkillId, "interval.number-3-8");
 });
 
 test("session planner does not auto-introduce optional enrichment skills", () => {

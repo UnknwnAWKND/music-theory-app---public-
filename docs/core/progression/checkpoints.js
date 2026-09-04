@@ -4,34 +4,36 @@ function group(id, label, skillIds, critical = true) {
 }
 const CHECKPOINT_GROUPS = {
     1: [
-        group("interval-number-quality", "Interval number & quality", ["interval.generic-number", "interval.quality-system"]),
-        group("interval-major-minor", "Major & minor intervals", ["interval.m2", "interval.M2", "interval.m3", "interval.M3", "interval.m6", "interval.M6", "interval.m7", "interval.M7"]),
-        group("interval-perfect-tritone", "Perfect intervals & tritones", ["interval.P1", "interval.P4", "interval.P5", "interval.P8", "interval.A4-d5"]),
-        group("interval-spelling-mixed", "Mixed interval spelling", ["interval.mixed-core", "interval.spelling", "interval.inversion"]),
+        group("interval-number-core", "Interval-number construction", [
+            "interval.number-3-8", "interval.number-4-5", "interval.number-mix-3-4-5-8",
+            "interval.number-2-7", "interval.number-mix-2-3-4-5-7-8", "interval.number-6", "interval.generic-number",
+        ]),
+        group("interval-core-quality", "Core 3rds, 4ths, 5ths & octave", ["interval.quality-system", "interval.M3", "interval.m3", "interval.P4", "interval.P5", "interval.P8"]),
     ],
     2: [
-        group("triad-members", "Chord members", ["triad.members", "triad.root-vs-bass"]),
+        group("triad-members-spelling", "Interval spelling, chord members & chord tones", ["interval.spelling", "triad.members", "melody.chord-tones", "triad.root-vs-bass"]),
         group("triad-major-minor", "Major & minor triads", ["triad.major", "triad.minor"]),
-        group("triad-dim-aug", "Diminished & augmented triads", ["triad.diminished", "triad.augmented"]),
+        group("triad-dim-aug", "Diminished & augmented triads", ["interval.A4-d5", "triad.diminished", "triad.augmented"]),
         group("triad-mixed-symbols", "Mixed triads & symbols", ["triad.mixed", "triad.symbols"]),
     ],
     3: [
+        group("interval-quality-expansion", "2nd, 6th & 7th interval fluency", ["interval.M2", "interval.m2", "interval.M6", "interval.m6", "interval.M7", "interval.m7", "interval.mixed-core"]),
         group("major-formula-degrees", "Major-scale formula & degrees", ["major.formula", "scale.degree-numbers", "major.degree-intervals"]),
-        group("major-spelling", "Major-scale spelling", ["major.spelling", "major.construct"]),
+        group("major-spelling", "Major-scale construction & spelling", ["major.spelling", "major.construct"]),
         group("major-degree-retrieval", "Key/degree retrieval", ["major.degree-to-note", "major.note-to-degree"]),
         group("major-membership", "Diatonic membership", ["major.membership"]),
     ],
     4: [
         group("diatonic-building", "Build diatonic triads", ["diatonic.stack-thirds", "diatonic.major-pattern"]),
-        group("roman-numerals", "Roman numerals", ["roman.major-basic"]),
+        group("number-system", "Scale degree vs chord number", ["progression.scale-degree-vs-chord", "roman.major-basic", "progression.absolute-relative"]),
         group("degree-chord-translation", "Degree ↔ chord", ["diatonic.degree-to-chord", "diatonic.chord-to-degree"]),
         group("harmonize-check", "Harmonize & diagnose", ["diatonic.harmonize-key", "diatonic.check-chord", "diatonic.definition"]),
     ],
     5: [
-        group("relative-progression", "Relative chord numbers", ["progression.absolute-relative", "progression.scale-degree-vs-chord"]),
         group("iiv", "I–IV–V", ["progression.I-IV-V"]),
         group("transpose", "Progression transposition", ["progression.transpose"]),
-        group("extract-iivi", "Analysis & ii–V–I", ["progression.extract", "progression.ii-V-I"]),
+        group("analysis-iivi", "Progression analysis & ii–V–I", ["progression.extract", "progression.ii-V-I"]),
+        group("chord-tone-targeting", "Chord-tone targeting", ["melody.progression-targeting"]),
     ],
     6: [
         group("tonic-dominant", "Tonic & dominant", ["function.tonic", "function.dominant", "function.V-I"]),
@@ -42,32 +44,32 @@ const CHECKPOINT_GROUPS = {
     7: [
         group("minor-natural", "Natural minor & key relationships", ["minor.parallel-alterations", "minor.natural-construct", "minor.relative", "minor.parallel"]),
         group("minor-variable", "Variable 6 & 7", ["minor.variable6-7", "minor.raised7"]),
-        group("minor-forms", "Harmonic & melodic minor", ["minor.harmonic", "minor.melodic"]),
-        group("minor-harmony", "Minor-key harmony", ["minor.V-v", "minor.harmony"]),
+        group("minor-harmonic", "Harmonic minor & dominant", ["minor.harmonic", "minor.V-v"]),
+        group("minor-harmony", "Minor-key harmony", ["minor.harmony"]),
     ],
     8: [
         group("seventh-members", "Seventh-chord members", ["seventh.members"]),
         group("seventh-core", "Major 7, minor 7 & dominant 7", ["seventh.major7", "seventh.minor7", "seventh.dominant7"]),
         group("seventh-diminished", "Diminished seventh types", ["seventh.halfdim7", "seventh.dim7"]),
-        group("seventh-diatonic", "Diatonic seventh chords", ["seventh.major-diatonic", "seventh.mixed"]),
+        group("seventh-diatonic", "Diatonic seventh chords", ["seventh.major-diatonic", "seventh.mixed", "seventh.minor-context"]),
     ],
     9: [
         group("triad-inversions", "Triad inversions", ["inversion.triad", "inversion.slash"]),
         group("seventh-inversions", "Seventh-chord inversions", ["inversion.seventh"]),
         group("voicing", "Voicing", ["voicing.distinction", "inversion.slash"]),
-        group("voice-leading", "Voice leading", ["voice.common-tones", "voice.economical"]),
+        group("voice-leading", "Voice leading", ["voice.common-tones", "voice.economical", "voice.guide-tones"]),
     ],
     10: [
         group("key-signatures", "Key signatures", ["keys.signatures"]),
         group("circle", "Circle of Fifths", ["circle.major"]),
         group("relatives-nearby", "Relative & nearby keys", ["circle.relative-minor", "keys.closely-related"]),
-        group("key-relations", "Key relationships", ["keys.accidental-order", "keys.minor-signatures", "keys.enharmonic"]),
+        group("minor-key-signatures", "Minor key signatures", ["keys.minor-signatures"]),
     ],
     11: [
-        group("color-chords", "Suspended & added-note colors", ["color.sus", "color.add", "color.six"]),
-        group("extensions", "Chord extensions", ["extension.compound-intervals", "extension.9", "extension.11-13"]),
+        group("color-chords", "Suspended & added-note colors", ["color.sus", "color.add"]),
+        group("extensions", "Practical chord extensions", ["extension.compound-intervals", "extension.9"]),
         group("chromatic-function", "Secondary dominants & borrowed harmony", ["secondary.V", "mixture.parallel"]),
-        group("modes-modulation", "Modes & modulation", ["mode.tonic-center", "modulation.tonicization-vs-keychange"]),
+        group("center-analysis", "Tonal center & integrated analysis", ["mode.tonic-center", "analysis.integrated"]),
     ],
 };
 function existing(skillIds) {
@@ -158,7 +160,7 @@ export function placementPrerequisitePhases(targetPhase) {
 export function placementDefinition(targetPhase) {
     const phases = placementPrerequisitePhases(targetPhase);
     const competencies = phases.flatMap((phase) => checkpointDefinition(phase)?.competencies ?? []);
-    // One representative critical group per prerequisite phase keeps placement broad but not exhaustive.
+    // One representative critical group per prerequisite phase keeps placement diagnostic rather than grindy.
     const representative = phases.flatMap((phase) => (checkpointDefinition(phase)?.competencies ?? []).filter((c) => c.critical !== false).slice(0, 1));
     const selected = representative.length ? representative : competencies;
     const minItems = selected.length + 1;

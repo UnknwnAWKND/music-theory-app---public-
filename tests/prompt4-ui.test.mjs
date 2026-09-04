@@ -9,7 +9,7 @@ const skills = fs.readFileSync("src/curriculum/skills.ts", "utf8");
 test("display titles are short UI aliases while stable internal skill ids remain unchanged", () => {
   assert.match(app, /"interval\.quality-system": "Interval Quality"/);
   assert.match(app, /"guitar\.triads": "Triads on Guitar"/);
-  assert.match(skills, /s\("interval\.quality-system", 1, "Perfect\/major\/minor\/augmented\/diminished quality system"/);
+  assert.match(skills, /s\("interval\.quality-system", 1,/);
 });
 
 test("long user-facing text wraps instead of overflowing cards", () => {

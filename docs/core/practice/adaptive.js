@@ -5,6 +5,12 @@ const CONFUSION_PAIRS = Object.freeze({
     "interval.M3": ["interval.m3"],
     "interval.P4": ["interval.P5"],
     "interval.P5": ["interval.P4"],
+    "interval.m2": ["interval.M2"],
+    "interval.M2": ["interval.m2"],
+    "interval.m6": ["interval.M6"],
+    "interval.M6": ["interval.m6"],
+    "interval.m7": ["interval.M7"],
+    "interval.M7": ["interval.m7"],
     "triad.major": ["triad.minor"],
     "triad.minor": ["triad.major"],
     "seventh.major7": ["seventh.dominant7"],
@@ -53,7 +59,7 @@ export function evidenceQualityForAttempt(attempt) {
 }
 export function semanticExerciseSignature(exercise) {
     const payload = (exercise.payload ?? {});
-    const keys = ["root", "tonic", "note", "interval", "quality", "degree", "mode", "romans", "expectedRoot", "expectedQuality", "naturalKeyIndex"];
+    const keys = ["root", "tonic", "note", "interval", "quality", "degree", "mode", "romans", "expectedRoot", "expectedQuality", "naturalKeyIndex", "intervalNumber", "fromLetter", "toLetter"];
     const attributes = {};
     for (const key of keys) {
         const value = payload[key];
@@ -137,6 +143,29 @@ export function confusionPartnerFor(skillId, evidence) {
         .find((x) => x.count > 0);
     return explicitlyConfused?.id;
 }
+function foundationalSpiralTargets(evidenceBySkill) {
+    return [...evidenceBySkill.entries()]
+        .filter(([skillId, evidence]) => {
+        const skill = SKILL_BY_ID.get(skillId);
+        return Boolean(skill
+            && skill.priority === "foundation"
+            && skill.thread === "interval"
+            && evidence.ready
+            && !evidence.fragile
+            && !evidence.retained);
+    })
+        .sort((a, b) => {
+        const reviewGap = (a[1].successfulDelayedReviewSessions ?? 0) - (b[1].successfulDelayedReviewSessions ?? 0);
+        if (reviewGap !== 0)
+            return reviewGap;
+        const aWeight = SKILL_BY_ID.get(a[0])?.recurrenceWeight ?? 1;
+        const bWeight = SKILL_BY_ID.get(b[0])?.recurrenceWeight ?? 1;
+        if (bWeight !== aWeight)
+            return bWeight - aWeight;
+        return (a[1].independentFirstAttemptSuccesses ?? 0) - (b[1].independentFirstAttemptSuccesses ?? 0);
+    })
+        .map(([skillId]) => skillId);
+}
 export function interleavingTargets(evidenceBySkill) {
     const targets = [];
     for (const [skillId, evidence] of evidenceBySkill) {
@@ -155,6 +184,15 @@ export function interleavingTargets(evidenceBySkill) {
         if (targets.length >= 2)
             break;
     }
+    // READY is a progression gate, not the end of practice. Until a foundational
+    // interval skill becomes RETAINED, use spare interleaving capacity to keep it alive.
+    // Once RETAINED, extra interleaving stops and normal spaced scheduling takes over.
+    for (const skillId of foundationalSpiralTargets(evidenceBySkill)) {
+        if (!targets.includes(skillId))
+            targets.push(skillId);
+        if (targets.length >= 2)
+            break;
+    }
     return targets.slice(0, 2);
 }
 export function inferredConfusionPartner(skillId, submitted) {
@@ -167,5 +205,17 @@ export function inferredConfusionPartner(skillId, submitted) {
         return "interval.P5";
     if (skillId === "interval.P5" && /^P4$/i.test(value))
         return "interval.P4";
+    if (skillId === "interval.M2" && /^m2$/i.test(value) && value !== "M2")
+        return "interval.m2";
+    if (skillId === "interval.m2" && value === "M2")
+        return "interval.M2";
+    if (skillId === "interval.M6" && /^m6$/i.test(value) && value !== "M6")
+        return "interval.m6";
+    if (skillId === "interval.m6" && value === "M6")
+        return "interval.M6";
+    if (skillId === "interval.M7" && /^m7$/i.test(value) && value !== "M7")
+        return "interval.m7";
+    if (skillId === "interval.m7" && value === "M7")
+        return "interval.M7";
     return undefined;
 }

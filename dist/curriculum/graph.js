@@ -1,4 +1,4 @@
-import { SKILLS } from "./skills.js";
+import { SKILLS } from "./skills-v09.js";
 export function validateSkillGraph(skills = SKILLS) {
     const counts = new Map();
     for (const skill of skills)

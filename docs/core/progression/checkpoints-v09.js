@@ -1,38 +1,46 @@
 import { SKILLS, SKILL_BY_ID } from "../curriculum/index.js";
+import { evaluateCheckpoint, nextCheckpointCompetency, } from "./checkpoints.js";
 function group(id, label, skillIds, critical = true) {
     return { id, label, skillIds, critical };
 }
-const CHECKPOINT_GROUPS = {
+const GROUPS = {
     1: [
         group("interval-number-core", "Interval-number construction", [
-            "interval.number-3-8", "interval.number-4-5", "interval.number-mix-3-4-5-8",
-            "interval.number-2-7", "interval.number-mix-2-3-4-5-7-8", "interval.number-6", "interval.generic-number",
+            "interval.number-3-8",
+            "interval.number-4-5",
+            "interval.number-mix-3-4-5-8",
+            "interval.number-2-7",
+            "interval.number-mix-2-3-4-5-7-8",
+            "interval.number-6",
+            "interval.number-mixed-all",
         ]),
-        group("interval-core-quality", "Core 3rds, 4ths, 5ths & octave", ["interval.quality-system", "interval.M3", "interval.m3", "interval.P4", "interval.P5", "interval.P8"]),
+        group("interval-core-quality", "Core 3rds, 4ths, 5ths & octave", [
+            "interval.quality-system", "interval.M3", "interval.m3", "interval.P4", "interval.P5", "interval.P8",
+        ]),
     ],
     2: [
         group("triad-members-spelling", "Interval spelling, chord members & chord tones", ["interval.spelling", "triad.members", "melody.chord-tones", "triad.root-vs-bass"]),
         group("triad-major-minor", "Major & minor triads", ["triad.major", "triad.minor"]),
         group("triad-dim-aug", "Diminished & augmented triads", ["interval.A4-d5", "triad.diminished", "triad.augmented"]),
-        group("triad-mixed-symbols", "Mixed triads & symbols", ["triad.mixed", "triad.symbols"]),
+        group("triad-mixed", "Mixed triads & symbols", ["triad.mixed", "triad.symbols"]),
     ],
     3: [
         group("interval-quality-expansion", "2nd, 6th & 7th interval fluency", ["interval.M2", "interval.m2", "interval.M6", "interval.m6", "interval.M7", "interval.m7", "interval.mixed-core"]),
         group("major-formula-degrees", "Major-scale formula & degrees", ["major.formula", "scale.degree-numbers", "major.degree-intervals"]),
-        group("major-spelling", "Major-scale construction & spelling", ["major.spelling", "major.construct"]),
+        group("major-construct", "Major-scale construction & spelling", ["major.spelling", "major.construct"]),
         group("major-degree-retrieval", "Key/degree retrieval", ["major.degree-to-note", "major.note-to-degree"]),
         group("major-membership", "Diatonic membership", ["major.membership"]),
     ],
     4: [
         group("diatonic-building", "Build diatonic triads", ["diatonic.stack-thirds", "diatonic.major-pattern"]),
-        group("number-system", "Scale degree vs chord number", ["progression.scale-degree-vs-chord", "roman.major-basic", "progression.absolute-relative"]),
-        group("degree-chord-translation", "Degree ↔ chord", ["diatonic.degree-to-chord", "diatonic.chord-to-degree"]),
-        group("harmonize-check", "Harmonize & diagnose", ["diatonic.harmonize-key", "diatonic.check-chord", "diatonic.definition"]),
+        group("number-system", "Scale degree & chord-number thinking", ["progression.scale-degree-vs-chord", "roman.major-basic", "progression.absolute-relative"]),
+        group("degree-chord", "Degree ↔ chord", ["diatonic.degree-to-chord", "diatonic.chord-to-degree"]),
+        group("harmonize", "Harmonize & diagnose a key", ["diatonic.harmonize-key", "diatonic.check-chord", "diatonic.definition"]),
     ],
     5: [
         group("iiv", "I–IV–V", ["progression.I-IV-V"]),
         group("transpose", "Progression transposition", ["progression.transpose"]),
-        group("analysis-iivi", "Progression analysis & ii–V–I", ["progression.extract", "progression.ii-V-I"]),
+        group("analysis", "Progression analysis & ii–V–I", ["progression.extract", "progression.ii-V-I"]),
         group("chord-tone-targeting", "Chord-tone targeting", ["melody.progression-targeting"]),
     ],
     6: [
@@ -44,7 +52,7 @@ const CHECKPOINT_GROUPS = {
     7: [
         group("minor-natural", "Natural minor & key relationships", ["minor.parallel-alterations", "minor.natural-construct", "minor.relative", "minor.parallel"]),
         group("minor-variable", "Variable 6 & 7", ["minor.variable6-7", "minor.raised7"]),
-        group("minor-harmonic", "Harmonic minor & dominant", ["minor.harmonic", "minor.V-v"]),
+        group("minor-dominant", "Harmonic minor & dominant", ["minor.harmonic", "minor.V-v"]),
         group("minor-harmony", "Minor-key harmony", ["minor.harmony"]),
     ],
     8: [
@@ -56,23 +64,23 @@ const CHECKPOINT_GROUPS = {
     9: [
         group("triad-inversions", "Triad inversions", ["inversion.triad", "inversion.slash"]),
         group("seventh-inversions", "Seventh-chord inversions", ["inversion.seventh"]),
-        group("voicing", "Voicing", ["voicing.distinction", "inversion.slash"]),
+        group("voicing", "Voicing", ["voicing.distinction"]),
         group("voice-leading", "Voice leading", ["voice.common-tones", "voice.economical", "voice.guide-tones"]),
     ],
     10: [
         group("key-signatures", "Key signatures", ["keys.signatures"]),
         group("circle", "Circle of Fifths", ["circle.major"]),
         group("relatives-nearby", "Relative & nearby keys", ["circle.relative-minor", "keys.closely-related"]),
-        group("minor-key-signatures", "Minor key signatures", ["keys.minor-signatures"]),
+        group("minor-signatures", "Minor key signatures", ["keys.minor-signatures"]),
     ],
     11: [
-        group("color-chords", "Suspended & added-note colors", ["color.sus", "color.add"]),
-        group("extensions", "Practical chord extensions", ["extension.compound-intervals", "extension.9"]),
-        group("chromatic-function", "Secondary dominants & borrowed harmony", ["secondary.V", "mixture.parallel"]),
-        group("center-analysis", "Tonal center & integrated analysis", ["mode.tonic-center", "analysis.integrated"]),
+        group("color", "Suspended & added-note colors", ["color.sus", "color.add"]),
+        group("extensions", "Practical extensions", ["extension.compound-intervals", "extension.9"]),
+        group("chromatic", "Secondary dominants & borrowed harmony", ["secondary.V", "mixture.parallel"]),
+        group("analysis", "Tonal center & integrated analysis", ["mode.tonic-center", "analysis.integrated"]),
     ],
 };
-function existing(skillIds) {
+function validateSkills(skillIds) {
     const missing = skillIds.filter((id) => !SKILL_BY_ID.has(id));
     if (missing.length)
         throw new Error(`Checkpoint references unknown curriculum skills: ${missing.join(", ")}`);
@@ -81,57 +89,13 @@ function existing(skillIds) {
 export function checkpointDefinition(phase) {
     if (phase === 12)
         return undefined;
-    const raw = CHECKPOINT_GROUPS[phase] ?? [];
-    const competencies = raw
-        .map((c) => ({ ...c, skillIds: existing(c.skillIds) }))
-        .filter((c) => c.skillIds.length > 0);
+    const competencies = (GROUPS[phase] ?? []).map((c) => ({ ...c, skillIds: validateSkills(c.skillIds) }));
     const minItems = competencies.length + 1;
     const maxItems = Math.max(minItems, competencies.length * 3);
     return { phase, competencies, minItems, maxItems };
 }
 export function allCheckpointDefinitions() {
-    return Array.from({ length: 11 }, (_, i) => checkpointDefinition((i + 1))).filter(Boolean);
-}
-function isStrong(r) {
-    return r.correct && r.firstSubmission && r.independent && !r.guidanceUsed && !r.solutionSeen
-        && ["constructed", "discrimination", "application"].includes(r.responseMode);
-}
-function isModerate(r) {
-    return r.correct && r.firstSubmission && r.independent && !r.guidanceUsed && !r.solutionSeen
-        && r.responseMode === "recognition";
-}
-export function evaluateCheckpoint(def, results) {
-    const competencies = def.competencies.map((c) => {
-        const rows = results.filter((r) => r.competencyId === c.id);
-        const strongRows = rows.filter(isStrong);
-        const moderateRows = rows.filter(isModerate);
-        const failures = rows.filter((r) => r.firstSubmission && r.independent && !r.correct).length;
-        const distinctSkills = new Set([...strongRows, ...moderateRows].map((r) => r.skillId)).size;
-        const distinctExamples = new Set([...strongRows, ...moderateRows].map((r) => r.exampleSignature)).size;
-        const demonstrated = failures === 0 && (strongRows.length >= 1 || (moderateRows.length >= 2 && distinctExamples >= 2));
-        return { competencyId: c.id, label: c.label, demonstrated, strongEvidence: strongRows.length, moderateEvidence: moderateRows.length, failures, distinctSkills, distinctExamples };
-    });
-    const allCompetencies = competencies.length > 0 && competencies.every((c) => c.demonstrated);
-    const passed = allCompetencies && results.length >= def.minItems;
-    const complete = passed || results.length >= def.maxItems;
-    return {
-        passed,
-        complete,
-        strong: competencies.filter((c) => c.demonstrated).map((c) => c.label),
-        review: competencies.filter((c) => !c.demonstrated).map((c) => c.label),
-        competencies,
-    };
-}
-export function nextCheckpointCompetency(def, results) {
-    const evaluation = evaluateCheckpoint(def, results);
-    if (evaluation.complete)
-        return undefined;
-    const unresolved = def.competencies.filter((c) => !evaluation.competencies.find((x) => x.competencyId === c.id)?.demonstrated);
-    const candidates = unresolved.length ? unresolved : def.competencies;
-    const counts = new Map();
-    for (const r of results)
-        counts.set(r.competencyId, (counts.get(r.competencyId) ?? 0) + 1);
-    return [...candidates].sort((a, b) => (counts.get(a.id) ?? 0) - (counts.get(b.id) ?? 0))[0];
+    return Array.from({ length: 11 }, (_, index) => checkpointDefinition((index + 1))).filter(Boolean);
 }
 export function placementPrerequisitePhases(targetPhase) {
     if (targetPhase <= 1)
@@ -154,15 +118,14 @@ export function placementPrerequisitePhases(targetPhase) {
             visit(depId);
         }
     };
-    SKILLS.filter((s) => s.phase === targetPhase && !s.optional).forEach((s) => visit(s.id));
+    SKILLS.filter((skill) => skill.phase === targetPhase && !skill.optional).forEach((skill) => visit(skill.id));
     return [...required].sort((a, b) => a - b);
 }
 export function placementDefinition(targetPhase) {
     const phases = placementPrerequisitePhases(targetPhase);
-    const competencies = phases.flatMap((phase) => checkpointDefinition(phase)?.competencies ?? []);
-    // One representative critical group per prerequisite phase keeps placement diagnostic rather than grindy.
-    const representative = phases.flatMap((phase) => (checkpointDefinition(phase)?.competencies ?? []).filter((c) => c.critical !== false).slice(0, 1));
-    const selected = representative.length ? representative : competencies;
+    // Placement stays diagnostic: experienced musicians prove representative dependencies,
+    // rather than being forced through the long-term practice volume used for learning.
+    const selected = phases.flatMap((phase) => (checkpointDefinition(phase)?.competencies ?? []).filter((c) => c.critical !== false).slice(0, 1));
     const minItems = selected.length + 1;
     const maxItems = Math.max(minItems, selected.length * 3);
     return { phase: targetPhase, competencies: selected, minItems, maxItems };
@@ -177,6 +140,7 @@ export function recommendStartingPhase(targetPhase, evaluation) {
     return targetPhase;
 }
 export function phaseCoreReady(phase, readySkillIds) {
-    const required = SKILLS.filter((s) => s.phase === phase && !s.optional);
-    return required.length > 0 && required.every((s) => readySkillIds.has(s.id));
+    const required = SKILLS.filter((skill) => skill.phase === phase && !skill.optional);
+    return required.length > 0 && required.every((skill) => readySkillIds.has(skill.id));
 }
+export { evaluateCheckpoint, nextCheckpointCompetency };

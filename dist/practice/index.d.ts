@@ -1,3 +1,4 @@
 export * from "./types.js";
-export * from "./lessons.js";
+export { lessonForSkill } from "./lessons-v09.js";
 export * from "./adaptive.js";
+export * from "./rounds.js";

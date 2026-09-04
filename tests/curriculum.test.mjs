@@ -26,9 +26,9 @@ test("topological order places every prerequisite before its dependent skill", (
 
 test("Phase 1 is the curriculum entry point after Phase 0 removal", () => {
   const unlocked = unlockableSkills(new Set());
-  assert.deepEqual(unlocked.map((x) => x.id), ["interval.generic-number"]);
+  assert.deepEqual(unlocked.map((x) => x.id), ["interval.number-3-8"]);
   assert.equal(SKILLS[0].phase, 1);
-  assert.equal(SKILLS[0].id, "interval.generic-number");
+  assert.equal(SKILLS[0].id, "interval.number-3-8");
 });
 
 test("Phase 0 is absent and later phase numbers remain 1 through 12", () => {
