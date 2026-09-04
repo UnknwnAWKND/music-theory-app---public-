@@ -44,7 +44,7 @@ jobs:
         run: python scripts/guard-manual-cold-review.py
       - name: Preserve deployed checkpoints and placement
         run: |
-          test -f src/assessment/checkpoints.ts
+          test -f src/progression/checkpoints.ts
           grep -q "checkpointDefinition" web/app.js
           grep -q "placementDefinition" web/app.js
       - name: Apply Prompt 4 UI and lesson cleanup
