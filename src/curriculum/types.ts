@@ -8,6 +8,9 @@ export type EvidenceMode =
   | "diagnose"
   | "apply";
 
+export type CurriculumPriority = "foundation" | "core" | "support" | "extension";
+export type CurriculumThread = "interval" | "scale" | "triad" | "number-system" | "function" | "chord-tone" | "guitar";
+
 export interface SkillDefinition {
   id: string;
   phase: PhaseNumber;
@@ -16,6 +19,14 @@ export interface SkillDefinition {
   evidence: readonly EvidenceMode[];
   tags?: readonly string[];
   optional?: boolean;
+  /** Importance controls planning priority; it does not itself grant READY/RETAINED. */
+  priority?: CurriculumPriority;
+  /** Relative priority when multiple legitimate reviews are due at the same time. */
+  recurrenceWeight?: number;
+  /** Suggested first acquisition round. The round is a UX container, not a mastery threshold. */
+  acquisitionRoundSize?: number;
+  /** Cross-phase spiral thread this skill contributes to. */
+  thread?: CurriculumThread;
 }
 
 export interface GraphValidationResult {
