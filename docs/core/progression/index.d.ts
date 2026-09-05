@@ -1,1 +1,1 @@
-export * from "./checkpoints.js";
+export * from "./checkpoints-block6.js";

@@ -5,4 +5,5 @@ export * from "./phase1-intervals.js";
 export * from "./phase2-major-scales.js";
 export * from "./phase3-minor-scales.js";
 export * from "./phase4-diatonic-chords.js";
-export * from "./catalog.js";
+export * from "./phase5-relatives.js";
+export * from "./catalog-block6.js";
