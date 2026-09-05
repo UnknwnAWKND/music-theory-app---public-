@@ -56,8 +56,7 @@ function applyAccent(value) {
   document.documentElement.dataset.accent = currentAccent;
   updateMetaThemeColor();
   document.querySelectorAll("[data-accent-choice]").forEach((button) => {
-    const selected = button.dataset.accentChoice === currentAccent;
-    button.setAttribute("aria-checked", String(selected));
+    button.setAttribute("aria-checked", String(button.dataset.accentChoice === currentAccent));
   });
   return currentAccent;
 }
@@ -83,26 +82,19 @@ async function loadAccentForCurrentUser(force = false) {
     const context = await resolveContext();
     const userChanged = context.userId !== currentUserId;
     currentUserId = context.userId;
-
     const cached = readCached(currentUserId);
     if (userChanged || !contextReady || force) applyAccent(cached);
 
     if (context.authenticated && context.client) {
-      const { data, error } = await context.client
-        .from("user_appearance_settings")
-        .select("accent_color")
-        .eq("user_id", currentUserId)
-        .maybeSingle();
+      const { data, error } = await context.client.from("user_appearance_settings").select("accent_color").eq("user_id", currentUserId).maybeSingle();
       if (!error && data?.accent_color) {
         const stored = applyAccent(data.accent_color);
         writeCached(currentUserId, stored);
       }
     }
-
     contextReady = true;
     return context;
   })();
-
   try { return await refreshPromise; }
   finally { refreshPromise = null; }
 }
@@ -117,7 +109,6 @@ async function saveAccent(value) {
   const next = applyAccent(value);
   writeCached(currentUserId, next);
   setSaveStatus("Saving…");
-
   if (context.authenticated && context.client) {
     const { error } = await context.client.from("user_appearance_settings").upsert({
       user_id: currentUserId,
@@ -130,40 +121,46 @@ async function saveAccent(value) {
       return;
     }
   }
-
   setSaveStatus("Saved");
   window.setTimeout(() => setSaveStatus(""), 900);
 }
 
-function accentMarkup() {
-  const swatches = ACCENTS.map((accent) => `
-    <button class="accent-swatch" data-accent-choice="${accent}" role="radio" aria-label="${accent[0].toUpperCase()}${accent.slice(1)}" aria-checked="${accent === currentAccent}" type="button" style="--swatch:${SWATCH[accent]}">
-      <span class="accent-swatch-dot" aria-hidden="true"></span>
-    </button>`).join("");
+function swatchMarkup() {
+  const swatches = ACCENTS.map((accent) => `<button class="accent-swatch" data-accent-choice="${accent}" role="radio" aria-label="${accent[0].toUpperCase()}${accent.slice(1)}" aria-checked="${accent === currentAccent}" type="button" style="--swatch:${SWATCH[accent]}"><span class="accent-swatch-dot" aria-hidden="true"></span></button>`).join("");
+  return `<div class="accent-swatch-grid" role="radiogroup" aria-label="Accent Color">${swatches}</div><div class="appearance-save-status" role="status" aria-live="polite"></div>`;
+}
 
-  return `<div class="accent-setting-block">
-    <div class="accent-setting-copy"><strong>Accent Color</strong><small>Changes interactive highlights without changing success or error colors.</small></div>
-    <div class="accent-swatch-grid" role="radiogroup" aria-label="Accent Color">${swatches}</div>
-    <div class="appearance-save-status" role="status" aria-live="polite"></div>
-  </div>`;
+function bindSwatches(scope) {
+  scope.querySelectorAll("[data-accent-choice]").forEach((button) => {
+    if (button.dataset.accentBound === "true") return;
+    button.dataset.accentBound = "true";
+    button.addEventListener("click", () => saveAccent(button.dataset.accentChoice));
+  });
+  applyAccent(currentAccent);
 }
 
 function injectAccentSetting() {
   if (!app) return;
+  const mount = app.querySelector("#accentSettingsMount");
+  if (mount) {
+    app.querySelectorAll(".accent-setting-block").forEach((old) => old.remove());
+    if (!mount.querySelector(".accent-swatch-grid")) mount.innerHTML = swatchMarkup();
+    bindSwatches(mount);
+    return;
+  }
+
   const groups = [...app.querySelectorAll(".settings-group")];
   const appearance = groups.find((group) => group.querySelector(".settings-group-title")?.textContent?.trim() === "Appearance");
   if (!appearance || appearance.querySelector(".accent-setting-block")) return;
-  appearance.insertAdjacentHTML("beforeend", accentMarkup());
-  appearance.querySelectorAll("[data-accent-choice]").forEach((button) => {
-    button.addEventListener("click", () => saveAccent(button.dataset.accentChoice));
-  });
+  appearance.insertAdjacentHTML("beforeend", `<div class="accent-setting-block"><div class="accent-setting-copy"><strong>Accent Color</strong><small>Changes interactive highlights without changing success or error colors.</small></div>${swatchMarkup()}</div>`);
+  bindSwatches(appearance);
 }
 
 let queued = false;
 function scheduleEnhance() {
   if (queued) return;
   queued = true;
-  queueMicrotask(async () => {
+  queueMicrotask(() => {
     queued = false;
     injectAccentSetting();
     updateMetaThemeColor();
