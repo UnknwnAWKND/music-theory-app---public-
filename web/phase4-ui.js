@@ -1,7 +1,7 @@
-const PHASE4_SAVED_PROGRESSION_PREFIX = "music-theory-tutor:phase4-last-major-progression";
+export const PHASE4_SAVED_PROGRESSION_KEY = "music-theory-tutor:phase4-last-major-progression";
 
 export function phase4SavedProgressionKey(userId = "local-preview") {
-  return `${PHASE4_SAVED_PROGRESSION_PREFIX}:${encodeURIComponent(String(userId || "local-preview"))}`;
+  return `${PHASE4_SAVED_PROGRESSION_KEY}:${encodeURIComponent(String(userId || "local-preview"))}`;
 }
 
 const ROOTS = ["C", "C#", "Db", "D", "Eb", "E", "F", "F#", "G", "G#", "Ab", "A", "Bb", "B"];
