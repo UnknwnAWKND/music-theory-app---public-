@@ -68,7 +68,8 @@ export interface UserLearningSettings {
   desiredRetention: number;
   maximumIntervalDays: number;
   requirePreviousLessons: boolean;
-  theme: UserTheme;
+  /** Optional only for backward compatibility with pre-Block-8 stored rows. */
+  theme?: UserTheme;
   curriculumVersion: string;
   schedulerVersion: "fsrs-6";
 }
