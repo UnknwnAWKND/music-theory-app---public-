@@ -1,5 +1,5 @@
 import { PHASE1_INTERVAL_GENERATORS } from "./phase1-intervals.js";
-import { PHASE2_MAJOR_SCALE_GENERATORS } from "./phase2-major-scales.js";
+import { PHASE2_MAJOR_SCALE_GENERATORS, phase2ExerciseForSkill } from "./phase2-major-scales.js";
 import { PHASE3_MINOR_SCALE_GENERATORS } from "./phase3-minor-scales.js";
 import { PHASE4_DIATONIC_CHORD_GENERATORS } from "./phase4-diatonic-chords.js";
 import type { Exercise, ExerciseGenerator } from "./types.js";
@@ -23,11 +23,37 @@ const phase3Generators = [...PHASE3_MINOR_SCALE_GENERATORS].map(([skillId, gener
   return [skillId, balancedNaturalRoots] as const;
 });
 
+const phase4Generators = [...PHASE4_DIATONIC_CHORD_GENERATORS].map(([skillId, generator]) => {
+  const correctedFoundationReview: ExerciseGenerator = (index) => {
+    const item = generator(index);
+    const safe = Math.max(0, index);
+    const intendedReviewSlot = safe > 0 && safe % 13 === 0 ? Math.floor(safe / 13) % 4 : -1;
+    if (intendedReviewSlot !== 2 || !item.metadata?.crossPhaseReview) return item;
+
+    // Phase 4 deliberately asks for a direct Phase 2 recall item in this slot.
+    // The raw Phase 2 generator's index 29 is itself an embedded Phase 1 review,
+    // so use a nearby direct major-scale recall probe instead of accidentally
+    // converting the intended Phase 2 application back into another interval item.
+    const review = phase2ExerciseForSkill("major-scales.lesson-4-instant-recall", 28);
+    if (!review) return item;
+    return {
+      ...review,
+      metadata: {
+        ...(review.metadata ?? {}),
+        crossPhaseReview: true,
+        reviewPhase: 2,
+        reviewReason: "apply-foundation-inside-harmony",
+      },
+    };
+  };
+  return [skillId, correctedFoundationReview] as const;
+});
+
 const GENERATORS = new Map<string, ExerciseGenerator>([
   ...PHASE1_INTERVAL_GENERATORS,
   ...phase2Generators,
   ...phase3Generators,
-  ...PHASE4_DIATONIC_CHORD_GENERATORS,
+  ...phase4Generators,
 ]);
 
 export function registerExerciseGenerator(skillId: string, generator: ExerciseGenerator): void { GENERATORS.set(skillId, generator); }
