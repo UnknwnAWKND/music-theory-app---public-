@@ -1,0 +1,116 @@
+/* Focused Home cleanup: remove visual clutter and refine the hero piano treatment. */
+
+.home-stack {
+  gap: 17px;
+}
+
+.home-secondary-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 2px;
+}
+
+.home-secondary-card {
+  min-height: 152px;
+}
+
+/* Refine the hero to feel closer to the approved embedded-piano reference. */
+.home-focus {
+  min-height: 278px;
+  padding: 26px;
+  background:
+    radial-gradient(88% 116% at 91% 51%, rgba(126, 96, 255, .27), transparent 53%),
+    radial-gradient(68% 74% at 24% 12%, rgba(112, 82, 222, .11), transparent 66%),
+    linear-gradient(145deg, rgba(44, 41, 88, .78), rgba(17, 24, 43, .97) 58%, rgba(11, 18, 31, .99));
+  box-shadow:
+    0 19px 48px rgba(0, 0, 0, .26),
+    inset 0 1px 0 rgba(255, 255, 255, .045);
+}
+
+.home-focus::before {
+  width: 250px;
+  height: 250px;
+  right: -72px;
+  top: 2px;
+  opacity: .78;
+  background:
+    radial-gradient(circle at 40% 46%, rgba(143, 112, 255, .34), rgba(99, 76, 222, .13) 48%, transparent 70%);
+  filter: blur(5px);
+}
+
+.home-focus::after {
+  width: min(44%, 205px);
+  height: 86%;
+  right: -2px;
+  bottom: -7px;
+  opacity: .43;
+  border-radius: 28px 8px 22px 12px;
+  transform: perspective(620px) rotateY(-11deg) rotateZ(.6deg);
+  transform-origin: 82% 55%;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.09), transparent 16%, transparent 67%, rgba(87,63,196,.12)),
+    linear-gradient(#070b14 0 57%, transparent 57%) 17% 0 / 10.5% 60% no-repeat,
+    linear-gradient(#070b14 0 57%, transparent 57%) 43% 0 / 10.5% 60% no-repeat,
+    linear-gradient(#070b14 0 57%, transparent 57%) 69% 0 / 10.5% 60% no-repeat,
+    linear-gradient(#070b14 0 57%, transparent 57%) 92% 0 / 10.5% 60% no-repeat,
+    repeating-linear-gradient(90deg,
+      rgba(238, 240, 252, .40) 0 28px,
+      rgba(92, 97, 124, .24) 28px 31px);
+  box-shadow:
+    -18px 2px 34px rgba(105, 80, 229, .12),
+    inset 0 0 28px rgba(104, 80, 229, .08);
+  filter: saturate(.82) contrast(.96) blur(.15px);
+  -webkit-mask-image: radial-gradient(ellipse at 74% 54%, #000 0 49%, rgba(0,0,0,.94) 62%, rgba(0,0,0,.52) 78%, transparent 96%);
+  mask-image: radial-gradient(ellipse at 74% 54%, #000 0 49%, rgba(0,0,0,.94) 62%, rgba(0,0,0,.52) 78%, transparent 96%);
+}
+
+.home-focus h1 {
+  max-width: 66%;
+}
+
+.home-focus p {
+  max-width: 66%;
+  margin: 15px 0 20px;
+}
+
+.home-focus .primary {
+  width: min(69%, 490px);
+}
+
+html[data-theme="light"] .home-focus::after {
+  opacity: .26;
+}
+
+@media (max-width: 420px) {
+  .home-stack {
+    gap: 16px;
+  }
+
+  .home-focus {
+    min-height: 270px;
+    padding: 22px;
+  }
+
+  .home-focus::after {
+    width: 46%;
+    right: -10px;
+    opacity: .38;
+  }
+
+  .home-focus h1,
+  .home-focus p {
+    max-width: 69%;
+  }
+
+  .home-focus .primary {
+    width: 72%;
+  }
+
+  .home-secondary-grid {
+    gap: 10px;
+  }
+
+  .home-secondary-card {
+    min-height: 148px;
+  }
+}
