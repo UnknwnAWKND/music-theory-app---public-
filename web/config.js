@@ -1,6 +1,6 @@
 // Production client configuration. These are Supabase public client values, not secrets.
 window.__THEORY_TUTOR_CONFIG__ = Object.freeze({
-  buildVersion: "rebuild-block7-phase6-circle-of-fifths",
+  buildVersion: "rebuild-block8-final",
   supabaseUrl: "https://vfgerhaghdqtuairzwbm.supabase.co",
   supabasePublishableKey: "sb_publishable_0yS4dmXH7sds9aBAn8OZGA_AjbKXYvx",
 });
