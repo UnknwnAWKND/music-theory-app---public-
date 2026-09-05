@@ -2,7 +2,7 @@ name: Build Theory Tutor
 
 on:
   push:
-    branches: ["main", "rebuild/**", "block2-*", "block3-*"]
+    branches: ["main", "rebuild/**", "block2-*", "block3-*", "block4-*"]
   pull_request:
     branches: ["main"]
 
@@ -43,5 +43,5 @@ jobs:
             echo "docs already match tested build"
             exit 0
           fi
-          git commit -m "Deploy Block 3 Phase 2 major scales"
+          git commit -m "Deploy Block 4 Phase 3 minor scales"
           git push origin HEAD:main
