@@ -94,14 +94,18 @@ test("Light and Dark share one final design system with warm light background an
   assert.match(design, /--space-2:\s*8px/);
   assert.match(design, /--space-4:\s*16px/);
   assert.match(design, /--space-6:\s*24px/);
-  assert.match(design, /min-height:\s*48px/);
+  assert.match(design, /--control-height:\s*48px/);
+  assert.match(design, /min-height:\s*var\(--control-height\)/);
 });
 
 test("production now loads the final Block 8 app directly", () => {
   assert.match(index, /app-block8\.js/);
   assert.match(index, /design-system\.css/);
   assert.doesNotMatch(index, /app-block3\.js|app-block4\.js|app-block5\.js|app-block6\.js|app-block7\.js/);
-  assert.match(read("scripts/build-site.mjs"), /app-block8\.js/);
+  const build = read("scripts/build-site.mjs");
+  assert.match(build, /await cp\("web", OUT/);
+  assert.match(build, /"app-block3\.js"/);
+  assert.match(build, /Built Block 8 final polished site/);
 });
 
 test("primary navigation is intentionally limited to Home, Learn, and Profile", () => {
