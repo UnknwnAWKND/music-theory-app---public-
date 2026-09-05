@@ -30,7 +30,7 @@ function resetLocalProgress() {
 async function resetSupabaseProgress() {
   const authClient = await createSupabaseBrowserClient(config);
   const session = await getSession(authClient);
-  if (!session?.user?.id) throw new Error("You must be signed in to reset progress.");
+  if (!session?.user?.id) throw new Error("not-authenticated");
   const token = await getAccessToken(authClient);
   const base = `${String(config.supabaseUrl).replace(/\/$/, "")}/rest/v1`;
   const response = await fetch(`${base}/rpc/reset_my_learning_progress`, {
@@ -40,16 +40,17 @@ async function resetSupabaseProgress() {
   });
   if (!response.ok) {
     const detail = await response.text();
-    throw new Error(`Could not reset progress (${response.status}). ${detail}`);
+    console.error("Reset progress request failed", response.status, detail);
+    throw new Error("reset-failed");
   }
 }
 
 async function handleReset(button) {
   if (resetting) return;
-  const confirmed = window.confirm("Reset ALL progress?\n\nThis permanently deletes lesson progress, READY/RETAINED states, question history, review schedules, checkpoint/placement progress, and study-session history.\n\nYour account, profile, and settings will stay. This cannot be undone.");
-  if (!confirmed || !window.confirm("Are you sure? This will put the app back at the beginning for this account.")) return;
+  const confirmed = window.confirm("Reset all learning progress?\n\nThis permanently clears lesson progress, review history, checkpoints, and learning evidence. Your account, profile, and settings stay.");
+  if (!confirmed || !window.confirm("Are you sure? This cannot be undone.")) return;
   resetting = true;
-  const original = button.textContent;
+  const original = button.innerHTML;
   button.disabled = true;
   button.textContent = "Resetting…";
   try {
@@ -57,23 +58,32 @@ async function handleReset(button) {
     window.location.hash = "";
     window.location.reload();
   } catch (error) {
-    console.error(error);
-    window.alert(error?.message ?? "Could not reset progress.");
+    console.error("Reset progress failed", error);
+    window.alert("Could not reset progress. Please try again.");
     button.disabled = false;
-    button.textContent = original;
+    button.innerHTML = original;
     resetting = false;
   }
 }
 
+function trashIcon() {
+  return '<svg class="ui-icon" viewBox="0 0 20 20" aria-hidden="true"><path d="M4.5 6.5h11M8 3.5h4M6.5 6.5l.7 10h5.6l.7-10"/></svg>';
+}
+
 function installResetSetting() {
-  const screen = document.querySelector(".settings-screen");
-  if (!screen || screen.querySelector("[data-reset-all-progress]")) return;
-  const section = document.createElement("section");
-  section.className = "settings-group";
-  section.dataset.resetProgressSection = "";
-  section.innerHTML = `<div class="settings-group-title">Testing</div><button class="menu-row danger" data-reset-all-progress type="button"><span>Reset All Progress</span><span>›</span></button><div class="setting-help">Clears learning and review progress. Your account, profile, and settings are kept.</div>`;
-  screen.appendChild(section);
-  section.querySelector("[data-reset-all-progress]").addEventListener("click", (event) => handleReset(event.currentTarget));
+  const account = document.querySelector("[data-settings-account]");
+  if (!account || account.querySelector("[data-reset-all-progress]")) return;
+  const button = document.createElement("button");
+  button.className = "settings-action-row danger";
+  button.dataset.resetAllProgress = "";
+  button.type = "button";
+  button.innerHTML = `<span>${trashIcon()} Reset Progress</span><span aria-hidden="true"></span>`;
+  account.appendChild(button);
+  const help = document.createElement("div");
+  help.className = "setting-help";
+  help.textContent = "Clears learning and review progress. Your account, profile, theme, and learning settings stay.";
+  account.appendChild(help);
+  button.addEventListener("click", (event) => handleReset(event.currentTarget));
 }
 
 const observer = new MutationObserver(installResetSetting);
