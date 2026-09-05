@@ -19,6 +19,7 @@ import {
   gradeExercise,
   lessonForSkill,
   lessonOpeningState,
+  lessonCompletionEligibleAfterRound,
   markLessonCompleted,
   phaseCoreReady,
   practiceRoundPlan,
@@ -43,8 +44,13 @@ import {
   applyTheme,
   cacheTheme,
   cachedTheme,
+  guidedLessonUnlocked,
   learningSummary,
+  lessonCompleted,
+  lessonProgressMap,
   normalizeTheme,
+  phaseAssessedLessonsComplete,
+  phaseEntryAllowedForGuidedFlow,
   phaseSummary,
   uiIcon,
 } from "./final-ui.js";
@@ -275,10 +281,12 @@ function evidenceMap(states) {
   return new Map(states.map((row) => [row.skillId, row.evidence]));
 }
 
-function statusFor(evidence) {
-  if (evidence?.fragile) return { label: "Needs review", cls: "repair" };
-  if (evidence?.ready) return { label: "Complete", cls: "complete" };
-  if (evidence && evidence.state !== "new") return { label: "Learning", cls: "current" };
+function statusFor(evidence, progress) {
+  if (lessonCompleted(progress)) {
+    if (evidence?.fragile) return { label: "Needs review", cls: "repair" };
+    return { label: "Complete", cls: "complete" };
+  }
+  if (evidence && evidence.state !== "new") return { label: "In progress", cls: "current" };
   return { label: "New", cls: "new" };
 }
 
@@ -287,20 +295,18 @@ function checkpointPassed(progressRows, phase) {
 }
 
 function phaseEntryAllowed(phase, progressRows) {
-  if (state.settings?.requirePreviousLessons === false || phase === 1) return true;
-  if (checkpointPassed(progressRows, phase - 1)) return true;
-  return Boolean(progressRows.find((row) => row.phase === phase)?.validatedEntryAt);
+  return phaseEntryAllowedForGuidedFlow(phase, progressRows, state.settings?.requirePreviousLessons !== false);
 }
 
-function lessonUnlocked(skill, indexInPhase, bySkill, progressRows) {
-  if (state.settings?.requirePreviousLessons === false) return true;
-  if (!phaseEntryAllowed(skill.phase, progressRows)) return false;
-  if (skill.contentKind === "reference") return true;
-  if (indexInPhase === 0) return true;
-  const siblings = phaseSkills(skill.phase);
-  const previous = [...siblings.slice(0, indexInPhase)].reverse().find((item) => item.blocksPhaseCompletion !== false && item.assessed !== false);
-  const evidence = previous ? bySkill.get(previous.id) : undefined;
-  return Boolean(evidence?.ready && !evidence.fragile);
+function lessonUnlocked(skill, indexInPhase, lessonProgressById, progressRows) {
+  return guidedLessonUnlocked({
+    skill,
+    indexInPhase,
+    siblings: phaseSkills(skill.phase),
+    lessonProgressById,
+    phaseEntryAllowed: phaseEntryAllowed(skill.phase, progressRows),
+    requirePreviousLessons: state.settings?.requirePreviousLessons !== false,
+  });
 }
 
 function phaseIntro(phase) {
@@ -330,16 +336,15 @@ function checkpointCopy(phase) {
   return "Fifth movement, nearby and distant keys, relatives, unfamiliar-key choice, and transposition.";
 }
 
-function nextLearningSkill(summary, states, progressRows) {
-  const bySkill = evidenceMap(states);
+function nextLearningSkill(summary, states, progressRows, lessonProgressRows) {
+  const lessonById = lessonProgressMap(lessonProgressRows);
   for (let phase = 1; phase <= 6; phase += 1) {
     if (!phaseEntryAllowed(phase, progressRows)) continue;
     const skills = phaseSkills(phase);
     for (let index = 0; index < skills.length; index += 1) {
       const skill = skills[index];
       if (skill.contentKind === "reference") continue;
-      const evidence = bySkill.get(skill.id);
-      if (!(evidence?.ready && !evidence?.fragile) && lessonUnlocked(skill, index, bySkill, progressRows)) return skill;
+      if (!lessonCompleted(lessonById.get(skill.id)) && lessonUnlocked(skill, index, lessonById, progressRows)) return skill;
     }
   }
   return null;
@@ -347,10 +352,11 @@ function nextLearningSkill(summary, states, progressRows) {
 
 async function renderHome() {
   const states = await state.repo.allSkillStates(state.userId);
+  const lessonProgress = await state.repo.allLessonProgress(state.userId);
   const due = (await state.repo.dueReviews(state.userId, new Date().toISOString())).filter((review) => SKILL_BY_ID.has(review.skillId));
   const progress = await state.repo.phaseProgress(state.userId);
-  const summary = learningSummary(SKILLS, states, progress);
-  const nextSkill = nextLearningSkill(summary, states, progress);
+  const summary = learningSummary(SKILLS, states, progress, lessonProgress);
+  const nextSkill = nextLearningSkill(summary, states, progress, lessonProgress);
   const firstDue = due[0];
   const focusSkill = firstDue ? SKILL_BY_ID.get(firstDue.skillId) : nextSkill;
   const focusPhase = focusSkill?.phase ?? summary.currentPhase;
@@ -383,23 +389,25 @@ async function renderHome() {
 async function renderLearn() {
   const states = await state.repo.allSkillStates(state.userId);
   const bySkill = evidenceMap(states);
+  const lessonProgress = await state.repo.allLessonProgress(state.userId);
+  const lessonById = lessonProgressMap(lessonProgress);
   const readyIds = new Set(states.filter((row) => row.evidence.ready && !row.evidence.fragile).map((row) => row.skillId));
   const progress = await state.repo.phaseProgress(state.userId);
-  const summary = learningSummary(SKILLS, states, progress);
+  const summary = learningSummary(SKILLS, states, progress, lessonProgress);
 
   const sections = CURRICULUM_PHASES.map(({ phase, title }) => {
     const skills = phaseSkills(phase);
-    const phaseInfo = phaseSummary(SKILLS, phase, states, progress);
+    const phaseInfo = phaseSummary(SKILLS, phase, states, progress, lessonProgress);
     const entryAllowed = phaseEntryAllowed(phase, progress);
     const phaseProgress = progress.find((row) => row.phase === phase);
-    const checkpointReady = entryAllowed && phaseCoreReady(phase, readyIds);
+    const checkpointReady = entryAllowed && phaseCoreReady(phase, readyIds) && phaseAssessedLessonsComplete(SKILLS, phase, lessonProgress);
     const open = phase === summary.currentPhase || Boolean(phaseProgress?.validatedEntryAt && !phaseProgress?.checkpointPassedAt);
     const stateLabel = phaseInfo.checkpointPassed ? "Complete" : !entryAllowed ? "Locked" : phase === summary.currentPhase ? "Current" : "Available";
     const stateClass = phaseInfo.checkpointPassed ? "complete" : phase === summary.currentPhase ? "current" : "";
 
     const rows = skills.map((skill, index) => {
-      const unlocked = lessonUnlocked(skill, index, bySkill, progress);
-      const status = skill.contentKind === "reference" ? { label: "Reference", cls: "" } : statusFor(bySkill.get(skill.id));
+      const unlocked = lessonUnlocked(skill, index, lessonById, progress);
+      const status = skill.contentKind === "reference" ? { label: "Reference", cls: "" } : statusFor(bySkill.get(skill.id), lessonById.get(skill.id));
       const lockedCopy = !entryAllowed ? "Pass the previous checkpoint or Placement Test" : "Complete the previous lesson first";
       return `<button class="lesson-row ${unlocked ? "" : "locked"}" data-skill="${esc(skill.id)}" ${unlocked ? "" : "disabled"} type="button">
         <span class="lesson-number">${index + 1}</span>
@@ -610,7 +618,7 @@ async function finishPracticeRound() {
   await state.repo.completeSession(state.userId, practice.sessionId, new Date().toISOString(), "practice-round-complete");
   const evidence = practice.evidence;
   const ready = Boolean(evidence?.ready && !evidence.fragile);
-  if (ready && practice.lessonProgress.completionCount === 0) {
+  if (lessonCompletionEligibleAfterRound(practice.lessonProgress, evidence)) {
     practice.lessonProgress = markLessonCompleted(practice.lessonProgress, new Date().toISOString());
     await state.repo.upsertLessonProgress(state.userId, practice.lessonProgress);
   }
@@ -852,10 +860,11 @@ async function renderPlacement() {
 
 async function renderProfile() {
   const states = await state.repo.allSkillStates(state.userId);
+  const lessonProgress = await state.repo.allLessonProgress(state.userId);
   const due = (await state.repo.dueReviews(state.userId, new Date().toISOString())).filter((review) => SKILL_BY_ID.has(review.skillId));
   const progress = await state.repo.phaseProgress(state.userId);
-  const summary = learningSummary(SKILLS, states, progress);
-  const nextSkill = nextLearningSkill(summary, states, progress);
+  const summary = learningSummary(SKILLS, states, progress, lessonProgress);
+  const nextSkill = nextLearningSkill(summary, states, progress, lessonProgress);
   const name = state.profile?.displayName || "Learner";
   const initial = name.trim().charAt(0).toUpperCase() || "L";
   root.innerHTML = shell(`<header class="page-header"><div><div class="eyebrow">Profile</div><h1>Your learning</h1></div></header>
