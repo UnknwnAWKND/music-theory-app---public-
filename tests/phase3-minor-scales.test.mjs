@@ -73,7 +73,7 @@ const NATURAL_CANONICAL = new Map([
   ["B",  ["B","C♯","D","E","F♯","G","A"]],
 ]);
 
-test("Phase 3 has exactly the requested five lessons in order and Phase 4 is absent", () => {
+test("Phase 3 remains exactly the requested five lessons in order while Phase 4 is added afterward", () => {
   const phase3=SKILLS.filter((skill)=>skill.phase===3);
   assert.deepEqual(phase3.map((skill)=>skill.id),IDS);
   assert.deepEqual(phase3.map((skill)=>skill.title),TITLES);
@@ -82,8 +82,9 @@ test("Phase 3 has exactly the requested five lessons in order and Phase 4 is abs
   assert.deepEqual(activeExerciseSkillIds().slice(14,19),IDS);
   assert.equal(SKILLS.filter((skill)=>skill.phase===1).length,10);
   assert.equal(SKILLS.filter((skill)=>skill.phase===2).length,4);
-  assert.equal(SKILLS.filter((skill)=>skill.phase===4).length,0);
-  assert.equal(checkpointDefinition(4),undefined);
+  assert.equal(SKILLS.filter((skill)=>skill.phase===4).length,10);
+  assert.ok(checkpointDefinition(4));
+  assert.equal(checkpointDefinition(5),undefined);
 });
 
 test("minor-scale formulas and tonic-based interval formulas are exact", () => {
