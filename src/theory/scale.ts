@@ -1,13 +1,46 @@
 import {
   Note,
   accidentalForPitchClass,
+  formatNote,
   letterAt,
   letterIndex,
   mod,
+  parseNote,
   pitchClass,
 } from "./note.js";
 
 export const MAJOR_OFFSETS = [0, 2, 4, 5, 7, 9, 11] as const;
+export const MAJOR_SCALE_STEP_PATTERN = ["W", "W", "H", "W", "W", "W", "H"] as const;
+export const MAJOR_SCALE_DEGREE_INTERVALS = ["P1", "M2", "M3", "P4", "P5", "M6", "M7", "P8"] as const;
+export const SCALE_DEGREE_NAMES = [
+  "Tonic",
+  "Supertonic",
+  "Mediant",
+  "Subdominant",
+  "Dominant",
+  "Submediant",
+  "Leading Tone",
+] as const;
+
+/**
+ * One practical spelling for each of the 12 pitch classes. These are used to
+ * balance recall practice by sound/piano position rather than over-sampling
+ * enharmonic duplicates.
+ */
+export const MAJOR_PITCH_CLASS_ROOTS = [
+  "C", "Db", "D", "Eb", "E", "F", "F#", "G", "Ab", "A", "Bb", "B",
+] as const;
+
+/**
+ * Conventional major-key spellings through seven accidentals. The three
+ * enharmonic pairs (C#/Db, F#/Gb, B/Cb) intentionally coexist because their
+ * written scales are different even when the piano pitches match.
+ */
+export const SUPPORTED_MAJOR_KEY_NAMES = [
+  "C", "G", "D", "A", "E", "B", "F#", "C#",
+  "F", "Bb", "Eb", "Ab", "Db", "Gb", "Cb",
+] as const;
+
 export const NATURAL_MINOR_OFFSETS = [0, 2, 3, 5, 7, 8, 10] as const;
 export const HARMONIC_MINOR_OFFSETS = [0, 2, 3, 5, 7, 8, 11] as const;
 export const MELODIC_MINOR_ASC_OFFSETS = [0, 2, 3, 5, 7, 9, 11] as const;
@@ -22,6 +55,45 @@ export function scaleFromOffsets(tonic: Note, offsets: readonly number[]): Note[
 
 export function majorScale(tonic: Note): Note[] {
   return scaleFromOffsets(tonic, MAJOR_OFFSETS);
+}
+
+export function majorScaleNames(tonicName: string): string[] {
+  return majorScale(parseNote(tonicName)).map(formatNote);
+}
+
+export function scaleDegreeName(degree: number): (typeof SCALE_DEGREE_NAMES)[number] {
+  if (!Number.isInteger(degree) || degree < 1 || degree > 7) throw new Error(`Invalid scale degree: ${degree}`);
+  return SCALE_DEGREE_NAMES[degree - 1];
+}
+
+export function majorScaleDegreeNote(tonicName: string, degree: number): string {
+  if (!Number.isInteger(degree) || degree < 1 || degree > 7) throw new Error(`Invalid scale degree: ${degree}`);
+  return majorScaleNames(tonicName)[degree - 1];
+}
+
+export function majorScaleDegreeForNote(tonicName: string, noteName: string): number | undefined {
+  const notePc = pitchClass(parseNote(noteName));
+  const scale = majorScale(parseNote(tonicName));
+  const index = scale.findIndex((note) => pitchClass(note) === notePc);
+  return index >= 0 ? index + 1 : undefined;
+}
+
+/** Return the practical 12-root spelling for a pitch class. */
+export function majorRootForPitchClass(pc: number): (typeof MAJOR_PITCH_CLASS_ROOTS)[number] {
+  return MAJOR_PITCH_CLASS_ROOTS[mod(pc, 12)];
+}
+
+/**
+ * Alternate conventional written roots for pitch classes that have two common
+ * major-key spellings. The first item is the balanced 12-root practice name.
+ */
+export function conventionalMajorRootsForPitchClass(pc: number): readonly string[] {
+  switch (mod(pc, 12)) {
+    case 1: return ["Db", "C#"];
+    case 6: return ["F#", "Gb"];
+    case 11: return ["B", "Cb"];
+    default: return [majorRootForPitchClass(pc)];
+  }
 }
 
 export function naturalMinorScale(tonic: Note): Note[] {

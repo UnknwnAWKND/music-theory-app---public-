@@ -1,9 +1,21 @@
 import type { SkillDefinition } from "./types.js";
 
-export const CURRICULUM_VERSION = "rebuild-block2-phase1" as const;
+export const CURRICULUM_VERSION = "rebuild-block3-phase2-major-scales" as const;
 
-const shared = {
+const phase1Shared = {
   phase: 1 as const,
+  contentKind: "lesson" as const,
+  assessed: true,
+  blocksPhaseCompletion: true,
+  foundationality: 5 as const,
+  automaticRecall: 5 as const,
+  reviewPriority: 5 as const,
+  longTermRecurrence: 5 as const,
+  prerequisiteImportance: 5 as const,
+};
+
+const phase2Shared = {
+  phase: 2 as const,
   contentKind: "lesson" as const,
   assessed: true,
   blocksPhaseCompletion: true,
@@ -16,7 +28,7 @@ const shared = {
 
 export const SKILLS: readonly SkillDefinition[] = Object.freeze([
   {
-    ...shared,
+    ...phase1Shared,
     id: "intervals.lesson-1-unison-octave",
     title: "Perfect Unison & Perfect Octave",
     prerequisites: [],
@@ -26,7 +38,7 @@ export const SKILLS: readonly SkillDefinition[] = Object.freeze([
     acquisitionRoundSize: 30,
   },
   {
-    ...shared,
+    ...phase1Shared,
     id: "intervals.lesson-2-perfect-fifth",
     title: "Perfect 5th",
     prerequisites: ["intervals.lesson-1-unison-octave"],
@@ -36,7 +48,7 @@ export const SKILLS: readonly SkillDefinition[] = Object.freeze([
     acquisitionRoundSize: 36,
   },
   {
-    ...shared,
+    ...phase1Shared,
     id: "intervals.lesson-3-perfect-fourth",
     title: "Perfect 4th",
     prerequisites: ["intervals.lesson-2-perfect-fifth"],
@@ -46,7 +58,7 @@ export const SKILLS: readonly SkillDefinition[] = Object.freeze([
     acquisitionRoundSize: 36,
   },
   {
-    ...shared,
+    ...phase1Shared,
     id: "intervals.lesson-4-thirds",
     title: "Major 3rd & Minor 3rd",
     prerequisites: ["intervals.lesson-3-perfect-fourth"],
@@ -56,7 +68,7 @@ export const SKILLS: readonly SkillDefinition[] = Object.freeze([
     acquisitionRoundSize: 40,
   },
   {
-    ...shared,
+    ...phase1Shared,
     id: "intervals.lesson-5-sixths",
     title: "Major 6th & Minor 6th",
     prerequisites: ["intervals.lesson-4-thirds"],
@@ -66,7 +78,7 @@ export const SKILLS: readonly SkillDefinition[] = Object.freeze([
     acquisitionRoundSize: 40,
   },
   {
-    ...shared,
+    ...phase1Shared,
     id: "intervals.lesson-6-seconds",
     title: "Major 2nd & Minor 2nd",
     prerequisites: ["intervals.lesson-5-sixths"],
@@ -76,7 +88,7 @@ export const SKILLS: readonly SkillDefinition[] = Object.freeze([
     acquisitionRoundSize: 40,
   },
   {
-    ...shared,
+    ...phase1Shared,
     id: "intervals.lesson-7-sevenths",
     title: "Major 7th & Minor 7th",
     prerequisites: ["intervals.lesson-6-seconds"],
@@ -86,7 +98,7 @@ export const SKILLS: readonly SkillDefinition[] = Object.freeze([
     acquisitionRoundSize: 40,
   },
   {
-    ...shared,
+    ...phase1Shared,
     id: "intervals.lesson-8-tritone",
     title: "Tritone: Augmented 4th / Diminished 5th",
     prerequisites: ["intervals.lesson-7-sevenths"],
@@ -96,7 +108,7 @@ export const SKILLS: readonly SkillDefinition[] = Object.freeze([
     acquisitionRoundSize: 40,
   },
   {
-    ...shared,
+    ...phase1Shared,
     id: "intervals.lesson-9-inversion-capstone",
     title: "Inversion Rule Capstone",
     prerequisites: ["intervals.lesson-8-tritone"],
@@ -106,12 +118,53 @@ export const SKILLS: readonly SkillDefinition[] = Object.freeze([
     acquisitionRoundSize: 36,
   },
   {
-    ...shared,
+    ...phase1Shared,
     id: "intervals.lesson-10-cumulative",
     title: "Cumulative Drilling",
     prerequisites: ["intervals.lesson-9-inversion-capstone"],
     evidence: ["construct", "identify", "transform", "diagnose", "apply"],
     tags: ["interval", "cumulative", "automaticity", "spelling", "inversion", "mixed-practice"],
+    conceptualUnderstanding: 4,
+    acquisitionRoundSize: 60,
+  },
+
+  {
+    ...phase2Shared,
+    id: "major-scales.lesson-1-formula",
+    title: "Major Scale Formula",
+    prerequisites: ["intervals.lesson-10-cumulative"],
+    evidence: ["identify", "construct", "apply"],
+    tags: ["major-scale", "formula", "WWHWWWH", "whole-step", "half-step", "interval-connection"],
+    conceptualUnderstanding: 5,
+    acquisitionRoundSize: 36,
+  },
+  {
+    ...phase2Shared,
+    id: "major-scales.lesson-2-degree-names",
+    title: "Scale Degree Names",
+    prerequisites: ["major-scales.lesson-1-formula"],
+    evidence: ["identify", "translate", "apply"],
+    tags: ["major-scale", "scale-degree", "tonic", "dominant", "leading-tone", "automatic-recall"],
+    conceptualUnderstanding: 4,
+    acquisitionRoundSize: 42,
+  },
+  {
+    ...phase2Shared,
+    id: "major-scales.lesson-3-build-all-roots",
+    title: "Building the Major Scale From Every Root",
+    prerequisites: ["major-scales.lesson-2-degree-names"],
+    evidence: ["construct", "translate", "diagnose", "apply"],
+    tags: ["major-scale", "12-pitch-classes", "spelling", "one-letter-each", "enharmonic", "construction"],
+    conceptualUnderstanding: 5,
+    acquisitionRoundSize: 48,
+  },
+  {
+    ...phase2Shared,
+    id: "major-scales.lesson-4-instant-recall",
+    title: "Major Scale Instant Recall Drill",
+    prerequisites: ["major-scales.lesson-3-build-all-roots"],
+    evidence: ["construct", "identify", "apply"],
+    tags: ["major-scale", "automaticity", "12-pitch-classes", "distributed-retrieval", "spelling", "mixed-practice"],
     conceptualUnderstanding: 4,
     acquisitionRoundSize: 60,
   },

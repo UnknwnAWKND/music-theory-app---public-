@@ -1,7 +1,20 @@
 import { PHASE1_INTERVAL_GENERATORS } from "./phase1-intervals.js";
+import { PHASE2_MAJOR_SCALE_GENERATORS } from "./phase2-major-scales.js";
 import type { Exercise, ExerciseGenerator } from "./types.js";
 
-const GENERATORS = new Map<string, ExerciseGenerator>(PHASE1_INTERVAL_GENERATORS);
+const phase2Generators = [...PHASE2_MAJOR_SCALE_GENERATORS].map(([skillId, generator]) => {
+  if (skillId !== "major-scales.lesson-4-instant-recall") return [skillId, generator] as const;
+  // Keep the very first 12 direct recall probes balanced across all 12 pitch
+  // classes before the first embedded Phase 1 review. Later cross-phase review
+  // continues on the normal schedule.
+  const balancedRecall: ExerciseGenerator = (index) => generator(index === 9 ? 21 : index);
+  return [skillId, balancedRecall] as const;
+});
+
+const GENERATORS = new Map<string, ExerciseGenerator>([
+  ...PHASE1_INTERVAL_GENERATORS,
+  ...phase2Generators,
+]);
 
 export function registerExerciseGenerator(skillId: string, generator: ExerciseGenerator): void {
   GENERATORS.set(skillId, generator);

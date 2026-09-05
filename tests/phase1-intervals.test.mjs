@@ -23,21 +23,22 @@ const IDS = [
   "intervals.lesson-7-sevenths", "intervals.lesson-8-tritone", "intervals.lesson-9-inversion-capstone",
   "intervals.lesson-10-cumulative",
 ];
+const phase1Skills = () => SKILLS.filter((x)=>x.phase===1);
 const generated = (id, count=120) => Array.from({length:count}, (_,i)=>exerciseForSkill(id,i)).filter(Boolean);
 const evidence = (overrides={}) => ({...deriveSkillEvidence([]), ...overrides});
 
-test("exact Phase 1 lesson order with no Phase 2 content", () => {
-  assert.deepEqual(SKILLS.map(x=>x.title), TITLES);
-  assert.deepEqual(SKILLS.map(x=>x.id), IDS);
-  assert.deepEqual(activeLessonSkillIds(), IDS);
-  assert.deepEqual(activeExerciseSkillIds(), IDS);
+test("exact Phase 1 lesson order remains untouched while Phase 2 is added", () => {
+  assert.deepEqual(phase1Skills().map(x=>x.title), TITLES);
+  assert.deepEqual(phase1Skills().map(x=>x.id), IDS);
+  assert.deepEqual(activeLessonSkillIds().slice(0, IDS.length), IDS);
+  assert.deepEqual(activeExerciseSkillIds().slice(0, IDS.length), IDS);
   assert.deepEqual(phase1Lessons().map(x=>x.title), TITLES);
-  assert.equal(SKILLS.every(x=>x.phase===1), true);
-  assert.equal(SKILLS.some(x=>x.phase>=2), false);
+  assert.equal(phase1Skills().length,10);
+  assert.equal(SKILLS.some(x=>x.phase>=3), false);
   assert.deepEqual(CURRICULUM_PHASES.map(x=>x.phase), [1,2,3,4,5,6]);
 });
 
-test("each Phase 1 lesson has teaching and exercises", () => {
+test("each Phase 1 lesson still has teaching and exercises", () => {
   for (const id of IDS) {
     assert.ok(lessonForSkill(id)?.teachingSteps.length >= 4, id);
     assert.ok(exerciseForSkill(id,0), id);
@@ -91,7 +92,7 @@ test("all requested inversion partners are exact", () => {
   for (const [a,b] of Object.entries(pairs)) assert.equal(invertPhase1Interval(a),b,a);
 });
 
-test("later lesson generators cumulatively revisit earlier intervals", () => {
+test("later Phase 1 generators cumulatively revisit earlier intervals", () => {
   const cases=[
     ["intervals.lesson-2-perfect-fifth",["P1","P8","P5"]],
     ["intervals.lesson-3-perfect-fourth",["P1","P8","P5","P4"]],
@@ -105,7 +106,7 @@ test("later lesson generators cumulatively revisit earlier intervals", () => {
   }
 });
 
-test("cumulative lesson covers all taught intervals and both directions", () => {
+test("Phase 1 cumulative lesson covers all taught intervals and both directions", () => {
   const items=generated("intervals.lesson-10-cumulative",260);
   const seen=new Set(items.map(x=>x.metadata?.interval).filter(Boolean));
   for (const interval of PHASE1_INTERVAL_NAMES) assert.ok(seen.has(interval),interval);
@@ -115,7 +116,7 @@ test("cumulative lesson covers all taught intervals and both directions", () => 
   assert.ok(items.some(x=>x.metadata?.family==="tritone-spelling"));
 });
 
-test("roots vary across naturals sharps and flats", () => {
+test("Phase 1 roots still vary across naturals sharps and flats", () => {
   assert.ok(phase1RootNames().some(x=>!/[#b]/.test(x)));
   assert.ok(phase1RootNames().some(x=>x.includes("#")));
   assert.ok(phase1RootNames().some(x=>x.includes("b")));
@@ -125,14 +126,14 @@ test("roots vary across naturals sharps and flats", () => {
   assert.ok([...roots].some(x=>x&&!/[♯♭]/.test(x)));
 });
 
-test("construct questions show the root but do not reveal the target before retrieval", () => {
+test("Phase 1 construct questions show the root but do not reveal the target before retrieval", () => {
   const item=generated("intervals.lesson-10-cumulative",100).find(x=>x.metadata?.direction==="construct");
   assert.ok(item);
   assert.equal(item.metadata.pianoHighlighted.length,1);
   assert.ok(item.metadata.revealPianoTarget);
 });
 
-test("recent question generation has meaningful variety", () => {
+test("Phase 1 recent question generation still has meaningful variety", () => {
   for (const id of IDS) {
     const items=generated(id,30);
     const unique=new Set(items.map(x=>x.exampleSignature));
@@ -140,7 +141,7 @@ test("recent question generation has meaningful variety", () => {
   }
 });
 
-test("teaching marks automatic recall vs understanding and examples accompany rule-heavy content", () => {
+test("Phase 1 teaching still marks automatic recall vs understanding", () => {
   for (const lesson of phase1Lessons()) {
     const expectations=new Set(lesson.teachingSteps.map(x=>x.expectation));
     assert.ok(expectations.has("know-instantly"),`${lesson.title} automatic target`);
@@ -152,7 +153,7 @@ test("teaching marks automatic recall vs understanding and examples accompany ru
   assert.match(ui,/UNDERSTAND THIS/);
 });
 
-test("READY remains reviewable and RETAINED lowers but does not erase recurrence", () => {
+test("Phase 1 READY remains reviewable and RETAINED lowers but does not erase recurrence", () => {
   const ready=evidence({state:"ready",ready:true,retained:false,fragile:false});
   const retained=evidence({state:"retained",ready:true,retained:true,fragile:false,everRetained:true});
   const id=IDS[0];
@@ -162,25 +163,26 @@ test("READY remains reviewable and RETAINED lowers but does not erase recurrence
   assert.ok(interleavingTargets(new Map([[id,retained]])).includes(id));
 });
 
-test("Phase 1 priorities are maximal and practice rounds are never under 30", () => {
-  assert.ok(SKILLS.every(x=>x.foundationality===5&&x.reviewPriority===5&&x.longTermRecurrence===5));
-  for (const skill of SKILLS) {
+test("Phase 1 priorities remain maximal and rounds remain at least 30", () => {
+  assert.ok(phase1Skills().every(x=>x.foundationality===5&&x.reviewPriority===5&&x.longTermRecurrence===5));
+  for (const skill of phase1Skills()) {
     assert.ok(practiceRoundPlan(skill.id,"new").size>=30);
     assert.ok(practiceRoundPlan(skill.id,"review").size>=30);
   }
   assert.match(renderPracticeRoundCounter(2,30,1),/Question 3 of 30/);
 });
 
-test("checkpoint represents all required Phase 1 competencies and Phase 2 is absent", () => {
+test("Phase 1 checkpoint remains intact while Phase 2 gets its own checkpoint", () => {
   const checkpoint=checkpointDefinition(1);
   assert.ok(checkpoint&&checkpoint.minItems>=14);
   const ids=new Set(checkpoint.competencies.map(x=>x.id));
   for (const id of ["perfect-construction","major-minor-construction","interval-identification","interval-inversion","quality-discrimination","tritone-spelling","varied-root-spelling"]) assert.ok(ids.has(id),id);
   assert.ok(checkpoint.competencies.every(x=>x.critical));
-  assert.equal(checkpointDefinition(2),undefined);
+  assert.ok(checkpointDefinition(2));
+  assert.equal(checkpointDefinition(3),undefined);
 });
 
-test("lesson replay starts at teaching and Skip to Review appears only after completed teaching", () => {
+test("Phase 1 lesson replay starts at teaching and Skip to Review remains at bottom", () => {
   const lesson=lessonForSkill(IDS[0]);
   const first={stage:"teaching",teachingStepIndex:0,canSkipToReview:false,skipPlacement:null};
   const replay={stage:"teaching",teachingStepIndex:0,canSkipToReview:true,skipPlacement:"teaching-bottom"};
@@ -190,5 +192,5 @@ test("lesson replay starts at teaching and Skip to Review appears only after com
 });
 
 test("no Phase 1 user-facing hint controls were reintroduced", () => {
-  for (const path of ["web/app.js","web/lesson-ui.js","src/practice/lessons.ts","src/exercises/phase1-intervals.ts"]) assert.doesNotMatch(fs.readFileSync(path,"utf8"),/show\s+hint|need\s+a\s+hint|hintbutton|hintbtn/i,path);
+  for (const path of ["web/app-block3.js","web/lesson-ui.js","src/practice/lessons.ts","src/exercises/phase1-intervals.ts"]) assert.doesNotMatch(fs.readFileSync(path,"utf8"),/show\s+hint|need\s+a\s+hint|hintbutton|hintbtn/i,path);
 });
