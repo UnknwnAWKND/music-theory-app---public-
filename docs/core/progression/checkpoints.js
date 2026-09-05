@@ -1,10 +1,58 @@
 import { SKILLS, SKILL_BY_ID } from "../curriculum/index.js";
-/** Block 1 contains no checkpoint competency content. Machinery stays available. */
-export function checkpointDefinition(_phase) {
-    return undefined;
+const PHASE1_CHECKPOINT = Object.freeze({
+    phase: 1,
+    minItems: 14,
+    maxItems: 24,
+    competencies: Object.freeze([
+        {
+            id: "perfect-construction",
+            label: "Construct perfect unisons, octaves, 5ths, and 4ths",
+            skillIds: ["intervals.lesson-1-unison-octave", "intervals.lesson-2-perfect-fifth", "intervals.lesson-3-perfect-fourth"],
+            critical: true,
+        },
+        {
+            id: "major-minor-construction",
+            label: "Construct major and minor 2nds, 3rds, 6ths, and 7ths",
+            skillIds: ["intervals.lesson-4-thirds", "intervals.lesson-5-sixths", "intervals.lesson-6-seconds", "intervals.lesson-7-sevenths"],
+            critical: true,
+        },
+        {
+            id: "interval-identification",
+            label: "Identify exact interval number and quality from two notes",
+            skillIds: SKILLS.filter((skill) => skill.phase === 1).map((skill) => skill.id),
+            critical: true,
+        },
+        {
+            id: "interval-inversion",
+            label: "Invert interval numbers and qualities accurately",
+            skillIds: ["intervals.lesson-3-perfect-fourth", "intervals.lesson-5-sixths", "intervals.lesson-7-sevenths", "intervals.lesson-9-inversion-capstone"],
+            critical: true,
+        },
+        {
+            id: "quality-discrimination",
+            label: "Discriminate perfect, major, minor, augmented, and diminished qualities",
+            skillIds: ["intervals.lesson-4-thirds", "intervals.lesson-5-sixths", "intervals.lesson-6-seconds", "intervals.lesson-7-sevenths", "intervals.lesson-8-tritone"],
+            critical: true,
+        },
+        {
+            id: "tritone-spelling",
+            label: "Distinguish and construct A4 versus d5 by spelling",
+            skillIds: ["intervals.lesson-8-tritone", "intervals.lesson-10-cumulative"],
+            critical: true,
+        },
+        {
+            id: "varied-root-spelling",
+            label: "Construct intervals above natural, sharp, and flat roots",
+            skillIds: ["intervals.lesson-8-tritone", "intervals.lesson-10-cumulative"],
+            critical: true,
+        },
+    ]),
+});
+export function checkpointDefinition(phase) {
+    return phase === 1 ? PHASE1_CHECKPOINT : undefined;
 }
 export function allCheckpointDefinitions() {
-    return [];
+    return [PHASE1_CHECKPOINT];
 }
 function isStrong(result) {
     return result.correct && result.firstSubmission && result.independent && !result.guidanceUsed && !result.solutionSeen
@@ -49,7 +97,7 @@ export function nextCheckpointCompetency(definition, results) {
         counts.set(result.competencyId, (counts.get(result.competencyId) ?? 0) + 1);
     return [...candidates].sort((a, b) => (counts.get(a.id) ?? 0) - (counts.get(b.id) ?? 0))[0];
 }
-/** Placement prerequisites remain graph-derived; there is no old hand-written map. */
+/** Placement prerequisites remain graph-derived; no Phase 2+ placement content is authored in Block 2. */
 export function placementPrerequisitePhases(targetPhase) {
     const required = new Set();
     const seen = new Set();

@@ -43,12 +43,11 @@ export interface AssessmentEvaluation {
     competencies: CompetencyAssessment[];
     recommendedPhase?: PhaseNumber;
 }
-/** Block 1 contains no checkpoint competency content. Machinery stays available. */
-export declare function checkpointDefinition(_phase: PhaseNumber): PhaseCheckpointDefinition | undefined;
+export declare function checkpointDefinition(phase: PhaseNumber): PhaseCheckpointDefinition | undefined;
 export declare function allCheckpointDefinitions(): PhaseCheckpointDefinition[];
 export declare function evaluateCheckpoint(definition: PhaseCheckpointDefinition, results: readonly DiagnosticItemResult[]): AssessmentEvaluation;
 export declare function nextCheckpointCompetency(definition: PhaseCheckpointDefinition, results: readonly DiagnosticItemResult[]): CompetencyDefinition | undefined;
-/** Placement prerequisites remain graph-derived; there is no old hand-written map. */
+/** Placement prerequisites remain graph-derived; no Phase 2+ placement content is authored in Block 2. */
 export declare function placementPrerequisitePhases(targetPhase: PhaseNumber): PhaseNumber[];
 export declare function placementDefinition(targetPhase: PhaseNumber): PhaseCheckpointDefinition;
 export declare function recommendStartingPhase(targetPhase: PhaseNumber, evaluation: AssessmentEvaluation): PhaseNumber;

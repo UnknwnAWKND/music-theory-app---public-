@@ -11,4 +11,10 @@ export declare function selectAdaptiveExercise(candidates: readonly Exercise[], 
 export declare function decideAdaptivePractice(attempts: readonly LearningAttempt[], evidence?: DerivedSkillEvidence): AdaptivePracticeDecision;
 export declare function confusionPartnerFor(evidence: DerivedSkillEvidence | undefined): string | undefined;
 export declare function inferredConfusionPartner(_attempt: LearningAttempt): string | undefined;
+/**
+ * Curriculum recurrence is intentionally separate from scheduler due dates.
+ * READY interval skills still deserve mixed retrieval. RETAINED lowers extra
+ * spiral pressure, but never makes a foundational interval skill weight zero.
+ */
+export declare function longTermPracticeWeight(skillId: string, evidence?: DerivedSkillEvidence): number;
 export declare function interleavingTargets(evidenceBySkill: ReadonlyMap<string, DerivedSkillEvidence>): string[];

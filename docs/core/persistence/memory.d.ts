@@ -1,8 +1,9 @@
 import type { DerivedSkillEvidence } from "../learning/index.js";
+import type { LessonProgressState } from "../practice/index.js";
 import type { SchedulerCardSnapshot, SchedulerReviewLog } from "../scheduler/index.js";
 import type { DueReview, SessionPlan } from "../session/index.js";
 import type { AppendAttemptInput, TutorRepository } from "./repository.js";
-import type { SkillStateRecord, StoredAttempt, StoredSchedulerCard, StoredSchedulerReview, StudySessionRecord, PhaseProgressRecord, UserLearningSettings, UserProfile } from "./types.js";
+import type { SkillStateRecord, StoredAttempt, StoredLessonProgress, StoredSchedulerCard, StoredSchedulerReview, StudySessionRecord, PhaseProgressRecord, UserLearningSettings, UserProfile } from "./types.js";
 export declare class InMemoryTutorRepository implements TutorRepository {
     readonly sessions: StudySessionRecord[];
     readonly attempts: StoredAttempt[];
@@ -12,6 +13,7 @@ export declare class InMemoryTutorRepository implements TutorRepository {
     readonly settings: Map<string, UserLearningSettings>;
     readonly profiles: Map<string, UserProfile>;
     readonly phaseProgressRows: Map<string, PhaseProgressRecord>;
+    readonly lessonProgressRows: Map<string, StoredLessonProgress>;
     private key;
     createSession(userId: string, startedAt: string, plan?: SessionPlan): Promise<StudySessionRecord>;
     completeSession(userId: string, sessionId: string, completedAt: string, completionReason: string): Promise<void>;
@@ -27,6 +29,8 @@ export declare class InMemoryTutorRepository implements TutorRepository {
     acquiringSkillIds(userId: string): Promise<string[]>;
     phaseProgress(userId: string): Promise<PhaseProgressRecord[]>;
     upsertPhaseProgress(record: PhaseProgressRecord): Promise<void>;
+    getLessonProgress(userId: string, lessonId: string): Promise<LessonProgressState | undefined>;
+    upsertLessonProgress(userId: string, progress: LessonProgressState): Promise<void>;
     getProfile(userId: string): Promise<UserProfile | undefined>;
     upsertProfile(userId: string, displayName: string, createdAt?: string): Promise<void>;
     getSettings(userId: string): Promise<UserLearningSettings | undefined>;

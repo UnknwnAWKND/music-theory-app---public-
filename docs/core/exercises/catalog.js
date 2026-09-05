@@ -1,5 +1,5 @@
-/** Empty by design in Block 1. Future curriculum blocks register generators here. */
-const GENERATORS = new Map();
+import { PHASE1_INTERVAL_GENERATORS } from "./phase1-intervals.js";
+const GENERATORS = new Map(PHASE1_INTERVAL_GENERATORS);
 export function registerExerciseGenerator(skillId, generator) {
     GENERATORS.set(skillId, generator);
 }

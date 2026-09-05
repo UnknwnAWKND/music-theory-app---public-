@@ -1,16 +1,11 @@
 const EMPTY = {
-    sessions: [], attempts: [], skillStates: [], cards: [], schedulerReviews: [], settings: [], profiles: [], phaseProgress: [],
+    sessions: [], attempts: [], skillStates: [], cards: [], schedulerReviews: [], settings: [], profiles: [], phaseProgress: [], lessonProgress: [],
 };
 function clone(value) { return JSON.parse(JSON.stringify(value)); }
 function uid(prefix) {
     const random = globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`;
     return `${prefix}-${random}`;
 }
-/**
- * Browser-only preview persistence. Production persistence remains Supabase.
- * This adapter intentionally stores the same repository shapes so the UI can be
- * exercised before deployment credentials are available.
- */
 export class BrowserStorageTutorRepository {
     storage;
     storageKey;
@@ -26,7 +21,8 @@ export class BrowserStorageTutorRepository {
             const parsed = JSON.parse(raw);
             return {
                 sessions: parsed.sessions ?? [], attempts: parsed.attempts ?? [], skillStates: parsed.skillStates ?? [],
-                cards: parsed.cards ?? [], schedulerReviews: parsed.schedulerReviews ?? [], settings: parsed.settings ?? [], profiles: parsed.profiles ?? [], phaseProgress: parsed.phaseProgress ?? [],
+                cards: parsed.cards ?? [], schedulerReviews: parsed.schedulerReviews ?? [], settings: parsed.settings ?? [], profiles: parsed.profiles ?? [],
+                phaseProgress: parsed.phaseProgress ?? [], lessonProgress: parsed.lessonProgress ?? [],
             };
         }
         catch {
@@ -116,6 +112,20 @@ export class BrowserStorageTutorRepository {
             db.phaseProgress[i] = clone(record);
         else
             db.phaseProgress.push(clone(record));
+        this.write(db);
+    }
+    async getLessonProgress(userId, lessonId) {
+        const row = this.read().lessonProgress.find((x) => x.userId === userId && x.lessonId === lessonId);
+        return row ? { lessonId: row.lessonId, completionCount: row.completionCount, firstCompletedAt: row.firstCompletedAt, lastCompletedAt: row.lastCompletedAt } : undefined;
+    }
+    async upsertLessonProgress(userId, progress) {
+        const db = this.read();
+        const i = db.lessonProgress.findIndex((x) => x.userId === userId && x.lessonId === progress.lessonId);
+        const row = { ...clone(progress), userId, updatedAt: new Date().toISOString() };
+        if (i >= 0)
+            db.lessonProgress[i] = row;
+        else
+            db.lessonProgress.push(row);
         this.write(db);
     }
     async getProfile(userId) {

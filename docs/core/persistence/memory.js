@@ -12,6 +12,7 @@ export class InMemoryTutorRepository {
     settings = new Map();
     profiles = new Map();
     phaseProgressRows = new Map();
+    lessonProgressRows = new Map();
     key(userId, skillId) {
         return `${userId}::${skillId}`;
     }
@@ -81,6 +82,15 @@ export class InMemoryTutorRepository {
     }
     async upsertPhaseProgress(record) {
         this.phaseProgressRows.set(`${record.userId}::${record.phase}`, { ...record });
+    }
+    async getLessonProgress(userId, lessonId) {
+        const row = this.lessonProgressRows.get(this.key(userId, lessonId));
+        if (!row)
+            return undefined;
+        return { lessonId: row.lessonId, completionCount: row.completionCount, firstCompletedAt: row.firstCompletedAt, lastCompletedAt: row.lastCompletedAt };
+    }
+    async upsertLessonProgress(userId, progress) {
+        this.lessonProgressRows.set(this.key(userId, progress.lessonId), { ...progress, userId, updatedAt: new Date().toISOString() });
     }
     async getProfile(userId) {
         const row = this.profiles.get(userId);

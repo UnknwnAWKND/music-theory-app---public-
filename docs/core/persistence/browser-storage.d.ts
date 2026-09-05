@@ -1,4 +1,5 @@
 import type { DerivedSkillEvidence } from "../learning/index.js";
+import type { LessonProgressState } from "../practice/index.js";
 import type { SchedulerCardSnapshot, SchedulerReviewLog } from "../scheduler/index.js";
 import type { DueReview, SessionPlan } from "../session/index.js";
 import type { AppendAttemptInput, TutorRepository } from "./repository.js";
@@ -7,11 +8,6 @@ export interface KeyValueStorage {
     getItem(key: string): string | null;
     setItem(key: string, value: string): void;
 }
-/**
- * Browser-only preview persistence. Production persistence remains Supabase.
- * This adapter intentionally stores the same repository shapes so the UI can be
- * exercised before deployment credentials are available.
- */
 export declare class BrowserStorageTutorRepository implements TutorRepository {
     private readonly storage;
     private readonly storageKey;
@@ -32,6 +28,8 @@ export declare class BrowserStorageTutorRepository implements TutorRepository {
     acquiringSkillIds(userId: string): Promise<string[]>;
     phaseProgress(userId: string): Promise<PhaseProgressRecord[]>;
     upsertPhaseProgress(record: PhaseProgressRecord): Promise<void>;
+    getLessonProgress(userId: string, lessonId: string): Promise<LessonProgressState | undefined>;
+    upsertLessonProgress(userId: string, progress: LessonProgressState): Promise<void>;
     getProfile(userId: string): Promise<UserProfile | undefined>;
     upsertProfile(userId: string, displayName: string, createdAt?: string): Promise<void>;
     getSettings(userId: string): Promise<UserLearningSettings | undefined>;

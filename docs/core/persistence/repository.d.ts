@@ -1,4 +1,5 @@
 import type { DerivedSkillEvidence, LearningAttempt } from "../learning/index.js";
+import type { LessonProgressState } from "../practice/index.js";
 import type { DueReview, SessionPlan } from "../session/index.js";
 import type { SchedulerCardSnapshot, SchedulerReviewLog } from "../scheduler/index.js";
 import type { SkillStateRecord, StoredAttempt, StoredSchedulerCard, StoredSchedulerReview, StudySessionRecord, PhaseProgressRecord, UserLearningSettings, UserProfile } from "./types.js";
@@ -23,6 +24,8 @@ export interface TutorRepository {
     acquiringSkillIds(userId: string): Promise<string[]>;
     phaseProgress(userId: string): Promise<PhaseProgressRecord[]>;
     upsertPhaseProgress(record: PhaseProgressRecord): Promise<void>;
+    getLessonProgress(userId: string, lessonId: string): Promise<LessonProgressState | undefined>;
+    upsertLessonProgress(userId: string, progress: LessonProgressState): Promise<void>;
     getProfile(userId: string): Promise<UserProfile | undefined>;
     upsertProfile(userId: string, displayName: string, createdAt?: string): Promise<void>;
     getSettings(userId: string): Promise<UserLearningSettings | undefined>;
