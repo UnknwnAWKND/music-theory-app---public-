@@ -3,10 +3,14 @@ import { uiIcon } from "./final-ui.js";
 const app = document.querySelector("#app");
 const THEME_COLORS = { dark: "#090e19", light: "#f4efe6" };
 
+function replaceText(node, text) {
+  if (node && node.textContent !== text) node.textContent = text;
+}
+
 function setThemeChrome() {
   const theme = document.documentElement.dataset.theme === "light" ? "light" : "dark";
   const meta = document.querySelector('meta[name="theme-color"]');
-  if (meta) meta.setAttribute("content", THEME_COLORS[theme]);
+  if (meta && meta.getAttribute("content") !== THEME_COLORS[theme]) meta.setAttribute("content", THEME_COLORS[theme]);
 }
 
 function addMetricIcon(card, name) {
@@ -37,8 +41,8 @@ function decorateHome(root) {
     const title = hero.querySelector("h1");
     const copy = hero.querySelector("p");
     const label = hero.querySelector(".eyebrow")?.textContent?.trim();
-    if (title?.textContent?.trim() === "Keep it fresh") title.textContent = "Curriculum complete";
-    if (label === "Review due" && copy) copy.textContent = "A spaced review is ready.";
+    if (title?.textContent?.trim() === "Keep it fresh") replaceText(title, "Curriculum complete");
+    if (label === "Review due") replaceText(copy, "A spaced review is ready.");
   }
 
   const cards = [...home.querySelectorAll(".home-secondary-card")];
@@ -59,8 +63,8 @@ function decorateHome(root) {
     addMetricIcon(curriculumCard, "learn");
     const button = curriculumCard.querySelector("#openCurriculum");
     if (button) {
-      button.textContent = "›";
-      button.setAttribute("aria-label", "Open curriculum");
+      replaceText(button, "›");
+      if (button.getAttribute("aria-label") !== "Open curriculum") button.setAttribute("aria-label", "Open curriculum");
       if (!curriculumCard.dataset.referenceBound) {
         curriculumCard.dataset.referenceBound = "true";
         curriculumCard.setAttribute("role", "button");
@@ -84,50 +88,40 @@ function decorateHome(root) {
 function decorateLearn(root) {
   const header = root.querySelector(".curriculum-header");
   if (!header) return false;
-  const eyebrow = header.querySelector(".eyebrow");
-  const title = header.querySelector("h1");
-  const copy = header.querySelector("p");
-  if (eyebrow) eyebrow.textContent = "Curriculum";
-  if (title) title.textContent = "Learn";
-  if (copy) copy.textContent = "6 phases";
+  replaceText(header.querySelector(".eyebrow"), "Curriculum");
+  replaceText(header.querySelector("h1"), "Learn");
+  replaceText(header.querySelector("p"), "6 phases");
   return true;
 }
 
 function decorateProfile(root) {
   if (!root.querySelector(".profile-hero-final")) return false;
   const header = root.querySelector(".page-header");
-  const eyebrow = header?.querySelector(".eyebrow");
-  const title = header?.querySelector("h1");
-  if (eyebrow) eyebrow.textContent = "Music Theory Tutor";
-  if (title) title.textContent = "Profile";
+  replaceText(header?.querySelector(".eyebrow"), "Music Theory Tutor");
+  replaceText(header?.querySelector("h1"), "Profile");
   return true;
 }
 
 function decoratePlacement(root) {
   const intro = root.querySelector(".placement-intro");
   if (!intro) return false;
-  const title = intro.querySelector("h1");
-  const copy = intro.querySelector("p");
-  if (title) title.textContent = "Test into a phase";
-  if (copy) copy.textContent = "Show the prerequisite skills for the phase you want to start. Passing unlocks entry without marking earlier material complete or retained.";
+  replaceText(intro.querySelector("h1"), "Test into a phase");
+  replaceText(intro.querySelector("p"), "Show the prerequisite skills for the phase you want to start. Passing unlocks entry without marking earlier material complete or retained.");
   return true;
 }
 
 function decorateAuth(root) {
   const card = root.querySelector(".auth-card");
   if (!card) return false;
-  const copy = card.querySelector(":scope > p");
-  if (copy) copy.textContent = "Sign in to continue your learning.";
+  replaceText(card.querySelector(":scope > p"), "Sign in to continue your learning.");
   return true;
 }
 
 function standardizeLabels(root) {
   root.querySelectorAll(".learning-expectation.automatic").forEach((label) => {
-    if (label.textContent?.trim() === "KNOW THIS INSTANTLY") label.textContent = "KNOW THIS AUTOMATICALLY";
+    if (label.textContent?.trim() === "KNOW THIS INSTANTLY") replaceText(label, "KNOW THIS AUTOMATICALLY");
   });
-  root.querySelectorAll(".loading-state > span").forEach((label) => {
-    label.textContent = "Loading…";
-  });
+  root.querySelectorAll(".loading-state > span").forEach((label) => replaceText(label, "Loading…"));
 }
 
 function markScreen(root) {
@@ -142,7 +136,7 @@ function markScreen(root) {
   else if (root.querySelector("#profileForm")) name = "edit-profile";
   else if (root.querySelector(".practice-card")) name = root.querySelector(".assessment-meta") ? "assessment" : "practice";
   else if (root.querySelector(".lesson-content")) name = "lesson";
-  screen.dataset.uiScreen = name;
+  if (screen.dataset.uiScreen !== name) screen.dataset.uiScreen = name;
 }
 
 let queued = false;
