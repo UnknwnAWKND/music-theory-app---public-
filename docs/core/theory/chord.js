@@ -16,6 +16,8 @@ export function buildSeventh(root, quality) {
         dominant7: [INTERVALS.P1, INTERVALS.M3, INTERVALS.P5, INTERVALS.m7],
         halfDiminished7: [INTERVALS.P1, INTERVALS.m3, INTERVALS.d5, INTERVALS.m7],
         diminished7: [INTERVALS.P1, INTERVALS.m3, INTERVALS.d5, INTERVALS.d7],
+        minorMajor7: [INTERVALS.P1, INTERVALS.m3, INTERVALS.P5, INTERVALS.M7],
+        augmentedMajor7: [INTERVALS.P1, INTERVALS.M3, INTERVALS.A5, INTERVALS.M7],
     };
     return formulas[quality].map((interval) => intervalAbove(root, interval));
 }
@@ -47,6 +49,8 @@ export function identifySeventh(notes) {
         "4,7,10": "dominant7",
         "3,6,10": "halfDiminished7",
         "3,6,9": "diminished7",
+        "3,7,11": "minorMajor7",
+        "4,8,11": "augmentedMajor7",
     };
     const quality = map[key];
     if (!quality)

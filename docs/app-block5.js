@@ -1,5 +1,6 @@
 import {
   BrowserStorageTutorRepository,
+  analyzeStructuredProgression,
   CURRICULUM_PHASES,
   CURRICULUM_VERSION,
   SKILLS,
@@ -31,11 +32,12 @@ import {
 } from "./runtime.js";
 import { renderPracticeRoundCounter, renderTeachingStep } from "./lesson-ui.js";
 import { pianoVisual } from "./theory-visuals.js";
+import { bindPhase4ProgressionLab, phase4ProgressionLabHtml } from "./phase4-ui.js";
 
 const config = runtimeConfig();
 const root = document.querySelector("#app");
 const LOCAL_USER_ID = "local-preview";
-// Keep the existing key so Block 4 preserves valid local progress from Phases 1–2.
+// Keep the existing key so Block 5 preserves valid local progress from Phases 1–4.
 const LOCAL_STORAGE_KEY = "music-theory-tutor:block2-phase1";
 const LEGACY_APP_STORAGE_KEYS = ["music-theory-tutor:v0.7-preview", "music-theory-tutor:v1", "music-theory-tutor:block1-empty"];
 const DEFAULT_SETTINGS = (userId) => ({
@@ -191,7 +193,7 @@ function renderAuth(message = "") {
     <section class="auth-card">
       <div class="eyebrow">Music Theory</div>
       <h1>Sign in</h1>
-      <p>Phases 1–3 — Intervals, Major Scales, and Minor Scales are ready.</p>
+      <p>Phases 1–4 — Intervals, Major Scales, Minor Scales, and Diatonic Chords / Roman Numerals are ready.</p>
       ${message ? `<div class="auth-message">${esc(message)}</div>` : ""}
       <form id="authForm">
         <label>Email<input id="email" type="email" autocomplete="email" required></label>
@@ -249,7 +251,7 @@ function lessonUnlocked(skill, indexInPhase, bySkill, progressRows) {
   if (skill.phase === 1 && indexInPhase === 0) return true;
   if (skill.phase > 1 && indexInPhase === 0) return checkpointPassed(progressRows, skill.phase - 1);
   const siblings = phaseSkills(skill.phase);
-  const previous = siblings[indexInPhase - 1];
+  const previous = [...siblings.slice(0, indexInPhase)].reverse().find((item) => item.blocksPhaseCompletion !== false && item.assessed !== false);
   const evidence = previous ? bySkill.get(previous.id) : undefined;
   return Boolean(evidence?.ready && !evidence.fragile);
 }
@@ -264,21 +266,24 @@ async function renderHome() {
   const phase1Passed = checkpointPassed(progress, 1);
   const phase2Passed = checkpointPassed(progress, 2);
   const phase3Passed = checkpointPassed(progress, 3);
-  const focusPhase = !phase1Passed ? 1 : !phase2Passed ? 2 : 3;
+  const phase4Passed = checkpointPassed(progress, 4);
+  const focusPhase = !phase1Passed ? 1 : !phase2Passed ? 2 : !phase3Passed ? 3 : 4;
   const focusTitle = phaseDescriptor(focusPhase)?.title ?? "Learn";
   const focusCopy = focusPhase === 1
     ? "Build interval recall until the relationships are fast, accurate, and correctly spelled."
     : focusPhase === 2
       ? "Build and recall all 12 major-scale pitch classes with correct theoretical spelling."
-      : phase3Passed
-        ? "Phase 3 is complete, but minor scales, major scales, and intervals continue returning in spaced review while Phase 4 remains unbuilt."
-        : "Build natural, harmonic, and classical melodic minor across all 12 pitch classes with exact spelling.";
+      : focusPhase === 3
+        ? "Build natural, harmonic, and classical melodic minor across all 12 pitch classes with exact spelling."
+        : phase4Passed
+          ? "Phase 4 is complete, but harmony, scales, and intervals continue returning in spaced review while Phase 5 remains unbuilt."
+          : "Turn scales into chords: stack thirds, derive Roman numerals, understand function, and transpose progressions.";
   root.innerHTML = shell(`<header class="page-header"><div><div class="eyebrow">Music Theory</div><h1>Home</h1></div></header>
     <section class="focus-card">
       <div class="eyebrow">Phase ${focusPhase}</div>
       <h1>${esc(focusTitle)}</h1>
       <p>${esc(focusCopy)}</p>
-      <button class="primary" id="continueLearning" type="button">${phase3Passed ? "Review learning" : `Continue Phase ${focusPhase}`}</button>
+      <button class="primary" id="continueLearning" type="button">${phase4Passed ? "Review learning" : `Continue Phase ${focusPhase}`}</button>
     </section>
     ${firstDue ? `<section class="focus-card review-card"><div class="eyebrow">Spaced review</div><h2>Review due</h2><p>${esc(SKILL_BY_ID.get(firstDue.skillId)?.title ?? "Practice")}</p><button class="secondary" id="startDueReview" type="button">Review now</button></section>` : ""}
     <section class="stats-grid">
@@ -295,7 +300,8 @@ async function renderHome() {
 function phaseIntro(phase) {
   if (phase === 1) return "Intervals are foundational. READY lets you move forward; interval practice continues afterward until recall becomes durable.";
   if (phase === 2) return "Major scales are a major foundation. Learn the construction system, then move toward fast recall across all 12 pitch classes without letting interval fluency disappear.";
-  return "Minor scales build directly on intervals and major-scale construction. Learn the natural form first, then understand exactly why harmonic and classical melodic minor alter specific degrees.";
+  if (phase === 3) return "Minor scales build directly on intervals and major-scale construction. Learn the natural form first, then understand exactly why harmonic and classical melodic minor alter specific degrees.";
+  return "Diatonic harmony turns the scales you already know into chords. Derive the system first, then make the most useful Roman-numeral relationships fast and practical.";
 }
 
 function lessonSubcopy(skill, indexInPhase) {
@@ -306,17 +312,30 @@ function lessonSubcopy(skill, indexInPhase) {
     if (indexInPhase === 2) return "All 12 pitch classes + exact spelling";
     return "Distributed major-scale recall";
   }
-  if (indexInPhase === 0) return "Natural-minor formula + interval connection";
-  if (indexInPhase === 1) return "All 12 roots + exact spelling";
-  if (indexInPhase === 2) return "Raised 7, leading tone + augmented 2nd";
-  if (indexInPhase === 3) return "Classical melodic minor up and down";
-  return "Distributed recall across all minor forms";
+  if (skill.phase === 3) {
+    if (indexInPhase === 0) return "Natural-minor formula + interval connection";
+    if (indexInPhase === 1) return "All 12 roots + exact spelling";
+    if (indexInPhase === 2) return "Raised 7, leading tone + augmented 2nd";
+    if (indexInPhase === 3) return "Classical melodic minor up and down";
+    return "Distributed recall across all minor forms";
+  }
+  if (indexInPhase === 0) return "Stack scale-tone 3rds into triads";
+  if (indexInPhase === 1) return "I ii iii IV V vi vii° — derive, then recall";
+  if (indexInPhase === 2) return "Natural-minor triads + Roman numerals";
+  if (indexInPhase === 3) return "Raised 7 changes V, III and vii°";
+  if (indexInPhase === 4) return "Ascending melodic-minor harmony — moderate priority";
+  if (indexInPhase === 5) return "Stack one more 3rd for seventh chords";
+  if (indexInPhase === 6) return "REFERENCE · lookup only · no mastery quiz";
+  if (indexInPhase === 7) return "Tonic, predominant/subdominant, dominant";
+  if (indexInPhase === 8) return "Portable progression vocabulary + transposition";
+  return "Structured analysis of your own progressions";
 }
 
 function checkpointCopy(phase) {
   if (phase === 1) return "Construction, identification, inversion, quality discrimination, varied roots, and tritone spelling.";
   if (phase === 2) return "Formula understanding, scale construction, exact spelling, scale degrees, varied keys, and instant recall.";
-  return "Natural-minor construction, harmonic and melodic alterations, exact spelling, form discrimination, leading tone, augmented 2nd, and varied keys.";
+  if (phase === 3) return "Natural-minor construction, harmonic and melodic alterations, exact spelling, form discrimination, leading tone, augmented 2nd, and varied keys.";
+  return "Stacked thirds, major/minor triads, seventh chords, Roman numerals, chord function, exact spelling, and progression application.";
 }
 
 async function renderLearn() {
@@ -325,14 +344,15 @@ async function renderLearn() {
   const readyIds = new Set(states.filter((row) => row.evidence.ready && !row.evidence.fragile).map((row) => row.skillId));
   const progress = await state.repo.phaseProgress(state.userId);
 
-  const activeSections = [1, 2, 3].map((phase) => {
+  const activeSections = [1, 2, 3, 4].map((phase) => {
     const skills = phaseSkills(phase);
+    const requiredSkillCount = skills.filter((skill) => !skill.optional && skill.assessed && skill.blocksPhaseCompletion).length;
     const previousPassed = phase === 1 || checkpointPassed(progress, phase - 1) || state.settings?.requirePreviousLessons === false;
     const checkpointReady = phaseCoreReady(phase, readyIds) && previousPassed;
     const phaseProgress = progress.find((row) => row.phase === phase);
     const rows = skills.map((skill, index) => {
       const unlocked = lessonUnlocked(skill, index, bySkill, progress);
-      const status = statusFor(bySkill.get(skill.id));
+      const status = skill.contentKind === "reference" ? { label: "REFERENCE", cls: "learning" } : statusFor(bySkill.get(skill.id));
       const lockedCopy = phase > 1 && index === 0 ? `Pass the Phase ${phase - 1} checkpoint first` : "Finish the previous lesson first";
       return `<button class="lesson-row ${unlocked ? "" : "locked"}" data-skill="${esc(skill.id)}" ${unlocked ? "" : "disabled"} type="button">
         <span class="lesson-number">${index + 1}</span>
@@ -349,15 +369,15 @@ async function renderLearn() {
       <section class="lesson-list">${rows}</section>
       <section class="checkpoint-card ${checkpointReady ? "" : "locked"}">
         <div class="eyebrow">Phase ${phase} checkpoint</div>
-        <h2>${phaseProgress?.checkpointPassedAt ? "Checkpoint passed" : phase === 1 ? "Representative interval check" : phase === 2 ? "Representative major-scale check" : "Representative minor-scale check"}</h2>
+        <h2>${phaseProgress?.checkpointPassedAt ? "Checkpoint passed" : phase === 1 ? "Representative interval check" : phase === 2 ? "Representative major-scale check" : phase === 3 ? "Representative minor-scale check" : "Representative harmony check"}</h2>
         <p>${esc(checkpointCopy(phase))}</p>
-        <button class="${checkpointReady ? "primary" : "secondary"}" data-checkpoint-phase="${phase}" type="button" ${checkpointReady ? "" : "disabled"}>${phaseProgress?.checkpointPassedAt ? "Retake checkpoint" : checkpointReady ? "Start checkpoint" : previousPassed ? `Become READY on all ${skills.length} lessons first` : `Pass Phase ${phase - 1} checkpoint first`}</button>
+        <button class="${checkpointReady ? "primary" : "secondary"}" data-checkpoint-phase="${phase}" type="button" ${checkpointReady ? "" : "disabled"}>${phaseProgress?.checkpointPassedAt ? "Retake checkpoint" : checkpointReady ? "Start checkpoint" : previousPassed ? `Become READY on all ${requiredSkillCount} assessed lessons first` : `Pass Phase ${phase - 1} checkpoint first`}</button>
       </section>
     </section>`;
   }).join("");
 
   root.innerHTML = shell(`${activeSections}
-    <section class="future-phases"><div class="eyebrow">Later blocks</div>${CURRICULUM_PHASES.filter((phase) => phase.phase >= 4).map((phase) => `<div class="future-phase"><span>Phase ${phase.phase}</span><strong>${esc(phase.title)}</strong><small>Not built yet</small></div>`).join("")}</section>`, "learn");
+    <section class="future-phases"><div class="eyebrow">Later blocks</div>${CURRICULUM_PHASES.filter((phase) => phase.phase >= 5).map((phase) => `<div class="future-phase"><span>Phase ${phase.phase}</span><strong>${esc(phase.title)}</strong><small>Not built yet</small></div>`).join("")}</section>`, "learn");
   bindNav();
   document.querySelectorAll("[data-skill]").forEach((button) => button.addEventListener("click", () => openLesson(button.dataset.skill)));
   document.querySelectorAll("[data-checkpoint-phase]").forEach((button) => {
@@ -372,9 +392,18 @@ async function renderLesson() {
   if (!lesson || !skill) return navigate("learn", true);
   const progress = await state.repo.getLessonProgress(state.userId, skillId) ?? freshLessonProgress(skillId);
   const openingState = lessonOpeningState(progress);
-  const html = renderTeachingStep({ lesson, openingState, stepIndex: state.teachingStep });
+  let html = renderTeachingStep({ lesson, openingState, stepIndex: state.teachingStep });
+  const atLastTeachingStep = state.teachingStep >= lesson.teachingSteps.length - 1;
+  if (skillId === "diatonic-chords.lesson-10-own-progressions" && atLastTeachingStep) html += phase4ProgressionLabHtml();
   root.innerHTML = shell(`<header class="page-header lesson-header"><button class="back-button" id="backToLearn" type="button">‹ Learn</button><div><div class="eyebrow">Phase ${skill.phase} · Lesson ${lessonNumberInPhase(skillId)}</div><h1>${esc(lesson.title)}</h1></div></header>${html}`, "learn", false);
   document.querySelector("#backToLearn").onclick = () => navigate("learn");
+  const startAction = document.querySelector('[data-action="start-practice"]');
+  if (skill.contentKind === "reference" && startAction) {
+    startAction.textContent = "Back to Phase 4";
+    startAction.dataset.action = "close-reference";
+    startAction.addEventListener("click", () => navigate("learn"));
+  }
+  bindPhase4ProgressionLab(analyzeStructuredProgression);
   document.querySelector('[data-action="previous-teaching"]')?.addEventListener("click", () => { state.teachingStep = Math.max(0, state.teachingStep - 1); render(); });
   document.querySelector('[data-action="next-teaching"]')?.addEventListener("click", () => { state.teachingStep += 1; render(); });
   document.querySelector('[data-action="start-practice"]')?.addEventListener("click", () => startPractice(skillId, "new", { lessonProgress: progress }));
@@ -570,7 +599,7 @@ function renderPractice() {
   root.innerHTML = shell(`<header class="page-header lesson-header"><button class="back-button" id="exitPractice" type="button">‹ Learn</button><div><div class="eyebrow">Phase ${phase} practice</div><h1>${esc(SKILL_BY_ID.get(practice.skillId)?.title ?? "Practice")}</h1></div></header>
     <section class="practice-card">
       ${renderPracticeRoundCounter(counterAnswered, practice.roundSize, practice.roundNumber)}
-      ${exercise.metadata?.crossPhaseReview ? `<div class="learning-expectation conceptual">${exercise.metadata?.reviewPhase === 2 ? "PHASE 2 MAJOR-SCALE REVIEW" : "PHASE 1 INTERVAL REVIEW"}</div>` : ""}
+      ${exercise.metadata?.crossPhaseReview ? `<div class="learning-expectation conceptual">${exercise.metadata?.reviewPhase === 3 ? "PHASE 3 MINOR-SCALE REVIEW" : exercise.metadata?.reviewPhase === 2 ? "PHASE 2 MAJOR-SCALE REVIEW" : "PHASE 1 INTERVAL REVIEW"}</div>` : ""}
       <h2>${esc(exercise.prompt)}</h2>
       ${practicePiano(exercise, Boolean(feedback))}
       ${feedback ? `<div class="feedback ${feedback.correct ? "correct" : "incorrect"}"><strong>${feedback.correct ? "Correct" : "Not quite"}</strong><p>${esc(feedback.detail ?? "")}</p></div>
@@ -701,7 +730,9 @@ async function finishCheckpoint(evaluation) {
     ? "You demonstrated representative Phase 1 competencies. Passing the checkpoint does not mean RETAINED; interval review continues."
     : phase === 2
       ? "You demonstrated representative major-scale competencies across multiple keys. Passing the checkpoint does not mean RETAINED; major-scale and interval review continue."
-      : "You demonstrated representative minor-scale competencies across multiple keys and forms. Passing the checkpoint does not mean RETAINED; minor-scale, major-scale, and interval review continue.";
+      : phase === 3
+        ? "You demonstrated representative minor-scale competencies across multiple keys and forms. Passing the checkpoint does not mean RETAINED; minor-scale, major-scale, and interval review continue."
+        : "You demonstrated representative diatonic-harmony competencies across keys, scale forms, chord sizes, functions, and progression applications. Passing the checkpoint does not mean RETAINED; harmony and prior foundations continue in review.";
   root.innerHTML = shell(`<header class="page-header"><div><div class="eyebrow">Phase ${phase} checkpoint</div><h1>${evaluation.passed ? "Passed" : "Review needed"}</h1></div></header>
     <section class="focus-card"><h2>${esc(title)}</h2><p>${evaluation.passed ? esc(successCopy) : "The checkpoint found areas that need more work before the phase is considered passed."}</p>
       ${evaluation.review.length ? `<div class="review-list"><strong>Review:</strong>${evaluation.review.map((item) => `<span>${esc(item)}</span>`).join("")}</div>` : ""}
@@ -758,7 +789,7 @@ async function renderSettings() {
       <div class="settings-group"><div class="settings-group-title">Account</div>
         <label class="settings-row settings-field"><span><strong>Display name</strong></span><input id="displayName" type="text" maxlength="80" value="${esc(state.profile?.displayName || "Learner")}"></label>
       </div>
-      <div class="soft-note">Curriculum version: ${esc(CURRICULUM_VERSION)} · Phases 1–3 active · ${SKILLS.length} lessons</div>
+      <div class="soft-note">Curriculum version: ${esc(CURRICULUM_VERSION)} · Phases 1–4 active · ${SKILLS.length} lessons</div>
     </section>`, "profile");
   bindNav();
   document.querySelector("#guidedToggle").addEventListener("change", async (event) => {
