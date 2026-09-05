@@ -6,6 +6,9 @@ export interface CompetencyDefinition {
     label: string;
     skillIds: readonly string[];
     critical?: boolean;
+    minStrongEvidence?: number;
+    minDistinctExamples?: number;
+    minDistinctSkills?: number;
 }
 export interface PhaseCheckpointDefinition {
     phase: PhaseNumber;
@@ -47,7 +50,7 @@ export declare function checkpointDefinition(phase: PhaseNumber): PhaseCheckpoin
 export declare function allCheckpointDefinitions(): PhaseCheckpointDefinition[];
 export declare function evaluateCheckpoint(definition: PhaseCheckpointDefinition, results: readonly DiagnosticItemResult[]): AssessmentEvaluation;
 export declare function nextCheckpointCompetency(definition: PhaseCheckpointDefinition, results: readonly DiagnosticItemResult[]): CompetencyDefinition | undefined;
-/** Placement prerequisites remain graph-derived; no Phase 2+ placement content is authored in Block 2. */
+/** Placement prerequisites remain graph-derived; Phase 3+ placement content is not authored in Block 3. */
 export declare function placementPrerequisitePhases(targetPhase: PhaseNumber): PhaseNumber[];
 export declare function placementDefinition(targetPhase: PhaseNumber): PhaseCheckpointDefinition;
 export declare function recommendStartingPhase(targetPhase: PhaseNumber, evaluation: AssessmentEvaluation): PhaseNumber;

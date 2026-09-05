@@ -48,11 +48,70 @@ const PHASE1_CHECKPOINT = Object.freeze({
         },
     ]),
 });
+const PHASE2_CHECKPOINT = Object.freeze({
+    phase: 2,
+    minItems: 14,
+    maxItems: 24,
+    competencies: Object.freeze([
+        {
+            id: "formula-understanding",
+            label: "Apply W-W-H-W-W-W-H and connect it to tonic-based intervals",
+            skillIds: ["major-scales.lesson-1-formula"],
+            critical: true,
+            minStrongEvidence: 2,
+            minDistinctExamples: 2,
+        },
+        {
+            id: "scale-construction",
+            label: "Construct complete major scales and individual scale tones",
+            skillIds: ["major-scales.lesson-1-formula", "major-scales.lesson-3-build-all-roots", "major-scales.lesson-4-instant-recall"],
+            critical: true,
+            minStrongEvidence: 2,
+            minDistinctExamples: 2,
+        },
+        {
+            id: "correct-spelling",
+            label: "Use exact theoretical major-scale spelling rather than enharmonic substitutes",
+            skillIds: ["major-scales.lesson-3-build-all-roots", "major-scales.lesson-4-instant-recall"],
+            critical: true,
+            minStrongEvidence: 2,
+            minDistinctExamples: 2,
+        },
+        {
+            id: "scale-degrees",
+            label: "Translate scale-degree numbers, names, and notes accurately",
+            skillIds: ["major-scales.lesson-2-degree-names", "major-scales.lesson-3-build-all-roots", "major-scales.lesson-4-instant-recall"],
+            critical: true,
+            minStrongEvidence: 2,
+            minDistinctExamples: 2,
+        },
+        {
+            id: "key-variety",
+            label: "Demonstrate major-scale knowledge across varied roots, not only easy keys",
+            skillIds: ["major-scales.lesson-3-build-all-roots", "major-scales.lesson-4-instant-recall"],
+            critical: true,
+            minStrongEvidence: 3,
+            minDistinctExamples: 3,
+        },
+        {
+            id: "instant-recall",
+            label: "Recall major-scale information without formula scaffolding",
+            skillIds: ["major-scales.lesson-4-instant-recall"],
+            critical: true,
+            minStrongEvidence: 2,
+            minDistinctExamples: 2,
+        },
+    ]),
+});
 export function checkpointDefinition(phase) {
-    return phase === 1 ? PHASE1_CHECKPOINT : undefined;
+    if (phase === 1)
+        return PHASE1_CHECKPOINT;
+    if (phase === 2)
+        return PHASE2_CHECKPOINT;
+    return undefined;
 }
 export function allCheckpointDefinitions() {
-    return [PHASE1_CHECKPOINT];
+    return [PHASE1_CHECKPOINT, PHASE2_CHECKPOINT];
 }
 function isStrong(result) {
     return result.correct && result.firstSubmission && result.independent && !result.guidanceUsed && !result.solutionSeen
@@ -68,9 +127,18 @@ export function evaluateCheckpoint(definition, results) {
         const strong = rows.filter(isStrong);
         const moderate = rows.filter(isModerate);
         const failures = rows.filter((result) => result.firstSubmission && result.independent && !result.correct).length;
-        const distinctSkills = new Set([...strong, ...moderate].map((result) => result.skillId)).size;
-        const distinctExamples = new Set([...strong, ...moderate].map((result) => result.exampleSignature)).size;
-        const demonstrated = failures === 0 && (strong.length >= 1 || (moderate.length >= 2 && distinctExamples >= 2));
+        const successful = [...strong, ...moderate];
+        const distinctSkills = new Set(successful.map((result) => result.skillId)).size;
+        const distinctExamples = new Set(successful.map((result) => result.exampleSignature)).size;
+        const minStrong = competency.minStrongEvidence ?? 1;
+        const minExamples = competency.minDistinctExamples ?? 1;
+        const minSkills = competency.minDistinctSkills ?? 1;
+        const enoughEvidence = strong.length >= minStrong
+            || (minStrong === 1 && moderate.length >= 2 && distinctExamples >= 2);
+        const demonstrated = failures === 0
+            && enoughEvidence
+            && distinctExamples >= minExamples
+            && distinctSkills >= minSkills;
         return { competencyId: competency.id, label: competency.label, demonstrated, strongEvidence: strong.length, moderateEvidence: moderate.length, failures, distinctSkills, distinctExamples };
     });
     const hasContent = competencies.length > 0;
@@ -97,7 +165,7 @@ export function nextCheckpointCompetency(definition, results) {
         counts.set(result.competencyId, (counts.get(result.competencyId) ?? 0) + 1);
     return [...candidates].sort((a, b) => (counts.get(a.id) ?? 0) - (counts.get(b.id) ?? 0))[0];
 }
-/** Placement prerequisites remain graph-derived; no Phase 2+ placement content is authored in Block 2. */
+/** Placement prerequisites remain graph-derived; Phase 3+ placement content is not authored in Block 3. */
 export function placementPrerequisitePhases(targetPhase) {
     const required = new Set();
     const seen = new Set();
