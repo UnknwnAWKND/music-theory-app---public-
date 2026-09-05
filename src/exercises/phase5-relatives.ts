@@ -72,10 +72,13 @@ function withReview(index: number, own: (safe: number) => Exercise): Exercise {
 }
 
 function sharedCollectionQuestion(skillId: string, index: number): Exercise {
-  const pair = pairAt(index + 2);
+  const variant = mod(index, 3);
+  // Decouple task type from key-pair rotation so each conceptual prompt reaches
+  // many different written key signatures instead of repeating the same small
+  // pair/task combinations.
+  const pair = pairAt(Math.floor(index / 3) + (variant * 5));
   const major = majorScaleNames(pair.major);
   const minor = naturalMinorScaleNames(pair.minor);
-  const variant = mod(index, 3);
   if (variant === 0) {
     return createExercise({
       skillId,
