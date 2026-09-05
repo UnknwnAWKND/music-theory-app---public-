@@ -25,6 +25,16 @@ export function selectAdaptiveExercise(
   const recent = new Set(recentSignatures);
   const preferred = candidates.filter((exercise) => !recent.has(semanticExerciseSignature(exercise)));
   const pool = preferred.length ? preferred : candidates;
+
+  // Major-scale generators deliberately order roots to distribute work across
+  // all 12 pitch classes. Do not apply a second index jump on top of the
+  // generator cursor or a 12-root cycle can collapse into only six roots.
+  const majorScaleWindow = candidates.some((exercise) => {
+    const family = String(exercise.metadata?.family ?? "");
+    return family.startsWith("major-scale") || family === "scale-degree";
+  });
+  if (majorScaleWindow) return pool[0];
+
   return pool[((index % pool.length) + pool.length) % pool.length];
 }
 
@@ -50,8 +60,8 @@ export function inferredConfusionPartner(_attempt: LearningAttempt): string | un
 
 /**
  * Curriculum recurrence is intentionally separate from scheduler due dates.
- * READY interval skills still deserve mixed retrieval. RETAINED lowers extra
- * spiral pressure, but never makes a foundational interval skill weight zero.
+ * READY foundational skills still deserve mixed retrieval. RETAINED lowers
+ * extra spiral pressure, but never makes a foundational skill weight zero.
  */
 export function longTermPracticeWeight(skillId: string, evidence?: DerivedSkillEvidence): number {
   const skill = SKILL_BY_ID.get(skillId);
