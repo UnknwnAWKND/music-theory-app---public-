@@ -1,6 +1,6 @@
 import type { SkillDefinition } from "./types.js";
 
-export const CURRICULUM_VERSION = "rebuild-block3-phase2-major-scales" as const;
+export const CURRICULUM_VERSION = "rebuild-block4-phase3-minor-scales" as const;
 
 const phase1Shared = {
   phase: 1 as const,
@@ -16,6 +16,18 @@ const phase1Shared = {
 
 const phase2Shared = {
   phase: 2 as const,
+  contentKind: "lesson" as const,
+  assessed: true,
+  blocksPhaseCompletion: true,
+  foundationality: 5 as const,
+  automaticRecall: 5 as const,
+  reviewPriority: 5 as const,
+  longTermRecurrence: 5 as const,
+  prerequisiteImportance: 5 as const,
+};
+
+const phase3Shared = {
+  phase: 3 as const,
   contentKind: "lesson" as const,
   assessed: true,
   blocksPhaseCompletion: true,
@@ -165,6 +177,57 @@ export const SKILLS: readonly SkillDefinition[] = Object.freeze([
     prerequisites: ["major-scales.lesson-3-build-all-roots"],
     evidence: ["construct", "identify", "apply"],
     tags: ["major-scale", "automaticity", "12-pitch-classes", "distributed-retrieval", "spelling", "mixed-practice"],
+    conceptualUnderstanding: 4,
+    acquisitionRoundSize: 60,
+  },
+
+  {
+    ...phase3Shared,
+    id: "minor-scales.lesson-1-natural-formula",
+    title: "Natural Minor Formula",
+    prerequisites: ["major-scales.lesson-4-instant-recall"],
+    evidence: ["identify", "construct", "apply"],
+    tags: ["minor-scale", "natural-minor", "formula", "WHWWHWW", "interval-connection"],
+    conceptualUnderstanding: 5,
+    acquisitionRoundSize: 36,
+  },
+  {
+    ...phase3Shared,
+    id: "minor-scales.lesson-2-natural-all-roots",
+    title: "Natural Minor From Every Root",
+    prerequisites: ["minor-scales.lesson-1-natural-formula"],
+    evidence: ["construct", "translate", "diagnose", "apply"],
+    tags: ["minor-scale", "natural-minor", "12-pitch-classes", "spelling", "one-letter-each", "construction"],
+    conceptualUnderstanding: 5,
+    acquisitionRoundSize: 48,
+  },
+  {
+    ...phase3Shared,
+    id: "minor-scales.lesson-3-harmonic-minor",
+    title: "Harmonic Minor",
+    prerequisites: ["minor-scales.lesson-2-natural-all-roots"],
+    evidence: ["construct", "identify", "transform", "apply", "diagnose"],
+    tags: ["minor-scale", "harmonic-minor", "raised-7", "leading-tone", "augmented-second", "dominant"],
+    conceptualUnderstanding: 5,
+    acquisitionRoundSize: 48,
+  },
+  {
+    ...phase3Shared,
+    id: "minor-scales.lesson-4-melodic-minor",
+    title: "Melodic Minor",
+    prerequisites: ["minor-scales.lesson-3-harmonic-minor"],
+    evidence: ["construct", "identify", "transform", "apply", "diagnose"],
+    tags: ["minor-scale", "melodic-minor", "raised-6", "raised-7", "ascending", "descending", "classical"],
+    conceptualUnderstanding: 5,
+    acquisitionRoundSize: 48,
+  },
+  {
+    ...phase3Shared,
+    id: "minor-scales.lesson-5-instant-recall",
+    title: "Minor Scale Instant Recall Drill",
+    prerequisites: ["minor-scales.lesson-4-melodic-minor"],
+    evidence: ["construct", "identify", "transform", "diagnose", "apply"],
+    tags: ["minor-scale", "natural-minor", "harmonic-minor", "melodic-minor", "automaticity", "12-pitch-classes", "distributed-retrieval", "spelling", "mixed-practice"],
     conceptualUnderstanding: 4,
     acquisitionRoundSize: 60,
   },

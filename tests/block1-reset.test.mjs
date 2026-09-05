@@ -35,18 +35,19 @@ test("Block 1 six-phase shell remains exact", () => {
   assert.deepEqual(CURRICULUM_PHASES.map((phase) => phase.title), ["Intervals", "Major Scales", "Minor Scales", "Diatonic Chords / Roman Numerals", "Relatives", "Circle of Fifths"]);
 });
 
-test("old pre-rebuild curriculum files remain absent and only Phases 1-2 are active", () => {
+test("old pre-rebuild curriculum files remain absent and only Phases 1-3 are active", () => {
   for (const path of OLD_CURRICULUM_FILES) assert.equal(fs.existsSync(path), false, path);
-  assert.equal(SKILLS.some((skill) => skill.phase > 2), false, "Block 3 must not add Phase 3+ skills");
+  assert.equal(SKILLS.some((skill) => skill.phase > 3), false, "Block 4 must not add Phase 4+ skills");
   assert.equal(SKILLS.filter((skill) => skill.phase === 1).length, 10);
   assert.equal(SKILLS.filter((skill) => skill.phase === 2).length, 4);
-  assert.equal(activeLessonSkillIds().length, 14);
-  assert.equal(activeExerciseSkillIds().length, 14);
-  assert.equal(allCheckpointDefinitions().length, 2);
+  assert.equal(SKILLS.filter((skill) => skill.phase === 3).length, 5);
+  assert.equal(activeLessonSkillIds().length, 19);
+  assert.equal(activeExerciseSkillIds().length, 19);
+  assert.equal(allCheckpointDefinitions().length, 3);
 });
 
-test("no Phase 3+ placement competency content is invented", () => {
-  for (const phase of CURRICULUM_PHASES.filter((x) => x.phase >= 3)) assert.deepEqual(placementDefinition(phase.phase).competencies, []);
+test("no Phase 4+ placement competency content is invented", () => {
+  for (const phase of CURRICULUM_PHASES.filter((x) => x.phase >= 4)) assert.deepEqual(placementDefinition(phase.phase).competencies, []);
 });
 
 test("rebuild migration still preserves auth and clears application data", () => {
@@ -58,18 +59,18 @@ test("rebuild migration still preserves auth and clears application data", () =>
   assert.match(read("web/runtime.js"), /getSession/);
 });
 
-test("login still lazily creates profile/settings without wiping Phase 1 progress", () => {
+test("login still lazily creates profile/settings without wiping prior progress", () => {
   assert.match(app, /ensureFreshAccountState/);
   assert.match(app, /getProfile\(userId\)/);
   assert.match(app, /upsertProfile\(userId/);
   assert.match(app, /getSettings\(userId\)/);
   assert.match(app, /upsertSettings\(settings\)/);
   assert.match(app, /music-theory-tutor:block2-phase1/);
-  assert.match(read("web/config.js"), /buildVersion:\s*"rebuild-block3-phase2-major-scales"/);
+  assert.match(read("web/config.js"), /buildVersion:\s*"rebuild-block4-phase3-minor-scales"/);
 });
 
 test("active app and schemas do not reintroduce hint UI/content", () => {
-  for (const path of ["web/app-block3.js", "web/lesson-ui.js", "src/exercises/types.ts", "src/exercises/generators.ts", "src/practice/types.ts", "src/practice/lessons.ts", "src/practice/phase2-major-scales.ts", "src/exercises/phase2-major-scales.ts"]) {
+  for (const path of ["web/app-block3.js", "web/lesson-ui.js", "src/exercises/types.ts", "src/exercises/generators.ts", "src/practice/types.ts", "src/practice/lessons.ts", "src/practice/phase2-major-scales.ts", "src/exercises/phase2-major-scales.ts", "src/practice/phase3-minor-scales.ts", "src/exercises/phase3-minor-scales.ts"]) {
     assert.doesNotMatch(read(path), /show\s+hint|need\s+a\s+hint|hintbutton|hintbtn|inputHint|hintText|showHint/i, path);
   }
 });
@@ -143,11 +144,11 @@ test("old source-mutating build scripts and stale schema remain absent", () => {
   assert.equal(fs.existsSync("supabase/schema.sql"), false);
 });
 
-test("Block 3 app parses with Phase 2 active and Phase 3 unbuilt", () => {
+test("Block 3 source app remains a valid baseline for the pure Block 4 production transform", () => {
   execFileSync(process.execPath, ["--check", "web/app-block3.js"]);
   assert.match(read("web/index.html"), /app-block3\.js/);
   assert.match(app, /Phase 2/);
   assert.match(app, /major scale|Major Scales/i);
-  assert.match(app, /phase\.phase >= 3/);
   assert.doesNotMatch(app, /minor-scales\.lesson-/);
+  assert.ok(fs.existsSync("scripts/block4-app-transform.mjs"));
 });
