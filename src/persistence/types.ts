@@ -61,11 +61,14 @@ export interface PhaseProgressRecord {
   updatedAt: string;
 }
 
+export type UserTheme = "light" | "dark";
+
 export interface UserLearningSettings {
   userId: string;
   desiredRetention: number;
   maximumIntervalDays: number;
   requirePreviousLessons: boolean;
+  theme: UserTheme;
   curriculumVersion: string;
   schedulerVersion: "fsrs-6";
 }
