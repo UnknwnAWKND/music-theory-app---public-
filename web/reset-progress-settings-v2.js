@@ -7,7 +7,7 @@ import {
 } from "./runtime.js";
 
 const config = runtimeConfig();
-const LOCAL_STORAGE_KEY = "music-theory-tutor:block1-empty";
+const LOCAL_STORAGE_KEY = "music-theory-tutor:block2-phase1";
 let resetting = false;
 
 function resetLocalProgress() {
