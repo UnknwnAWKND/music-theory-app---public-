@@ -42,7 +42,8 @@ function rootFor(index: number) {
 
 function intervalFor(pool: readonly Phase1IntervalName[], index: number): Phase1IntervalName {
   const safe = Math.max(0, index);
-  return pool[(safe * 7 + Math.floor(safe / ROOT_NAMES.length)) % pool.length];
+  // 11 is coprime with every pool length used here, so variety appears quickly instead of cycling a small subset.
+  return pool[(safe * 11 + Math.floor(safe / ROOT_NAMES.length)) % pool.length];
 }
 
 function keyboardPitchName(noteName: string): string {
@@ -76,15 +77,7 @@ function makeIdentify(skillId: string, interval: Phase1IntervalName, index: numb
     explanation: `${rootName} to ${targetName} is ${INTERVALS[interval].name} (${interval}): a ${INTERVALS[interval].number} by letter spelling and ${INTERVALS[interval].semitones} semitone${INTERVALS[interval].semitones === 1 ? "" : "s"}.`,
     exampleSignature: `${skillId}:identify:${rootName}:${targetName}:${interval}`,
     directEvidence: true,
-    metadata: {
-      family: "interval",
-      direction: "identify",
-      responseMode: "recognition",
-      interval,
-      root: rootName,
-      target: targetName,
-      pianoHighlighted: [keyboardPitchName(rootName), keyboardPitchName(targetName)],
-    },
+    metadata: { family: "interval", direction: "identify", responseMode: "recognition", interval, root: rootName, target: targetName, pianoHighlighted: [keyboardPitchName(rootName), keyboardPitchName(targetName)] },
   }, index);
 }
 
@@ -100,16 +93,7 @@ function makeConstruct(skillId: string, interval: Phase1IntervalName, index: num
     explanation: `The target must first be a ${INTERVALS[interval].number} by letter name, then the accidental must make the distance ${INTERVALS[interval].semitones} semitone${INTERVALS[interval].semitones === 1 ? "" : "s"}. The correct spelling is ${targetName}.`,
     exampleSignature: `${skillId}:construct:${rootName}:${interval}:${targetName}`,
     directEvidence: true,
-    metadata: {
-      family: "interval",
-      direction: "construct",
-      responseMode: "constructed",
-      interval,
-      root: rootName,
-      target: targetName,
-      pianoHighlighted: [keyboardPitchName(rootName)],
-      revealPianoTarget: keyboardPitchName(targetName),
-    },
+    metadata: { family: "interval", direction: "construct", responseMode: "constructed", interval, root: rootName, target: targetName, pianoHighlighted: [keyboardPitchName(rootName)], revealPianoTarget: keyboardPitchName(targetName) },
   }, index);
 }
 
@@ -123,13 +107,7 @@ function makeInversion(skillId: string, interval: Phase1IntervalName, index: num
     explanation: `${INTERVALS[interval].number} + ${INTERVALS[inverse].number} = 9, and ${INTERVALS[interval].quality} inverts to ${INTERVALS[inverse].quality}. So ${interval} ↔ ${inverse}.`,
     exampleSignature: `${skillId}:invert:${interval}:${inverse}:${index % 3}`,
     directEvidence: true,
-    metadata: {
-      family: "interval-inversion",
-      direction: "transform",
-      responseMode: "application",
-      interval,
-      inverse,
-    },
+    metadata: { family: "interval-inversion", direction: "transform", responseMode: "application", interval, inverse },
   }, index);
 }
 
@@ -147,15 +125,7 @@ function makeTritoneSpelling(skillId: string, index: number): Exercise {
     explanation: `The letters make this a ${INTERVALS[interval].number}, so the six-semitone tritone is ${interval}, not ${other}. Spelling determines the interval name.`,
     exampleSignature: `${skillId}:tritone-spelling:${rootName}:${targetName}:${interval}`,
     directEvidence: true,
-    metadata: {
-      family: "tritone-spelling",
-      direction: "diagnose",
-      responseMode: "discrimination",
-      interval,
-      root: rootName,
-      target: targetName,
-      pianoHighlighted: [keyboardPitchName(rootName), keyboardPitchName(targetName)],
-    },
+    metadata: { family: "tritone-spelling", direction: "diagnose", responseMode: "discrimination", interval, root: rootName, target: targetName, pianoHighlighted: [keyboardPitchName(rootName), keyboardPitchName(targetName)] },
   }, index);
 }
 
@@ -180,7 +150,6 @@ function generatorFor(skillId: string): ExerciseGenerator {
   return (index: number) => {
     const safe = Math.max(0, index);
     const interval = intervalFor(pool, safe);
-
     if (skillId === "intervals.lesson-3-perfect-fourth" && safe % 5 === 4) return makeInversion(skillId, safe % 2 === 0 ? "P5" : "P4", safe);
     if (skillId === "intervals.lesson-5-sixths" && safe % 5 === 0) return makeInversion(skillId, ["M3", "m6", "m3", "M6"][safe % 4] as Phase1IntervalName, safe);
     if (skillId === "intervals.lesson-7-sevenths" && safe % 5 === 0) return makeInversion(skillId, ["M2", "m7", "m2", "M7"][safe % 4] as Phase1IntervalName, safe);
@@ -193,19 +162,10 @@ function generatorFor(skillId: string): ExerciseGenerator {
       if (safe % 7 === 0) return makeInversion(skillId, interval, safe);
       if (safe % 11 === 0) return makeTritoneSpelling(skillId, safe);
     }
-
     return safe % 2 === 0 ? makeConstruct(skillId, interval, safe) : makeIdentify(skillId, interval, safe);
   };
 }
 
-export const PHASE1_INTERVAL_GENERATORS: ReadonlyMap<string, ExerciseGenerator> = new Map(
-  Object.keys(LESSON_POOLS).map((skillId) => [skillId, generatorFor(skillId)]),
-);
-
-export function phase1ExerciseForSkill(skillId: string, index = 0): Exercise | undefined {
-  return PHASE1_INTERVAL_GENERATORS.get(skillId)?.(index);
-}
-
-export function phase1RootNames(): readonly string[] {
-  return ROOT_NAMES;
-}
+export const PHASE1_INTERVAL_GENERATORS: ReadonlyMap<string, ExerciseGenerator> = new Map(Object.keys(LESSON_POOLS).map((skillId) => [skillId, generatorFor(skillId)]));
+export function phase1ExerciseForSkill(skillId: string, index = 0): Exercise | undefined { return PHASE1_INTERVAL_GENERATORS.get(skillId)?.(index); }
+export function phase1RootNames(): readonly string[] { return ROOT_NAMES; }
