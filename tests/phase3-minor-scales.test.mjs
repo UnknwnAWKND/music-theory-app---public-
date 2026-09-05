@@ -85,7 +85,7 @@ test("Phase 3 remains exactly the requested five lessons in order while Phase 4 
   assert.equal(SKILLS.filter((skill)=>skill.phase===4).length,10);
   assert.ok(checkpointDefinition(4));
   assert.ok(checkpointDefinition(5));
-  assert.equal(checkpointDefinition(6),undefined);
+  assert.ok(checkpointDefinition(6));
 });
 
 test("minor-scale formulas and tonic-based interval formulas are exact", () => {

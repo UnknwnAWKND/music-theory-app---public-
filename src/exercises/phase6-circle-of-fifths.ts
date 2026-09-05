@@ -50,27 +50,39 @@ function metadata(homeKey: string, targetKey: string | undefined, competencies: 
   };
 }
 
+function nativeReview(
+  generator: (skillId: string, index?: number) => Exercise | undefined,
+  skillId: string,
+  expectedPrefix: string,
+  seed: number,
+): Exercise {
+  for (let offset = 0; offset < 80; offset += 1) {
+    const candidate = generator(skillId, seed + offset);
+    if (candidate && candidate.skillId.startsWith(expectedPrefix) && !candidate.metadata?.crossPhaseReview) return candidate;
+  }
+  throw new Error(`Could not produce native review item for ${skillId}`);
+}
+
 function priorReview(index: number): Exercise {
   const slot = mod(Math.floor(index / 19), 5);
-  let item: Exercise | undefined;
-  let reviewPhase = 1;
+  let item: Exercise;
+  let reviewPhase: 1 | 2 | 3 | 4 | 5;
   if (slot === 0) {
-    item = phase1ExerciseForSkill("intervals.lesson-2-perfect-fifth", 3 + mod(index, 12));
+    item = nativeReview(phase1ExerciseForSkill, "intervals.lesson-2-perfect-fifth", "intervals.", 3 + mod(index, 12));
     reviewPhase = 1;
   } else if (slot === 1) {
-    item = phase2ExerciseForSkill("major-scales.lesson-4-instant-recall", 17 + mod(index, 12) * 7);
+    item = nativeReview(phase2ExerciseForSkill, "major-scales.lesson-4-instant-recall", "major-scales.", 17 + mod(index, 12) * 7);
     reviewPhase = 2;
   } else if (slot === 2) {
-    item = phase3ExerciseForSkill("minor-scales.lesson-5-instant-recall", 11 + mod(index, 12) * 5);
+    item = nativeReview(phase3ExerciseForSkill, "minor-scales.lesson-5-instant-recall", "minor-scales.", 11 + mod(index, 12) * 5);
     reviewPhase = 3;
   } else if (slot === 3) {
-    item = phase4ExerciseForSkill("diatonic-chords.lesson-9-progressions", 7 + mod(index, 12) * 3);
+    item = nativeReview(phase4ExerciseForSkill, "diatonic-chords.lesson-9-progressions", "diatonic-chords.", 7 + mod(index, 12) * 3);
     reviewPhase = 4;
   } else {
-    item = phase5ExerciseForSkill("relatives.lesson-4-instant-recall", 13 + mod(index, 15) * 4);
+    item = nativeReview(phase5ExerciseForSkill, "relatives.lesson-4-instant-recall", "relatives.", 13 + mod(index, 15) * 4);
     reviewPhase = 5;
   }
-  if (!item) throw new Error("Missing Phase 6 cross-phase review item");
   return {
     ...item,
     metadata: {

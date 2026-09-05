@@ -35,17 +35,18 @@ test("Block 1 six-phase shell remains exact", () => {
   assert.deepEqual(CURRICULUM_PHASES.map((phase) => phase.title), ["Intervals", "Major Scales", "Minor Scales", "Diatonic Chords / Roman Numerals", "Relatives", "Circle of Fifths"]);
 });
 
-test("old pre-rebuild curriculum files remain absent and only Phases 1-5 are active", () => {
+test("old pre-rebuild curriculum files remain absent and only Phases 1-6 are active", () => {
   for (const path of OLD_CURRICULUM_FILES) assert.equal(fs.existsSync(path), false, path);
-  assert.equal(SKILLS.some((skill) => skill.phase > 5), false, "Block 6 must not add Phase 6 skills");
+  assert.equal(SKILLS.some((skill) => skill.phase > 6), false, "No Phase 7 skills may exist");
   assert.equal(SKILLS.filter((skill) => skill.phase === 1).length, 10);
   assert.equal(SKILLS.filter((skill) => skill.phase === 2).length, 4);
   assert.equal(SKILLS.filter((skill) => skill.phase === 3).length, 5);
   assert.equal(SKILLS.filter((skill) => skill.phase === 4).length, 10);
   assert.equal(SKILLS.filter((skill) => skill.phase === 5).length, 4);
-  assert.equal(activeLessonSkillIds().length, 33);
-  assert.equal(activeExerciseSkillIds().length, 32, "Reference Lesson 7 must remain the only lesson without an exercise generator");
-  assert.equal(allCheckpointDefinitions().length, 5);
+  assert.equal(SKILLS.filter((skill) => skill.phase === 6).length, 4);
+  assert.equal(activeLessonSkillIds().length, 37);
+  assert.equal(activeExerciseSkillIds().length, 36, "Reference Lesson 7 must remain the only lesson without an exercise generator");
+  assert.equal(allCheckpointDefinitions().length, 6);
 });
 
 test("no Phase 6 placement competency content is invented", () => {
@@ -68,7 +69,7 @@ test("login still lazily creates profile/settings without wiping prior progress"
   assert.match(app, /getSettings\(userId\)/);
   assert.match(app, /upsertSettings\(settings\)/);
   assert.match(app, /music-theory-tutor:block2-phase1/);
-  assert.match(read("web/config.js"), /buildVersion:\s*"rebuild-block6-phase5-relatives"/);
+  assert.match(read("web/config.js"), /buildVersion:\s*"rebuild-block7-phase6-circle-of-fifths"/);
 });
 
 test("active app and schemas do not reintroduce hint UI/content", () => {

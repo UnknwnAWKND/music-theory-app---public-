@@ -84,7 +84,7 @@ test("every adjacent major-key pair shares exactly six of seven pitch classes", 
     assert.equal(circleDistanceBetweenMajors(left, right), 1, `${left}/${right}`);
     assert.equal(sharedMajorScaleNoteCount(left, right), 6, `${left}/${right}`);
   }
-  assert.equal(sharedMajorScaleNoteCount("C", "F#"), 1);
+  assert.equal(sharedMajorScaleNoteCount("C", "F#"), 2);
 });
 
 test("enharmonic seam labels and matching relatives are explicit", () => {

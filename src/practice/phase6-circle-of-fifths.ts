@@ -75,7 +75,7 @@ export const PHASE6_CIRCLE_LESSONS: readonly LessonContent[] = Object.freeze([
         id: "distant-definition",
         title: "Distant = farther outside that immediate family",
         body: "A distant key is not one of those immediate close relationships. More circle steps generally mean less shared major-scale pitch material and a bigger change in key signature.",
-        workedExample: "C major to G major is one step and shares six notes. C major to F♯/G♭ is the opposite side and shares only one pitch class.",
+        workedExample: "C major to G major is one step and shares six notes. C major to F♯/G♭ is the opposite side and shares only two pitch classes.",
         expectation: "understand",
       },
       {
