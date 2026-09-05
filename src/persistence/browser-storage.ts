@@ -131,7 +131,7 @@ export class BrowserStorageTutorRepository implements TutorRepository {
   }
   async getSettings(userId: string): Promise<UserLearningSettings|undefined> {
     const row=this.read().settings.find((x)=>x.userId===userId);
-    return row?{...clone(row),requirePreviousLessons:row.requirePreviousLessons??true}:undefined;
+    return row?{...clone(row),requirePreviousLessons:row.requirePreviousLessons??true,theme:row.theme??"dark"}:undefined;
   }
   async upsertSettings(settings: UserLearningSettings): Promise<void> {
     const db=this.read(); const i=db.settings.findIndex((x)=>x.userId===settings.userId);
