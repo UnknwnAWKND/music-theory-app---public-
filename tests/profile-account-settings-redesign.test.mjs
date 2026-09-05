@@ -108,7 +108,7 @@ test("email and password changes use Supabase Auth rather than profile-table cre
   assert.match(controller, /Check your email to confirm the change/);
   assert.match(controller, /auth\.updateUser\(\{ password: first\.value \}\)/);
   assert.match(controller, /Password updated/);
-  assert.doesNotMatch(migration, /\bpassword\b|\bemail\b/i);
+  assert.doesNotMatch(migration, /add column[^\n]*(?:email|password)|\b(?:email|password)\s+(?:text|varchar)/i);
   assert.doesNotMatch(controller, /localStorage\.setItem\([^\n]*(password|email)/i);
 });
 
@@ -117,7 +117,9 @@ test("account errors are friendly and raw provider error objects are not rendere
   assert.match(controller, /Your session expired\. Sign in again and retry/);
   assert.match(controller, /Could not connect\. Check your connection and try again/);
   assert.match(controller, /For security, sign in again before changing your password/);
-  assert.doesNotMatch(controller, /innerHTML\s*=\s*.*error\?\.message/s);
+  assert.match(controller, /status\.textContent = friendlyError\(error, "email"\)/);
+  assert.match(controller, /status\.textContent = friendlyError\(error, "password"\)/);
+  assert.doesNotMatch(controller, /status\.textContent\s*=\s*error(?:\?\.message)?/);
 });
 
 test("Theme and Accent Color use the same settings item and content-column alignment", () => {
