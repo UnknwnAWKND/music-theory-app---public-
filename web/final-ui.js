@@ -49,16 +49,49 @@ export function activeAssessedSkills(skills) {
   return skills.filter((skill) => skill.assessed !== false && skill.blocksPhaseCompletion !== false && skill.contentKind !== "reference");
 }
 
-export function learningSummary(skills, stateRows, phaseProgressRows) {
+export function lessonProgressMap(rows = []) {
+  return new Map(rows.map((row) => [row.lessonId, row]));
+}
+
+export function lessonCompleted(progress) {
+  return Boolean(progress && Number(progress.completionCount ?? 0) > 0);
+}
+
+export function lessonDisplayState(evidence, progress) {
+  if (lessonCompleted(progress)) return "completed";
+  if (evidence && evidence.state !== "new") return "in-progress";
+  return "not-started";
+}
+
+export function phaseEntryAllowedForGuidedFlow(phase, phaseProgressRows, requirePreviousLessons = true) {
+  if (!requirePreviousLessons || phase === 1) return true;
+  if (phaseProgressRows.some((row) => row.phase === phase - 1 && Boolean(row.checkpointPassedAt))) return true;
+  return Boolean(phaseProgressRows.find((row) => row.phase === phase)?.validatedEntryAt);
+}
+
+export function guidedLessonUnlocked({ skill, indexInPhase, siblings, lessonProgressById, phaseEntryAllowed, requirePreviousLessons = true }) {
+  if (!requirePreviousLessons) return true;
+  if (!phaseEntryAllowed) return false;
+  if (skill.contentKind === "reference") return true;
+  if (indexInPhase === 0) return true;
+  const previous = [...siblings.slice(0, indexInPhase)].reverse().find((item) => item.blocksPhaseCompletion !== false && item.assessed !== false);
+  return previous ? lessonCompleted(lessonProgressById.get(previous.id)) : true;
+}
+
+export function phaseAssessedLessonsComplete(skills, phase, lessonProgressRows = []) {
+  const lessonById = lessonProgressMap(lessonProgressRows);
+  const required = activeAssessedSkills(skills).filter((skill) => skill.phase === phase);
+  return required.length > 0 && required.every((skill) => lessonCompleted(lessonById.get(skill.id)));
+}
+
+export function learningSummary(skills, stateRows, phaseProgressRows, lessonProgressRows = []) {
   const assessed = activeAssessedSkills(skills);
   const byId = new Map(stateRows.map((row) => [row.skillId, row.evidence]));
-  const completed = assessed.filter((skill) => {
-    const evidence = byId.get(skill.id);
-    return Boolean(evidence?.ready && !evidence?.fragile);
-  }).length;
+  const lessonById = lessonProgressMap(lessonProgressRows);
+  const completed = assessed.filter((skill) => lessonCompleted(lessonById.get(skill.id))).length;
   const learning = assessed.filter((skill) => {
     const evidence = byId.get(skill.id);
-    return Boolean(evidence && evidence.state !== "new" && !(evidence.ready && !evidence.fragile));
+    return Boolean(evidence && evidence.state !== "new" && !lessonCompleted(lessonById.get(skill.id)));
   }).length;
   const overallPercent = assessed.length ? Math.round((completed / assessed.length) * 100) : 0;
   const passed = new Set(phaseProgressRows.filter((row) => row.checkpointPassedAt).map((row) => row.phase));
@@ -67,16 +100,13 @@ export function learningSummary(skills, stateRows, phaseProgressRows) {
     currentPhase = phase;
     if (!passed.has(phase)) break;
   }
-  return { assessed, byId, completed, learning, overallPercent, currentPhase, allCheckpointsPassed: passed.size === 6 };
+  return { assessed, byId, lessonById, completed, learning, overallPercent, currentPhase, allCheckpointsPassed: passed.size === 6 };
 }
 
-export function phaseSummary(skills, phase, stateRows, phaseProgressRows) {
+export function phaseSummary(skills, phase, stateRows, phaseProgressRows, lessonProgressRows = []) {
   const required = activeAssessedSkills(skills).filter((skill) => skill.phase === phase);
-  const byId = new Map(stateRows.map((row) => [row.skillId, row.evidence]));
-  const completed = required.filter((skill) => {
-    const evidence = byId.get(skill.id);
-    return Boolean(evidence?.ready && !evidence?.fragile);
-  }).length;
+  const lessonById = lessonProgressMap(lessonProgressRows);
+  const completed = required.filter((skill) => lessonCompleted(lessonById.get(skill.id))).length;
   const percent = required.length ? Math.round((completed / required.length) * 100) : 0;
   const checkpointPassed = Boolean(phaseProgressRows.find((row) => row.phase === phase)?.checkpointPassedAt);
   return { required, completed, percent, checkpointPassed };

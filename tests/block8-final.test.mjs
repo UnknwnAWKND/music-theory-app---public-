@@ -62,17 +62,22 @@ test("all assessed learning still uses real 30+ question rounds", () => {
   }
 });
 
-test("final progress summaries exclude the Phase 4 reference card from mastery math", () => {
+test("final progress summaries use lesson completion, not READY, and exclude the Phase 4 reference card", () => {
   const assessed = activeAssessedSkills(SKILLS);
   assert.equal(assessed.length, 36);
   assert.equal(assessed.some((skill) => skill.contentKind === "reference"), false);
   const reference = SKILLS.find((skill) => skill.contentKind === "reference");
   assert.ok(reference);
   const allReadyRows = assessed.map((skill) => ({ skillId: skill.id, evidence: { ready: true, fragile: false, state: "ready" } }));
-  const summary = learningSummary(SKILLS, allReadyRows, []);
+  const noCompletion = learningSummary(SKILLS, allReadyRows, [], []);
+  assert.equal(noCompletion.completed, 0);
+  assert.equal(noCompletion.learning, 36);
+  assert.equal(noCompletion.overallPercent, 0);
+  const completedLessons = assessed.map((skill) => ({ lessonId: skill.id, completionCount: 1 }));
+  const summary = learningSummary(SKILLS, allReadyRows, [], completedLessons);
   assert.equal(summary.completed, 36);
   assert.equal(summary.overallPercent, 100);
-  const phase4 = phaseSummary(SKILLS, 4, allReadyRows, []);
+  const phase4 = phaseSummary(SKILLS, 4, allReadyRows, [], completedLessons);
   assert.equal(phase4.required.length, 9);
   assert.equal(phase4.percent, 100);
 });
