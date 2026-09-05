@@ -27,14 +27,14 @@ const phase1Skills = () => SKILLS.filter((x)=>x.phase===1);
 const generated = (id, count=120) => Array.from({length:count}, (_,i)=>exerciseForSkill(id,i)).filter(Boolean);
 const evidence = (overrides={}) => ({...deriveSkillEvidence([]), ...overrides});
 
-test("exact Phase 1 lesson order remains untouched while Phase 2 is added", () => {
+test("exact Phase 1 lesson order remains untouched as later phases are added", () => {
   assert.deepEqual(phase1Skills().map(x=>x.title), TITLES);
   assert.deepEqual(phase1Skills().map(x=>x.id), IDS);
   assert.deepEqual(activeLessonSkillIds().slice(0, IDS.length), IDS);
   assert.deepEqual(activeExerciseSkillIds().slice(0, IDS.length), IDS);
   assert.deepEqual(phase1Lessons().map(x=>x.title), TITLES);
   assert.equal(phase1Skills().length,10);
-  assert.equal(SKILLS.some(x=>x.phase>=3), false);
+  assert.equal(SKILLS.some(x=>x.phase>=4), false);
   assert.deepEqual(CURRICULUM_PHASES.map(x=>x.phase), [1,2,3,4,5,6]);
 });
 
@@ -172,14 +172,15 @@ test("Phase 1 priorities remain maximal and rounds remain at least 30", () => {
   assert.match(renderPracticeRoundCounter(2,30,1),/Question 3 of 30/);
 });
 
-test("Phase 1 checkpoint remains intact while Phase 2 gets its own checkpoint", () => {
+test("Phase 1 checkpoint remains intact while later checkpoints are added", () => {
   const checkpoint=checkpointDefinition(1);
   assert.ok(checkpoint&&checkpoint.minItems>=14);
   const ids=new Set(checkpoint.competencies.map(x=>x.id));
   for (const id of ["perfect-construction","major-minor-construction","interval-identification","interval-inversion","quality-discrimination","tritone-spelling","varied-root-spelling"]) assert.ok(ids.has(id),id);
   assert.ok(checkpoint.competencies.every(x=>x.critical));
   assert.ok(checkpointDefinition(2));
-  assert.equal(checkpointDefinition(3),undefined);
+  assert.ok(checkpointDefinition(3));
+  assert.equal(checkpointDefinition(4),undefined);
 });
 
 test("Phase 1 lesson replay starts at teaching and Skip to Review remains at bottom", () => {
