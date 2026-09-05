@@ -35,19 +35,20 @@ test("Block 1 six-phase shell remains exact", () => {
   assert.deepEqual(CURRICULUM_PHASES.map((phase) => phase.title), ["Intervals", "Major Scales", "Minor Scales", "Diatonic Chords / Roman Numerals", "Relatives", "Circle of Fifths"]);
 });
 
-test("old pre-rebuild curriculum files remain absent and only Phases 1-3 are active", () => {
+test("old pre-rebuild curriculum files remain absent and only Phases 1-4 are active", () => {
   for (const path of OLD_CURRICULUM_FILES) assert.equal(fs.existsSync(path), false, path);
-  assert.equal(SKILLS.some((skill) => skill.phase > 3), false, "Block 4 must not add Phase 4+ skills");
+  assert.equal(SKILLS.some((skill) => skill.phase > 4), false, "Block 5 must not add Phase 5+ skills");
   assert.equal(SKILLS.filter((skill) => skill.phase === 1).length, 10);
   assert.equal(SKILLS.filter((skill) => skill.phase === 2).length, 4);
   assert.equal(SKILLS.filter((skill) => skill.phase === 3).length, 5);
-  assert.equal(activeLessonSkillIds().length, 19);
-  assert.equal(activeExerciseSkillIds().length, 19);
-  assert.equal(allCheckpointDefinitions().length, 3);
+  assert.equal(SKILLS.filter((skill) => skill.phase === 4).length, 10);
+  assert.equal(activeLessonSkillIds().length, 29);
+  assert.equal(activeExerciseSkillIds().length, 28, "Reference Lesson 7 must not have an exercise generator");
+  assert.equal(allCheckpointDefinitions().length, 4);
 });
 
-test("no Phase 4+ placement competency content is invented", () => {
-  for (const phase of CURRICULUM_PHASES.filter((x) => x.phase >= 4)) assert.deepEqual(placementDefinition(phase.phase).competencies, []);
+test("no Phase 5+ placement competency content is invented", () => {
+  for (const phase of CURRICULUM_PHASES.filter((x) => x.phase >= 5)) assert.deepEqual(placementDefinition(phase.phase).competencies, []);
 });
 
 test("rebuild migration still preserves auth and clears application data", () => {
@@ -66,11 +67,11 @@ test("login still lazily creates profile/settings without wiping prior progress"
   assert.match(app, /getSettings\(userId\)/);
   assert.match(app, /upsertSettings\(settings\)/);
   assert.match(app, /music-theory-tutor:block2-phase1/);
-  assert.match(read("web/config.js"), /buildVersion:\s*"rebuild-block4-phase3-minor-scales"/);
+  assert.match(read("web/config.js"), /buildVersion:\s*"rebuild-block5-phase4-diatonic-chords"/);
 });
 
 test("active app and schemas do not reintroduce hint UI/content", () => {
-  for (const path of ["web/app-block3.js", "web/lesson-ui.js", "src/exercises/types.ts", "src/exercises/generators.ts", "src/practice/types.ts", "src/practice/lessons.ts", "src/practice/phase2-major-scales.ts", "src/exercises/phase2-major-scales.ts", "src/practice/phase3-minor-scales.ts", "src/exercises/phase3-minor-scales.ts"]) {
+  for (const path of ["web/app-block3.js", "web/lesson-ui.js", "src/exercises/types.ts", "src/exercises/generators.ts", "src/practice/types.ts", "src/practice/lessons.ts", "src/practice/phase2-major-scales.ts", "src/exercises/phase2-major-scales.ts", "src/practice/phase3-minor-scales.ts", "src/exercises/phase3-minor-scales.ts", "src/practice/phase4-diatonic-chords.ts", "src/exercises/phase4-diatonic-chords.ts", "web/phase4-ui.js"]) {
     assert.doesNotMatch(read(path), /show\s+hint|need\s+a\s+hint|hintbutton|hintbtn|inputHint|hintText|showHint/i, path);
   }
 });
@@ -94,11 +95,15 @@ test("lesson replay behavior remains global", () => {
   assert.ok(html.indexOf("Skip to Review") > html.indexOf("Teach first."));
 });
 
-test("real practice rounds still have a 30-question minimum and do not grant mastery", () => {
-  for (const skill of SKILLS) {
+test("real assessed practice rounds still have a 30-question minimum and do not grant mastery", () => {
+  for (const skill of SKILLS.filter((skill) => skill.assessed)) {
     const round = practiceRoundPlan(skill.id, "new");
     assert.ok(round.size >= 30, skill.id);
   }
+  const reference = SKILLS.find((skill) => skill.contentKind === "reference");
+  assert.ok(reference);
+  assert.equal(reference.assessed, false);
+  assert.equal(reference.blocksPhaseCompletion, false);
   const round = practiceRoundPlan(SKILLS[0].id, "new");
   assert.equal(practiceRoundQuestionNumber(7, round.size), 8);
   assert.match(renderPracticeRoundCounter(7, round.size, 1), new RegExp(`Question 8 of ${round.size}`));
@@ -144,11 +149,12 @@ test("old source-mutating build scripts and stale schema remain absent", () => {
   assert.equal(fs.existsSync("supabase/schema.sql"), false);
 });
 
-test("Block 3 source app remains a valid baseline for the pure Block 4 production transform", () => {
+test("Block 3 source app remains a stable baseline for pure later-phase production transforms", () => {
   execFileSync(process.execPath, ["--check", "web/app-block3.js"]);
   assert.match(read("web/index.html"), /app-block3\.js/);
   assert.match(app, /Phase 2/);
   assert.match(app, /major scale|Major Scales/i);
   assert.doesNotMatch(app, /minor-scales\.lesson-/);
   assert.ok(fs.existsSync("scripts/block4-app-transform.mjs"));
+  assert.ok(fs.existsSync("scripts/block5-app-transform.mjs"));
 });

@@ -1,0 +1,15 @@
+.phase4-progression-lab { display: grid; gap: 12px; margin-top: 18px; }
+.phase4-progression-lab .page-header { display: block; min-height: 0; margin: 0 2px 4px; }
+.phase4-progression-lab .page-header h2 { margin: 4px 0 0; font-size: 1.15rem; }
+.phase4-progression-lab .page-header p { margin: 7px 0 0; color: var(--muted); line-height: 1.45; font-size: .82rem; }
+.progression-analyzer-card { display: grid; gap: 14px; padding: 16px; border-color: var(--border); box-shadow: none; }
+.progression-key-row, .progression-chord-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 9px; }
+.progression-chord-slot { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 7px; padding: 9px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 12px; }
+.progression-analyzer-card label { display: grid; gap: 5px; color: var(--muted); font-size: .7rem; font-weight: 720; }
+.progression-analyzer-card select { width: 100%; min-width: 0; min-height: 42px; padding: 8px 9px; border: 1px solid var(--border-strong); border-radius: 10px; background: var(--surface-3); color: var(--text); }
+.progression-analysis-output:empty { display: none; }
+.progression-analysis-output .worked-example { margin-top: 0; display: grid; gap: 7px; }
+.progression-analysis-output .worked-example span { display: block; line-height: 1.4; }
+@media (max-width: 560px) {
+  .progression-key-row, .progression-chord-grid { grid-template-columns: 1fr; }
+}
