@@ -1,4 +1,8 @@
-export const PHASE4_SAVED_PROGRESSION_KEY = "music-theory-tutor:phase4-last-major-progression";
+const PHASE4_SAVED_PROGRESSION_PREFIX = "music-theory-tutor:phase4-last-major-progression";
+
+export function phase4SavedProgressionKey(userId = "local-preview") {
+  return `${PHASE4_SAVED_PROGRESSION_PREFIX}:${encodeURIComponent(String(userId || "local-preview"))}`;
+}
 
 const ROOTS = ["C", "C#", "Db", "D", "Eb", "E", "F", "F#", "G", "G#", "Ab", "A", "Bb", "B"];
 const QUALITIES = ["major", "minor", "diminished", "augmented"];
@@ -53,10 +57,10 @@ export function phase4ProgressionLabHtml() {
   </section>`;
 }
 
-function saveMajorProgression(tonic, form, rows) {
+function saveMajorProgression(userId, tonic, form, rows) {
   if (form !== "major" || rows.some((row) => !row.diatonic || !row.romanNumeral)) return;
   try {
-    localStorage.setItem(PHASE4_SAVED_PROGRESSION_KEY, JSON.stringify({
+    localStorage.setItem(phase4SavedProgressionKey(userId), JSON.stringify({
       tonic,
       form,
       romanNumerals: rows.map((row) => row.romanNumeral),
@@ -67,7 +71,7 @@ function saveMajorProgression(tonic, form, rows) {
   }
 }
 
-export function bindPhase4ProgressionLab(analyzeStructuredProgression) {
+export function bindPhase4ProgressionLab(analyzeStructuredProgression, { userId = "local-preview" } = {}) {
   document.querySelectorAll("[data-analyze-progression]").forEach((button) => {
     button.addEventListener("click", () => {
       const index = Number(button.dataset.analyzeProgression);
@@ -82,9 +86,10 @@ export function bindPhase4ProgressionLab(analyzeStructuredProgression) {
       try {
         const rows = analyzeStructuredProgression(tonic, form, inputs);
         output.innerHTML = `<div class="worked-example"><strong>Analysis</strong>${rows.map((row, chordIndex) => `<span><b>${chordIndex + 1}. ${row.diatonic ? esc(row.romanNumeral) : "Outside current diatonic set"}</b> — ${esc(row.explanation)}</span>`).join("")}</div>`;
-        saveMajorProgression(tonic, form, rows);
+        saveMajorProgression(userId, tonic, form, rows);
       } catch (error) {
-        output.innerHTML = `<div class="feedback incorrect"><strong>Could not analyze</strong><p>${esc(error?.message ?? error)}</p></div>`;
+        console.error("Progression analysis failed", error);
+        output.innerHTML = `<div class="feedback incorrect"><strong>Could not analyze</strong><p>Check the selected key and chord choices, then try again.</p></div>`;
       }
     });
   });
