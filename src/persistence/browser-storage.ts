@@ -42,6 +42,10 @@ function uid(prefix: string) {
   return `${prefix}-${random}`;
 }
 
+function lessonProgressState(row: StoredLessonProgress): LessonProgressState {
+  return { lessonId: row.lessonId, completionCount: row.completionCount, firstCompletedAt: row.firstCompletedAt, lastCompletedAt: row.lastCompletedAt };
+}
+
 export class BrowserStorageTutorRepository implements TutorRepository {
   constructor(private readonly storage: KeyValueStorage, private readonly storageKey = "music-theory-tutor:v1") {}
 
@@ -112,9 +116,12 @@ export class BrowserStorageTutorRepository implements TutorRepository {
     const db=this.read(); const i=db.phaseProgress.findIndex((x)=>x.userId===record.userId&&x.phase===record.phase);
     if(i>=0) db.phaseProgress[i]=clone(record); else db.phaseProgress.push(clone(record)); this.write(db);
   }
+  async allLessonProgress(userId: string): Promise<LessonProgressState[]> {
+    return this.read().lessonProgress.filter((x)=>x.userId===userId).map((row)=>lessonProgressState(row));
+  }
   async getLessonProgress(userId: string, lessonId: string): Promise<LessonProgressState|undefined> {
     const row=this.read().lessonProgress.find((x)=>x.userId===userId&&x.lessonId===lessonId);
-    return row?{lessonId:row.lessonId,completionCount:row.completionCount,firstCompletedAt:row.firstCompletedAt,lastCompletedAt:row.lastCompletedAt}:undefined;
+    return row?lessonProgressState(row):undefined;
   }
   async upsertLessonProgress(userId: string, progress: LessonProgressState): Promise<void> {
     const db=this.read(); const i=db.lessonProgress.findIndex((x)=>x.userId===userId&&x.lessonId===progress.lessonId);
