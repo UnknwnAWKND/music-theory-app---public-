@@ -63,16 +63,17 @@ const CANONICAL = new Map([
   ["B",  ["B","C♯","D♯","E","F♯","G♯","A♯"]],
 ]);
 
-test("Phase 2 has exactly the requested four lessons in order and Phase 3 is absent", () => {
+test("Phase 2 remains exactly the requested four lessons while Phase 3 is added afterward", () => {
   const phase2 = SKILLS.filter((skill)=>skill.phase===2);
   assert.deepEqual(phase2.map((skill)=>skill.id), IDS);
   assert.deepEqual(phase2.map((skill)=>skill.title), TITLES);
   assert.deepEqual(phase2Lessons().map((lesson)=>lesson.skillId), IDS);
-  assert.deepEqual(activeLessonSkillIds().slice(-4), IDS);
-  assert.deepEqual(activeExerciseSkillIds().slice(-4), IDS);
+  assert.deepEqual(activeLessonSkillIds().slice(10,14), IDS);
+  assert.deepEqual(activeExerciseSkillIds().slice(10,14), IDS);
   assert.equal(phase1Lessons().length,10);
-  assert.equal(SKILLS.filter((skill)=>skill.phase===3).length,0);
-  assert.equal(checkpointDefinition(3),undefined);
+  assert.equal(SKILLS.filter((skill)=>skill.phase===3).length,5);
+  assert.ok(checkpointDefinition(3));
+  assert.equal(SKILLS.filter((skill)=>skill.phase===4).length,0);
 });
 
 test("major-scale formula, scale-degree intervals, and degree names are exact", () => {
