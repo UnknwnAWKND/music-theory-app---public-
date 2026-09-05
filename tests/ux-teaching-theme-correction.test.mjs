@@ -3,6 +3,7 @@ import test from "node:test";
 import { readFile } from "node:fs/promises";
 
 import {
+  exerciseForSkill,
   lessonForSkill,
   phase1Lessons,
   phase2Lessons,
@@ -26,6 +27,15 @@ function lessonText(id) {
   const lesson = lessonForSkill(id);
   assert.ok(lesson, `missing ${id}`);
   return lesson.teachingSteps.map((step) => [step.title, step.body, step.workedExample, step.payoff].filter(Boolean).join(" ")).join(" ");
+}
+
+function exerciseText(item) {
+  const choices = item?.answerSpec?.kind === "choice" ? item.answerSpec.choices ?? [] : [];
+  return [item?.prompt, ...choices, item?.explanation].filter(Boolean).join(" ");
+}
+
+function generatedText(skillId, count = 80) {
+  return Array.from({ length: count }, (_, index) => exerciseForSkill(skillId, index)).filter(Boolean).map(exerciseText).join("\n");
 }
 
 function paletteVars(theme, accent) {
@@ -82,6 +92,17 @@ test("exact chromatic-size comparison arrives with Major/Minor in Lesson 4", () 
   assert.match(lesson4, /Half steps help distinguish the exact Major or Minor version/i);
 });
 
+test("early Phase 1 questions, choices, and corrective feedback do not leak later concepts", () => {
+  const lesson1 = generatedText("intervals.lesson-1-unison-octave");
+  const lesson2 = generatedText("intervals.lesson-2-perfect-fifth");
+  const lesson3 = generatedText("intervals.lesson-3-perfect-fourth");
+
+  assert.doesNotMatch(lesson1, /\bP4\b|\bP5\b|\bMajor\b|\bMinor\b|Augmented|Diminished|semitones?|half steps?|invert|inversion/i);
+  assert.doesNotMatch(lesson2, /\bP4\b|\bMajor\b|\bMinor\b|Augmented|Diminished|semitones?|half steps?|invert|inversion/i);
+  assert.doesNotMatch(lesson3, /\bMajor\b|\bMinor\b|Augmented|Diminished|semitones?|half steps?/i);
+  assert.match(generatedText("intervals.lesson-4-thirds"), /semitone|half step/i);
+});
+
 test("future interval terminology is progressively disclosed", () => {
   const firstTwo = [
     lessonText("intervals.lesson-1-unison-octave"),
@@ -93,6 +114,17 @@ test("future interval terminology is progressively disclosed", () => {
   assert.match(lessonText("intervals.lesson-8-tritone"), /Augmented|Diminished/i);
 });
 
+test("future-concept audit removes identified forward references across all later phases", () => {
+  const phase2Lesson1 = lessonText("major-scales.lesson-1-formula");
+  assert.doesNotMatch(phase2Lesson1, /\bscale degree\b|Roman numerals?|diatonic chords?|transposition|harmonic function/i);
+
+  assert.doesNotMatch(lessonText("minor-scales.lesson-1-natural-formula"), /harmonic minor|melodic minor/i);
+  assert.doesNotMatch(lessonText("minor-scales.lesson-3-harmonic-minor"), /dominant chord|dominant-to-tonic/i);
+  assert.doesNotMatch(lessonText("diatonic-chords.lesson-10-own-progressions"), /chromatic harmony/i);
+  assert.doesNotMatch(lessonText("relatives.lesson-1-relative-major-minor"), /cadences?/i);
+  assert.doesNotMatch(lessonText("circle-of-fifths.lesson-2-close-vs-distant"), /pivot-chord|modulation theory/i);
+});
+
 test("all six phases remain present and ordered while dependency pass changes content only", () => {
   const phases = [phase1Lessons(), phase2Lessons(), phase3Lessons(), phase4Lessons(), phase5Lessons(), phase6Lessons()];
   assert.deepEqual(phases.map((lessons) => lessons.length), [10, 4, 5, 10, 4, 4]);
@@ -101,14 +133,17 @@ test("all six phases remain present and ordered while dependency pass changes co
   assert.match(lessonText("circle-of-fifths.lesson-1-what-it-represents"), /Circle of Fifths/i);
 });
 
-test("floating Back is viewport fixed, safe-area aware, and only mirrors eligible page-header back controls", () => {
+test("floating Back is viewport fixed, safe-area aware, mirrors eligible page-header Back, and reserves a non-overlap lane", () => {
   assert.match(indexHtml, /floating-back\.css/);
   assert.match(indexHtml, /floating-back\.js/);
   assert.match(floatingCss, /\.floating-back-control\s*\{[\s\S]*?position:\s*fixed/);
   assert.match(floatingCss, /top:\s*calc\(env\(safe-area-inset-top\)\s*\+\s*10px\)/);
+  assert.match(floatingCss, /\.floating-back-spacer\.is-active\s*\{[\s\S]*?height:\s*calc\(env\(safe-area-inset-top\)\s*\+\s*68px\)/);
   assert.match(floatingJs, /IntersectionObserver/);
   assert.match(floatingJs, /!entry\.isIntersecting\s*&&\s*sourceHasScrolledAboveViewport/);
   assert.match(floatingJs, /\["exitPractice",\s*"exitCheckpoint"\]/);
+  assert.match(floatingJs, /header\.insertAdjacentElement\("afterend",\s*spacer\)/);
+  assert.match(floatingJs, /setFloatingVisible\(shouldFloat\)/);
   assert.match(floatingJs, /source\?\.click\(\)/);
 });
 
