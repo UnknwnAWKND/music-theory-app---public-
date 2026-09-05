@@ -1,0 +1,32 @@
+name: Block 6 Update Test Guards
+
+on:
+  push:
+    branches: ["block6-phase5-relatives"]
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Update prior-phase regression guards
+        run: node scripts/block6-update-test-guards.mjs
+      - name: Commit updates
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add tests
+          if git diff --cached --quiet; then
+            echo "guards already updated"
+            exit 0
+          fi
+          git commit -m "Update prior-phase guards for Block 6"
+          git push origin HEAD:block6-phase5-relatives
