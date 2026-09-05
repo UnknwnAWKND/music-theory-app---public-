@@ -20,6 +20,11 @@ const LESSON_POOLS = Object.freeze({
 const PERFECT_CHOICES = ["P1", "P4", "P5", "P8"];
 const MAJOR_MINOR_CHOICES = ["m2", "M2", "m3", "M3", "m6", "M6", "m7", "M7"];
 const TRITONE_CHOICES = ["A4", "d5", "P4", "P5"];
+const PRE_CHROMATIC_DETAIL_SKILLS = new Set([
+    "intervals.lesson-1-unison-octave",
+    "intervals.lesson-2-perfect-fifth",
+    "intervals.lesson-3-perfect-fourth",
+]);
 function rootFor(index) {
     const safe = Math.max(0, index);
     const rootName = ROOT_NAMES[(safe * 5 + Math.floor(safe / ROOT_NAMES.length)) % ROOT_NAMES.length];
@@ -34,7 +39,23 @@ function keyboardPitchName(noteName) {
     const note = parseNote(noteName);
     return ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"][pitchClass(note)];
 }
-function intervalChoices(interval) {
+function ordinal(number) {
+    if (number === 1)
+        return "1st";
+    if (number === 2)
+        return "2nd";
+    if (number === 3)
+        return "3rd";
+    return `${number}th`;
+}
+function intervalChoices(skillId, interval) {
+    // Early lessons must never display untaught interval labels as distractors.
+    if (skillId === "intervals.lesson-1-unison-octave")
+        return ["P1", "P8"];
+    if (skillId === "intervals.lesson-2-perfect-fifth")
+        return ["P1", "P5", "P8"];
+    if (skillId === "intervals.lesson-3-perfect-fourth")
+        return ["P1", "P4", "P5", "P8"];
     if (interval === "A4" || interval === "d5")
         return TRITONE_CHOICES;
     if (INTERVALS[interval].quality === "perfect")
@@ -50,16 +71,35 @@ function pairPrompt(rootName, targetName, interval) {
         return `${rootName} to the next ${targetName} one octave higher: identify the interval.`;
     return `${rootName} up to ${targetName}: identify the exact interval.`;
 }
+function earlyIdentifyExplanation(rootName, targetName, interval) {
+    if (interval === "P1")
+        return `${rootName} to ${targetName} at the same pitch is a Perfect Unison (P1).`;
+    if (interval === "P8")
+        return `${rootName} to the next ${targetName} one octave higher is a Perfect Octave (P8).`;
+    const number = INTERVALS[interval].number;
+    return `${rootName} to ${targetName} is ${INTERVALS[interval].name} (${interval}). The written letters span ${number} letter names, so the interval number is a ${ordinal(number)}.`;
+}
+function earlyConstructExplanation(rootName, targetName, interval) {
+    if (interval === "P1")
+        return `A Perfect Unison keeps the same written note at the same pitch. The correct answer is ${targetName}.`;
+    if (interval === "P8")
+        return `A Perfect Octave keeps the same letter name one octave higher. The correct answer is ${targetName}.`;
+    const number = INTERVALS[interval].number;
+    return `First choose the target letter that makes a ${ordinal(number)} above ${rootName}. Then match the named ${INTERVALS[interval].name} keyboard relationship from the lesson. The correct spelling is ${targetName}.`;
+}
 function makeIdentify(skillId, interval, index) {
     const root = rootFor(index);
     const target = intervalAbove(root, INTERVALS[interval]);
     const rootName = formatNote(root);
     const targetName = formatNote(target);
+    const explanation = PRE_CHROMATIC_DETAIL_SKILLS.has(skillId)
+        ? earlyIdentifyExplanation(rootName, targetName, interval)
+        : `${rootName} to ${targetName} is ${INTERVALS[interval].name} (${interval}): a ${INTERVALS[interval].number} by letter spelling and ${INTERVALS[interval].semitones} semitone${INTERVALS[interval].semitones === 1 ? "" : "s"}.`;
     return createExercise({
         skillId,
         prompt: pairPrompt(rootName, targetName, interval),
-        answerSpec: { kind: "choice", expected: interval, choices: intervalChoices(interval) },
-        explanation: `${rootName} to ${targetName} is ${INTERVALS[interval].name} (${interval}): a ${INTERVALS[interval].number} by letter spelling and ${INTERVALS[interval].semitones} semitone${INTERVALS[interval].semitones === 1 ? "" : "s"}.`,
+        answerSpec: { kind: "choice", expected: interval, choices: intervalChoices(skillId, interval) },
+        explanation,
         exampleSignature: `${skillId}:identify:${rootName}:${targetName}:${interval}`,
         directEvidence: true,
         metadata: { family: "interval", direction: "identify", responseMode: "recognition", interval, root: rootName, target: targetName, pianoHighlighted: [keyboardPitchName(rootName), keyboardPitchName(targetName)] },
@@ -70,11 +110,14 @@ function makeConstruct(skillId, interval, index) {
     const target = intervalAbove(root, INTERVALS[interval]);
     const rootName = formatNote(root);
     const targetName = formatNote(target);
+    const explanation = PRE_CHROMATIC_DETAIL_SKILLS.has(skillId)
+        ? earlyConstructExplanation(rootName, targetName, interval)
+        : `The target must first be a ${INTERVALS[interval].number} by letter name, then the accidental must make the distance ${INTERVALS[interval].semitones} semitone${INTERVALS[interval].semitones === 1 ? "" : "s"}. The correct spelling is ${targetName}.`;
     return createExercise({
         skillId,
         prompt: `Construct ${INTERVALS[interval].name} (${interval}) above ${rootName}. Enter the correctly spelled target note.`,
         answerSpec: { kind: "note", expected: targetName },
-        explanation: `The target must first be a ${INTERVALS[interval].number} by letter name, then the accidental must make the distance ${INTERVALS[interval].semitones} semitone${INTERVALS[interval].semitones === 1 ? "" : "s"}. The correct spelling is ${targetName}.`,
+        explanation,
         exampleSignature: `${skillId}:construct:${rootName}:${interval}:${targetName}`,
         directEvidence: true,
         metadata: { family: "interval", direction: "construct", responseMode: "constructed", interval, root: rootName, target: targetName, pianoHighlighted: [keyboardPitchName(rootName)], revealPianoTarget: keyboardPitchName(targetName) },

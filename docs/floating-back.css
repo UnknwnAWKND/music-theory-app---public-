@@ -23,6 +23,23 @@
   transition: opacity 140ms ease, transform 140ms ease, visibility 140ms ease, border-color 140ms ease;
 }
 
+/*
+ * This spacer sits immediately after the normal page header. It expands only
+ * while the floating control is visible, creating a clear top lane so the
+ * fixed button never sits on top of teaching copy, lesson visuals, or actions.
+ * Because the observed Back/header is before the spacer, expanding it cannot
+ * make the source Back re-enter view and oscillate the floating state.
+ */
+.floating-back-spacer {
+  height: 0;
+  pointer-events: none;
+  transition: height 140ms ease;
+}
+
+.floating-back-spacer.is-active {
+  height: calc(env(safe-area-inset-top) + 68px);
+}
+
 .floating-back-control.is-visible {
   opacity: 1;
   visibility: visible;
@@ -49,4 +66,9 @@
     height: 46px;
     left: max(9px, env(safe-area-inset-left));
   }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .floating-back-control,
+  .floating-back-spacer { transition: none; }
 }
