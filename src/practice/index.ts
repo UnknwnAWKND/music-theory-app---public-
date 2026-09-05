@@ -1,5 +1,6 @@
 export * from "./types.js";
-export * from "./lessons.js";
+export * from "./lesson-catalog.js";
+export * from "./phase2-major-scales.js";
 export * from "./lesson-replay.js";
 export * from "./adaptive.js";
 export * from "./rounds.js";
