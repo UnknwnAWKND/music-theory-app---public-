@@ -1,4 +1,5 @@
 import type { DerivedSkillEvidence, LearningAttempt } from "../learning/index.js";
+import type { LessonProgressState } from "../practice/index.js";
 import type { SchedulerCardSnapshot, SchedulerReviewLog } from "../scheduler/index.js";
 import type { SessionPlan } from "../session/index.js";
 
@@ -41,6 +42,11 @@ export interface UserProfile {
   userId: string;
   displayName: string;
   createdAt: string;
+  updatedAt: string;
+}
+
+export interface StoredLessonProgress extends LessonProgressState {
+  userId: string;
   updatedAt: string;
 }
 

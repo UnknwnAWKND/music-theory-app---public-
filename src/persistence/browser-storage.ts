@@ -1,10 +1,12 @@
 import type { DerivedSkillEvidence } from "../learning/index.js";
+import type { LessonProgressState } from "../practice/index.js";
 import type { SchedulerCardSnapshot, SchedulerReviewLog } from "../scheduler/index.js";
 import type { DueReview, SessionPlan } from "../session/index.js";
 import type { AppendAttemptInput, TutorRepository } from "./repository.js";
 import type {
   SkillStateRecord,
   StoredAttempt,
+  StoredLessonProgress,
   StoredSchedulerCard,
   StoredSchedulerReview,
   StudySessionRecord,
@@ -27,10 +29,11 @@ interface BrowserSnapshot {
   settings: UserLearningSettings[];
   profiles: UserProfile[];
   phaseProgress: PhaseProgressRecord[];
+  lessonProgress: StoredLessonProgress[];
 }
 
 const EMPTY: BrowserSnapshot = {
-  sessions: [], attempts: [], skillStates: [], cards: [], schedulerReviews: [], settings: [], profiles: [], phaseProgress: [],
+  sessions: [], attempts: [], skillStates: [], cards: [], schedulerReviews: [], settings: [], profiles: [], phaseProgress: [], lessonProgress: [],
 };
 
 function clone<T>(value: T): T { return JSON.parse(JSON.stringify(value)) as T; }
@@ -39,11 +42,6 @@ function uid(prefix: string) {
   return `${prefix}-${random}`;
 }
 
-/**
- * Browser-only preview persistence. Production persistence remains Supabase.
- * This adapter intentionally stores the same repository shapes so the UI can be
- * exercised before deployment credentials are available.
- */
 export class BrowserStorageTutorRepository implements TutorRepository {
   constructor(private readonly storage: KeyValueStorage, private readonly storageKey = "music-theory-tutor:v1") {}
 
@@ -54,7 +52,8 @@ export class BrowserStorageTutorRepository implements TutorRepository {
       const parsed = JSON.parse(raw) as Partial<BrowserSnapshot>;
       return {
         sessions: parsed.sessions ?? [], attempts: parsed.attempts ?? [], skillStates: parsed.skillStates ?? [],
-        cards: parsed.cards ?? [], schedulerReviews: parsed.schedulerReviews ?? [], settings: parsed.settings ?? [], profiles: parsed.profiles ?? [], phaseProgress: parsed.phaseProgress ?? [],
+        cards: parsed.cards ?? [], schedulerReviews: parsed.schedulerReviews ?? [], settings: parsed.settings ?? [], profiles: parsed.profiles ?? [],
+        phaseProgress: parsed.phaseProgress ?? [], lessonProgress: parsed.lessonProgress ?? [],
       };
     } catch { return clone(EMPTY); }
   }
@@ -112,6 +111,15 @@ export class BrowserStorageTutorRepository implements TutorRepository {
   async upsertPhaseProgress(record: PhaseProgressRecord): Promise<void> {
     const db=this.read(); const i=db.phaseProgress.findIndex((x)=>x.userId===record.userId&&x.phase===record.phase);
     if(i>=0) db.phaseProgress[i]=clone(record); else db.phaseProgress.push(clone(record)); this.write(db);
+  }
+  async getLessonProgress(userId: string, lessonId: string): Promise<LessonProgressState|undefined> {
+    const row=this.read().lessonProgress.find((x)=>x.userId===userId&&x.lessonId===lessonId);
+    return row?{lessonId:row.lessonId,completionCount:row.completionCount,firstCompletedAt:row.firstCompletedAt,lastCompletedAt:row.lastCompletedAt}:undefined;
+  }
+  async upsertLessonProgress(userId: string, progress: LessonProgressState): Promise<void> {
+    const db=this.read(); const i=db.lessonProgress.findIndex((x)=>x.userId===userId&&x.lessonId===progress.lessonId);
+    const row:StoredLessonProgress={...clone(progress),userId,updatedAt:new Date().toISOString()};
+    if(i>=0) db.lessonProgress[i]=row; else db.lessonProgress.push(row); this.write(db);
   }
   async getProfile(userId: string): Promise<UserProfile|undefined> {
     const row=this.read().profiles.find((x)=>x.userId===userId); return row?clone(row):undefined;

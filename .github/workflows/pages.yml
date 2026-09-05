@@ -2,7 +2,7 @@ name: Build Theory Tutor
 
 on:
   push:
-    branches: ["main", "rebuild/**"]
+    branches: ["main", "rebuild/**", "block2-*"]
   pull_request:
     branches: ["main"]
 
@@ -26,7 +26,7 @@ jobs:
           cache: npm
       - name: Install dependencies
         run: npm ci
-      - name: Run Block 1 baseline tests
+      - name: Run curriculum and learning-engine tests
         run: npm test
       - name: Build static site
         run: npm run build:site
@@ -43,5 +43,5 @@ jobs:
             echo "docs already match tested build"
             exit 0
           fi
-          git commit -m "Deploy Block 1 empty curriculum shell"
+          git commit -m "Deploy Block 2 Phase 1 intervals"
           git push origin HEAD:main

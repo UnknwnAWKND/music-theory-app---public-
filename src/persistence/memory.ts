@@ -1,10 +1,12 @@
 import type { DerivedSkillEvidence } from "../learning/index.js";
+import type { LessonProgressState } from "../practice/index.js";
 import type { SchedulerCardSnapshot, SchedulerReviewLog } from "../scheduler/index.js";
 import type { DueReview, SessionPlan } from "../session/index.js";
 import type { AppendAttemptInput, TutorRepository } from "./repository.js";
 import type {
   SkillStateRecord,
   StoredAttempt,
+  StoredLessonProgress,
   StoredSchedulerCard,
   StoredSchedulerReview,
   StudySessionRecord,
@@ -28,6 +30,7 @@ export class InMemoryTutorRepository implements TutorRepository {
   readonly settings = new Map<string, UserLearningSettings>();
   readonly profiles = new Map<string, UserProfile>();
   readonly phaseProgressRows = new Map<string, PhaseProgressRecord>();
+  readonly lessonProgressRows = new Map<string, StoredLessonProgress>();
 
   private key(userId: string, skillId: string) {
     return `${userId}::${skillId}`;
@@ -111,6 +114,16 @@ export class InMemoryTutorRepository implements TutorRepository {
 
   async upsertPhaseProgress(record: PhaseProgressRecord): Promise<void> {
     this.phaseProgressRows.set(`${record.userId}::${record.phase}`, { ...record });
+  }
+
+  async getLessonProgress(userId: string, lessonId: string): Promise<LessonProgressState | undefined> {
+    const row = this.lessonProgressRows.get(this.key(userId, lessonId));
+    if (!row) return undefined;
+    return { lessonId: row.lessonId, completionCount: row.completionCount, firstCompletedAt: row.firstCompletedAt, lastCompletedAt: row.lastCompletedAt };
+  }
+
+  async upsertLessonProgress(userId: string, progress: LessonProgressState): Promise<void> {
+    this.lessonProgressRows.set(this.key(userId, progress.lessonId), { ...progress, userId, updatedAt: new Date().toISOString() });
   }
 
   async getProfile(userId: string): Promise<UserProfile | undefined> {

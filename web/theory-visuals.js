@@ -2,10 +2,21 @@ function esc(value) {
   return String(value ?? "").replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[char]));
 }
 
-export function pianoVisual({ highlighted = [] } = {}) {
+/**
+ * `highlighted` uses physical equal-tempered pitch-class keys (C, C#, ...).
+ * `displayLabels` can override the printed spelling so the same black key can
+ * correctly appear as F# in an A4 context or G♭ in a d5 context. When no
+ * spelling is supplied, black keys show both common enharmonic names rather
+ * than silently implying that the sharp spelling is always correct.
+ */
+export function pianoVisual({ highlighted = [], displayLabels = {} } = {}) {
   const active = new Set(highlighted);
   const notes = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
-  return `<div class="theory-visual piano-visual" aria-label="Piano keyboard">${notes.map((note) => `<span class="piano-key ${note.includes("#") ? "black" : "white"} ${active.has(note) ? "active" : ""}" data-note="${esc(note)}">${esc(note)}</span>`).join("")}</div>`;
+  const defaults = { "C#": "C#/Db", "D#": "D#/Eb", "F#": "F#/Gb", "G#": "G#/Ab", "A#": "A#/Bb" };
+  return `<div class="theory-visual piano-visual" aria-label="Piano keyboard">${notes.map((note) => {
+    const label = displayLabels[note] ?? defaults[note] ?? note;
+    return `<span class="piano-key ${note.includes("#") ? "black" : "white"} ${active.has(note) ? "active" : ""}" data-note="${esc(note)}" aria-label="${esc(label)}">${esc(label)}</span>`;
+  }).join("")}</div>`;
 }
 
 export function intervalVisual({ root = "", target = "", label = "" } = {}) {
