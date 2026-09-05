@@ -74,7 +74,8 @@ test("Phase 2 remains exactly the requested four lessons while later phases are 
   assert.equal(SKILLS.filter((skill)=>skill.phase===3).length,5);
   assert.ok(checkpointDefinition(3));
   assert.equal(SKILLS.filter((skill)=>skill.phase===4).length,10);
-  assert.equal(SKILLS.some((skill)=>skill.phase>=5),false);
+  assert.equal(SKILLS.filter((skill)=>skill.phase===5).length,4);
+  assert.equal(SKILLS.some((skill)=>skill.phase>=6),false);
 });
 
 test("major-scale formula, scale-degree intervals, and degree names are exact", () => {

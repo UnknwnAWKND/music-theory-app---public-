@@ -45,14 +45,16 @@ const phase4Skills = () => SKILLS.filter((skill) => skill.phase === 4);
 const generated = (id, count = 180) => Array.from({ length: count }, (_, index) => exerciseForSkill(id, index)).filter(Boolean);
 const direct = (id, count = 180) => generated(id, count).filter((item) => item.skillId === id && !item.metadata?.crossPhaseReview);
 
-test("Phase 4 contains exactly the requested ten curriculum positions and Phase 5 is absent", () => {
+test("Phase 4 remains exact while Phase 5 is added afterward and Phase 6 is absent", () => {
   assert.deepEqual(phase4Skills().map((skill) => skill.id), IDS);
   assert.deepEqual(phase4Skills().map((skill) => skill.title), TITLES);
   assert.deepEqual(phase4Lessons().map((lesson) => lesson.skillId), IDS);
   assert.deepEqual(activeLessonSkillIds().slice(19, 29), IDS);
-  assert.deepEqual(activeExerciseSkillIds().slice(19), PHASE4_DIATONIC_CHORD_SKILL_IDS);
-  assert.equal(SKILLS.some((skill) => skill.phase >= 5), false);
-  assert.equal(checkpointDefinition(5), undefined);
+  assert.deepEqual(activeExerciseSkillIds().slice(19, 28), PHASE4_DIATONIC_CHORD_SKILL_IDS);
+  assert.equal(SKILLS.filter((skill) => skill.phase === 5).length, 4);
+  assert.equal(SKILLS.some((skill) => skill.phase >= 6), false);
+  assert.ok(checkpointDefinition(5));
+  assert.equal(checkpointDefinition(6), undefined);
 });
 
 test("Reference Lesson 7 is a real lookup card but never a mastery lesson", () => {

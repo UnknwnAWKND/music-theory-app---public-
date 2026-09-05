@@ -34,7 +34,7 @@ test("exact Phase 1 lesson order remains untouched as later phases are added", (
   assert.deepEqual(activeExerciseSkillIds().slice(0, IDS.length), IDS);
   assert.deepEqual(phase1Lessons().map(x=>x.title), TITLES);
   assert.equal(phase1Skills().length,10);
-  assert.equal(SKILLS.some(x=>x.phase>=5), false);
+  assert.equal(SKILLS.some(x=>x.phase>=6), false);
   assert.deepEqual(CURRICULUM_PHASES.map(x=>x.phase), [1,2,3,4,5,6]);
 });
 
@@ -181,7 +181,8 @@ test("Phase 1 checkpoint remains intact while later checkpoints are added", () =
   assert.ok(checkpointDefinition(2));
   assert.ok(checkpointDefinition(3));
   assert.ok(checkpointDefinition(4));
-  assert.equal(checkpointDefinition(5),undefined);
+  assert.ok(checkpointDefinition(5));
+  assert.equal(checkpointDefinition(6),undefined);
 });
 
 test("Phase 1 lesson replay starts at teaching and Skip to Review remains at bottom", () => {

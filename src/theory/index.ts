@@ -3,5 +3,6 @@ export * from "./interval.js";
 export * from "./scale.js";
 export * from "./chord.js";
 export * from "./harmony.js";
+export * from "./relatives.js";
 export * from "./chord-reference.js";
 export * from "./extended.js";
