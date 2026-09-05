@@ -1,4 +1,4 @@
-import { PHASE4_SAVED_PROGRESSION_KEY } from "./phase4-ui.js";
+import { phase4SavedProgressionKey } from "./phase4-ui.js";
 
 const MAJOR_KEYS = ["C", "G", "D", "A", "E", "B", "F#", "C#", "F", "Bb", "Eb", "Ab", "Db", "Gb", "Cb"];
 
@@ -43,6 +43,7 @@ function bindCircleVisuals() {
         button.classList.toggle("is-selected", distance === 0);
         button.classList.toggle("is-adjacent", distance === 1);
         button.classList.toggle("is-distant", distance >= 4);
+        button.setAttribute("aria-pressed", distance === 0 ? "true" : "false");
       });
       const selected = buttons[selectedIndex];
       const prev = buttons[(selectedIndex - 1 + total) % total];
@@ -54,16 +55,16 @@ function bindCircleVisuals() {
   });
 }
 
-function readSavedProgression() {
+function readSavedProgression(userId) {
   try {
-    const raw = localStorage.getItem(PHASE4_SAVED_PROGRESSION_KEY);
+    const raw = localStorage.getItem(phase4SavedProgressionKey(userId));
     return raw ? JSON.parse(raw) : null;
   } catch {
     return null;
   }
 }
 
-export function bindPhase6Ui({ selectFarSideMajorTarget, transposeMajorRomanProgression, resolveFarSideProgression }) {
+export function bindPhase6Ui({ selectFarSideMajorTarget, transposeMajorRomanProgression, resolveFarSideProgression, userId = "local-preview" }) {
   bindCircleVisuals();
   document.querySelectorAll("[data-phase6-lab]").forEach((lab) => {
     const home = lab.querySelector("[data-phase6-home]");
@@ -82,16 +83,17 @@ export function bindPhase6Ui({ selectFarSideMajorTarget, transposeMajorRomanProg
         target.value = selectFarSideMajorTarget(home.value, pickIndex++);
         source.textContent = `${target.value} major is deliberately 4–6 circle steps from ${home.value} major.`;
       } catch (error) {
-        source.textContent = error?.message ?? String(error);
+        console.error("Far-side target selection failed", error);
+        source.textContent = "Could not choose a target key. Try selecting a different starting key.";
       }
     });
 
     load.addEventListener("click", () => {
-      const resolved = resolveFarSideProgression(readSavedProgression());
+      const resolved = resolveFarSideProgression(readSavedProgression(userId));
       romans.value = resolved.romanNumerals.join("–");
       source.textContent = resolved.source === "saved"
         ? "Loaded your last valid major-key Roman progression from Phase 4 Lesson 10."
-        : "No valid saved major-key progression was available, so the lesson supplied I–V–vi–IV.";
+        : "No saved major-key progression is available yet, so this drill is using I–V–vi–IV.";
     });
 
     transpose.addEventListener("click", () => {
@@ -100,7 +102,8 @@ export function bindPhase6Ui({ selectFarSideMajorTarget, transposeMajorRomanProg
         output.innerHTML = result.map((chord) => `<div class="phase6-chord-row"><strong>${esc(chord.roman)}</strong><span>${esc(chord.root)} ${esc(chord.quality)}</span></div>`).join("");
         source.textContent = `Target: ${target.value} major. Roman numerals stay fixed; chord roots change to the target key.`;
       } catch (error) {
-        output.innerHTML = `<div class="feedback incorrect"><strong>Could not transpose</strong><p>${esc(error?.message ?? error)}</p></div>`;
+        console.error("Progression transposition failed", error);
+        output.innerHTML = `<div class="feedback incorrect"><strong>Could not transpose</strong><p>Check the Roman numerals and selected key, then try again.</p></div>`;
       }
     });
   });
