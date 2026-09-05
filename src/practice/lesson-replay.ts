@@ -7,19 +7,40 @@ export interface LessonOpeningState {
   skipPlacement: "teaching-bottom" | null;
 }
 
+export interface LessonCompletionEvidence {
+  ready?: boolean;
+  fragile?: boolean;
+}
+
 export function freshLessonProgress(lessonId: string): LessonProgressState {
   return { lessonId, completionCount: 0 };
 }
 
+export function lessonIsCompleted(progress: LessonProgressState | undefined): boolean {
+  return Boolean(progress && progress.completionCount > 0);
+}
+
 /** Every open/reopen starts at the beginning of teaching. */
 export function lessonOpeningState(progress: LessonProgressState): LessonOpeningState {
-  const completedBefore = progress.completionCount > 0;
+  const completedBefore = lessonIsCompleted(progress);
   return {
     stage: "teaching",
     teachingStepIndex: 0,
     canSkipToReview: completedBefore,
     skipPlacement: completedBefore ? "teaching-bottom" : null,
   };
+}
+
+/**
+ * The existing completion contract: a finished practice round can record lesson completion
+ * only when the adaptive evidence is READY and not fragile. READY by itself, including a
+ * mid-round READY transition, is not lesson completion.
+ */
+export function lessonCompletionEligibleAfterRound(
+  progress: LessonProgressState,
+  evidence: LessonCompletionEvidence | undefined,
+): boolean {
+  return !lessonIsCompleted(progress) && Boolean(evidence?.ready && !evidence.fragile);
 }
 
 /** Completion is recorded only after teaching + required practice actually complete. */
