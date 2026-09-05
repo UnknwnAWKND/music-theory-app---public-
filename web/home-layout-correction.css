@@ -1,0 +1,347 @@
+/*
+ * Home/layout correction pass.
+ *
+ * This file intentionally contains presentation-only overrides. It does not
+ * alter curriculum, progression, mastery, READY/RETAINED, review scheduling,
+ * checkpoints, placement, or question selection.
+ */
+
+:root {
+  /* Height of the dock above the iOS safe area: 10 top + 64 item + 10 bottom. */
+  --bottom-dock-core-height: 84px;
+  /* Visible breathing room between the last content card and the fixed dock. */
+  --bottom-dock-clearance: 24px;
+}
+
+html {
+  scroll-padding-bottom: calc(
+    var(--bottom-dock-core-height) +
+    env(safe-area-inset-bottom) +
+    var(--bottom-dock-clearance)
+  );
+}
+
+body,
+.app-shell {
+  min-height: 100vh;
+}
+
+@supports (min-height: 100dvh) {
+  body,
+  .app-shell,
+  .final-shell {
+    min-height: 100dvh;
+  }
+}
+
+/*
+ * The primary nav is fixed and therefore does not participate in document
+ * flow. Reserve its real footprint (including the device safe area) in the
+ * shared app shell so Home, Learn, and Profile can all scroll completely
+ * clear of it.
+ */
+.app-shell {
+  padding-bottom: calc(
+    var(--bottom-dock-core-height) +
+    env(safe-area-inset-bottom) +
+    var(--bottom-dock-clearance)
+  );
+}
+
+.screen-content {
+  min-width: 0;
+}
+
+/* True bottom dock. The safe area is INSIDE the dock instead of underneath it. */
+.bottom-nav {
+  position: fixed;
+  z-index: 50;
+  left: 50%;
+  right: auto;
+  bottom: 0;
+  transform: translateX(-50%);
+  width: min(100%, var(--content-max));
+  max-width: var(--content-max);
+  min-height: calc(var(--bottom-dock-core-height) + env(safe-area-inset-bottom));
+  padding:
+    10px
+    max(18px, env(safe-area-inset-right))
+    max(10px, env(safe-area-inset-bottom))
+    max(18px, env(safe-area-inset-left));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--surface) 92%, transparent), color-mix(in srgb, var(--bg-primary) 98%, transparent));
+  border: 0;
+  border-top: 1px solid var(--border-subtle);
+  border-radius: 0;
+  box-shadow: 0 -18px 42px rgba(0, 0, 0, .22);
+  backdrop-filter: blur(24px) saturate(125%);
+  -webkit-backdrop-filter: blur(24px) saturate(125%);
+}
+
+html[data-theme="light"] .bottom-nav {
+  background: color-mix(in srgb, var(--surface) 96%, transparent);
+  box-shadow: 0 -14px 36px rgba(69, 59, 46, .08);
+}
+
+.nav-item {
+  min-width: 0;
+  min-height: 64px;
+  padding: 8px 10px;
+  gap: 5px;
+  color: var(--text-muted);
+  background: color-mix(in srgb, var(--surface-raised) 38%, transparent);
+  border: 1px solid color-mix(in srgb, var(--border-subtle) 72%, transparent);
+  border-radius: 18px;
+  font-size: .72rem;
+  font-weight: 720;
+}
+
+.nav-item .ui-icon {
+  width: 23px;
+  height: 23px;
+}
+
+.nav-item.active {
+  color: #aa92ff;
+  background: linear-gradient(145deg, rgba(139, 108, 255, .18), rgba(139, 108, 255, .10));
+  border-color: rgba(139, 108, 255, .12);
+}
+
+html[data-theme="light"] .nav-item {
+  background: color-mix(in srgb, var(--surface-raised) 66%, transparent);
+}
+
+html[data-theme="light"] .nav-item.active {
+  color: var(--accent-strong);
+  background: var(--accent-soft);
+  border-color: color-mix(in srgb, var(--accent-border) 46%, transparent);
+}
+
+/* -------------------------- Home reference match ------------------------- */
+
+.home-stack {
+  gap: 18px;
+}
+
+.home-stack > .page-header {
+  margin: 0 0 4px;
+}
+
+.home-stack > .page-header h1 {
+  font-size: clamp(2.8rem, 12vw, 4rem);
+  line-height: .98;
+  letter-spacing: -.055em;
+}
+
+.home-stack .page-subtitle {
+  margin-top: 9px;
+  max-width: 39ch;
+  color: var(--text-muted);
+  font-size: clamp(.96rem, 3.8vw, 1.05rem);
+  line-height: 1.4;
+}
+
+.home-focus {
+  min-height: 270px;
+  padding: 26px;
+  border-radius: 28px;
+  border-color: rgba(139, 108, 255, .34);
+  background:
+    radial-gradient(82% 112% at 92% 51%, rgba(124, 94, 255, .27), transparent 54%),
+    radial-gradient(82% 85% at 20% 10%, rgba(117, 89, 222, .10), transparent 64%),
+    linear-gradient(145deg, rgba(46, 43, 92, .76), rgba(17, 24, 43, .96) 58%, rgba(12, 19, 33, .99));
+  box-shadow:
+    0 18px 46px rgba(0, 0, 0, .25),
+    inset 0 1px 0 rgba(255, 255, 255, .04);
+}
+
+.home-focus::before {
+  width: 238px;
+  height: 238px;
+  right: -78px;
+  top: 10px;
+  opacity: .86;
+}
+
+.home-focus::after {
+  width: 164px;
+  height: 170px;
+  right: -8px;
+  bottom: 8px;
+  opacity: .37;
+}
+
+.home-focus .eyebrow {
+  margin-bottom: 16px;
+  padding: 7px 11px;
+  font-size: .71rem;
+}
+
+.home-focus h1 {
+  max-width: 67%;
+  font-size: clamp(1.85rem, 7.8vw, 2.65rem);
+  line-height: 1.08;
+  letter-spacing: -.047em;
+}
+
+.home-focus p {
+  max-width: 67%;
+  margin: 15px 0 20px;
+  font-size: .96rem;
+  line-height: 1.44;
+}
+
+.home-focus .primary {
+  width: min(70%, 490px);
+  min-height: 56px;
+  padding-inline: 17px;
+  gap: 14px;
+  border-radius: 15px;
+  font-size: .98rem;
+  box-shadow: 0 12px 28px rgba(106, 75, 241, .24);
+}
+
+.home-secondary-grid {
+  gap: 12px;
+}
+
+.home-secondary-card {
+  min-height: 150px;
+  padding: 18px;
+  border-radius: 22px;
+}
+
+.home-secondary-card.is-curriculum {
+  min-height: 104px;
+  padding-right: 58px;
+}
+
+.home-secondary-card.is-curriculum.has-metric-icon {
+  padding-left: 80px;
+}
+
+.home-secondary-card strong {
+  font-size: 1.5rem;
+}
+
+.home-secondary-card.is-curriculum strong {
+  font-size: 1.08rem;
+}
+
+.home-secondary-card span {
+  font-size: .88rem;
+}
+
+.home-secondary-card p {
+  font-size: .78rem;
+}
+
+.metric-orb {
+  width: 46px;
+  height: 46px;
+  margin-bottom: 13px;
+  border-radius: 17px;
+}
+
+.is-curriculum .metric-orb {
+  left: 18px;
+}
+
+/* Keep the approved two-stat + full-width curriculum composition on phones. */
+@media (max-width: 699px) {
+  .home-secondary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .home-secondary-card.is-curriculum {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 420px) {
+  .app-shell {
+    padding-left: 18px;
+    padding-right: 18px;
+  }
+
+  .home-stack {
+    gap: 16px;
+  }
+
+  .home-focus {
+    min-height: 264px;
+    padding: 22px;
+  }
+
+  .home-focus h1,
+  .home-focus p {
+    max-width: 69%;
+  }
+
+  .home-focus .primary {
+    width: 72%;
+    font-size: .94rem;
+  }
+
+  .home-focus::after {
+    width: 152px;
+    right: -18px;
+  }
+
+  .home-secondary-grid {
+    gap: 10px;
+  }
+
+  .home-secondary-card {
+    min-height: 146px;
+    padding: 16px;
+  }
+
+  .home-secondary-card.is-curriculum {
+    min-height: 100px;
+  }
+
+  .home-secondary-card.is-curriculum.has-metric-icon {
+    padding-left: 72px;
+  }
+
+  .is-curriculum .metric-orb {
+    left: 16px;
+  }
+}
+
+@media (max-width: 350px) {
+  .app-shell {
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+
+  .home-focus h1,
+  .home-focus p {
+    max-width: 74%;
+  }
+
+  .home-focus .primary {
+    width: 76%;
+  }
+}
+
+/* The dock remains flush with the viewport at every breakpoint. */
+@media (min-width: 700px) {
+  .app-shell {
+    padding-bottom: calc(
+      var(--bottom-dock-core-height) +
+      env(safe-area-inset-bottom) +
+      var(--bottom-dock-clearance)
+    );
+  }
+
+  .bottom-nav {
+    bottom: 0;
+    border: 0;
+    border-top: 1px solid var(--border-subtle);
+    border-radius: 0;
+  }
+}
