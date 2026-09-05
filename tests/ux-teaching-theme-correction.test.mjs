@@ -28,6 +28,33 @@ function lessonText(id) {
   return lesson.teachingSteps.map((step) => [step.title, step.body, step.workedExample, step.payoff].filter(Boolean).join(" ")).join(" ");
 }
 
+function paletteVars(theme, accent) {
+  const selector = `html[data-theme="${theme}"][data-accent="${accent}"]`;
+  const start = appearanceCss.indexOf(selector);
+  assert.ok(start >= 0, `missing ${theme} + ${accent}`);
+  const open = appearanceCss.indexOf("{", start);
+  const close = appearanceCss.indexOf("}", open);
+  const body = appearanceCss.slice(open + 1, close);
+  return Object.fromEntries([...body.matchAll(/--([\w-]+):\s*(#[0-9a-fA-F]{3,8})/g)].map((match) => [match[1], match[2]]));
+}
+
+function rgb(hex) {
+  let value = hex.replace("#", "");
+  if (value.length === 3) value = value.split("").map((char) => char + char).join("");
+  return [0, 2, 4].map((index) => Number.parseInt(value.slice(index, index + 2), 16) / 255);
+}
+
+function luminance(hex) {
+  const channels = rgb(hex).map((channel) => channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4);
+  return 0.2126 * channels[0] + 0.7152 * channels[1] + 0.0722 * channels[2];
+}
+
+function contrast(a, b) {
+  const l1 = luminance(a);
+  const l2 = luminance(b);
+  return (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05);
+}
+
 test("Phase 1 Lesson 1 teaches interval number from letters without later quality jargon", () => {
   const text = lessonText("intervals.lesson-1-unison-octave");
   assert.match(text, /C.?D.?E.?F.?G/i);
@@ -107,9 +134,29 @@ test("all eight accents have explicit Light and Dark variants", () => {
   }
 });
 
+test("all 16 theme/accent combinations keep primary-button text readable", () => {
+  const accents = ["red","green","purple","yellow","orange","blue","black","white"];
+  for (const theme of ["light", "dark"]) {
+    for (const accent of accents) {
+      const vars = paletteVars(theme, accent);
+      for (const endpoint of ["accent-button-start", "accent-button-end"]) {
+        assert.ok(vars[endpoint], `${theme} + ${accent} missing ${endpoint}`);
+        assert.ok(vars["accent-foreground"], `${theme} + ${accent} missing foreground`);
+        assert.ok(contrast(vars["accent-foreground"], vars[endpoint]) >= 4.5, `${theme} + ${accent} ${endpoint} contrast`);
+      }
+    }
+  }
+});
+
 test("Yellow, White, and Black edge cases have deliberate contrast treatments", () => {
-  assert.match(appearanceCss, /data-theme="dark"\]\[data-accent="yellow"\][^\n]*--accent-foreground:#241d06/);
-  assert.match(appearanceCss, /data-theme="light"\]\[data-accent="yellow"\][^\n]*--accent-foreground:#241d06/);
+  const darkYellow = paletteVars("dark", "yellow");
+  const lightYellow = paletteVars("light", "yellow");
+  const lightWhite = paletteVars("light", "white");
+  const darkBlack = paletteVars("dark", "black");
+  assert.equal(darkYellow["accent-foreground"].toLowerCase(), "#241d06");
+  assert.equal(lightYellow["accent-foreground"].toLowerCase(), "#241d06");
+  assert.equal(lightWhite["accent-ink"].toLowerCase(), "#4f4941");
+  assert.equal(darkBlack["accent-ink"].toLowerCase(), "#eef1f5");
   assert.match(appearanceCss, /data-theme="light"\]\[data-accent="white"\][^\n]*--accent-border:#8b8378/);
   assert.match(appearanceCss, /data-theme="dark"\]\[data-accent="black"\][^\n]*--accent-border:#697283/);
 });
@@ -120,6 +167,7 @@ test("accent is centralized and semantic success/error colors are not reassigned
   assert.match(appearanceCss, /--accent-soft/);
   assert.match(appearanceCss, /--accent-border/);
   assert.match(appearanceCss, /--accent-foreground/);
+  assert.match(appearanceCss, /--accent-ink/);
   assert.doesNotMatch(appearanceCss, /--success\s*:/);
   assert.doesNotMatch(appearanceCss, /--error\s*:/);
 });
