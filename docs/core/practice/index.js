@@ -1,5 +1,5 @@
 export * from "./types.js";
-export * from "./lesson-catalog-block7.js";
+export * from "./lesson-catalog-block8.js";
 export * from "./phase2-major-scales.js";
 export * from "./phase3-minor-scales.js";
 export * from "./phase4-diatonic-chords.js";

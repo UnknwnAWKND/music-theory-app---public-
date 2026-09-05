@@ -145,7 +145,7 @@ export class BrowserStorageTutorRepository {
     }
     async getSettings(userId) {
         const row = this.read().settings.find((x) => x.userId === userId);
-        return row ? { ...clone(row), requirePreviousLessons: row.requirePreviousLessons ?? true } : undefined;
+        return row ? { ...clone(row), requirePreviousLessons: row.requirePreviousLessons ?? true, theme: row.theme ?? "dark" } : undefined;
     }
     async upsertSettings(settings) {
         const db = this.read();

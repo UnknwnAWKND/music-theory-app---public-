@@ -52,11 +52,14 @@ export interface PhaseProgressRecord {
     placementSummary?: Record<string, unknown>;
     updatedAt: string;
 }
+export type UserTheme = "light" | "dark";
 export interface UserLearningSettings {
     userId: string;
     desiredRetention: number;
     maximumIntervalDays: number;
     requirePreviousLessons: boolean;
+    /** Optional only for backward compatibility with pre-Block-8 stored rows. */
+    theme?: UserTheme;
     curriculumVersion: string;
     schedulerVersion: "fsrs-6";
 }
