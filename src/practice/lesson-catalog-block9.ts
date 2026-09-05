@@ -39,15 +39,9 @@ function patchSteps(
 /*
  * Dependency-aware teaching correction.
  *
- * Phase 1 deliberately reveals interval naming in stages:
- *   L1: interval number from letter names + the names P1/P8
- *   L2: build/recognize P5 without making semitone arithmetic the reason for “5th”
- *   L3: P4 + inversion
- *   L4: Major/Minor quality + half-step comparison becomes explicit
- *   L8: Augmented/Diminished are formally introduced
- *
- * Later phases already consume concepts introduced by earlier phases/lessons;
- * their content is cloned unchanged here after the dependency audit.
+ * Each patch below removes a term/rule that was arriving before its formal
+ * introduction or defines exactly enough at first use. Lesson order and the
+ * six-phase curriculum remain unchanged.
  */
 const phase1 = patchSteps(priorPhase1Lessons(), [
   {
@@ -128,13 +122,145 @@ const phase1 = patchSteps(priorPhase1Lessons(), [
       workedExample: "C–D–E makes both examples 3rds by letter name. C→E is 4 half steps, so it is M3. C→E♭ is 3 half steps, so it is m3.",
     },
   },
+  {
+    skillId: "intervals.lesson-4-thirds",
+    stepId: "third-payoff",
+    patch: {
+      body: "Major and Minor 3rds are common building blocks inside chords. For now, make the interval itself fast to recognize and build.",
+      payoff: "Later chord lessons can reuse that interval knowledge without making you recount every 3rd from scratch.",
+      expectation: "understand",
+    },
+  },
+  {
+    skillId: "intervals.lesson-5-sixths",
+    stepId: "sixths-payoff",
+    patch: {
+      payoff: "Fast inversion partners make later interval and harmony work easier to reason through.",
+    },
+  },
 ]);
 
-const phase2 = priorPhase2Lessons().map(cloneLesson);
-const phase3 = priorPhase3Lessons().map(cloneLesson);
-const phase4 = priorPhase4Lessons().map(cloneLesson);
-const phase5 = priorPhase5Lessons().map(cloneLesson);
-const phase6 = priorPhase6Lessons().map(cloneLesson);
+const phase2 = patchSteps(priorPhase2Lessons(), [
+  {
+    skillId: "major-scales.lesson-1-formula",
+    stepId: "scale-tonic-definition",
+    patch: {
+      title: "Scale and tonic",
+      body: "A scale is an ordered set of notes organized around a home note. That home note is the tonic. In this curriculum, tonic is the word for the home note of a scale or key; root is used mainly for the note a chord is built from. The next lesson will give the notes their numbered scale positions.",
+      workedExample: "In D major, D is the tonic.",
+    },
+  },
+  {
+    skillId: "major-scales.lesson-1-formula",
+    stepId: "major-formula",
+    patch: {
+      body: "Every ascending major scale follows the same step pattern: W-W-H-W-W-W-H. The half steps occur between the 3rd and 4th notes of the scale and between the 7th note and the octave.",
+    },
+  },
+  {
+    skillId: "major-scales.lesson-1-formula",
+    stepId: "interval-connection",
+    patch: {
+      body: "The formula is not a random code. Measured from the tonic, the notes of the major scale make the Phase 1 intervals P1, M2, M3, P4, P5, M6, M7, then P8 at the octave.",
+      workedExample: "In C major: C→E is M3, C→G is P5, and C→B is M7. Those are the same interval relationships you already learned.",
+    },
+  },
+  {
+    skillId: "major-scales.lesson-1-formula",
+    stepId: "formula-payoff",
+    patch: {
+      payoff: "Major scales become the note pool for later chord building, moving musical ideas between keys, and improvising.",
+      expectation: "understand",
+    },
+  },
+  {
+    skillId: "major-scales.lesson-2-degree-names",
+    stepId: "degree-priority",
+    patch: {
+      body: "Know the degree numbers 1–7 instantly and become fluent with all seven names. Tonic (1), Subdominant (4), Dominant (5), and Leading Tone (7) are especially important because later chord lessons refer to them often.",
+    },
+  },
+  {
+    skillId: "major-scales.lesson-3-build-all-roots",
+    stepId: "build-payoff",
+    patch: {
+      payoff: "Correct spelling matters because later chord lessons depend on knowing which scale degree a note actually belongs to.",
+      expectation: "understand",
+    },
+  },
+  {
+    skillId: "major-scales.lesson-4-instant-recall",
+    stepId: "recall-payoff",
+    patch: {
+      body: "When the notes of a key are automatic, later theory stops spending mental bandwidth on basic lookup. You can focus on chord building and musical choices instead.",
+      workedExample: "If E major is instantly E-F♯-G♯-A-B-C♯-D♯, building its chords later becomes much faster.",
+      expectation: "understand",
+    },
+  },
+]);
+
+const phase3 = patchSteps(priorPhase3Lessons(), [
+  {
+    skillId: "minor-scales.lesson-1-natural-formula",
+    stepId: "natural-minor-payoff",
+    patch: {
+      body: "Natural minor gives the basic minor note collection. Keep this version solid because later lessons will change only specific notes instead of replacing the whole scale.",
+      workedExample: "A natural minor = A B C D E F G. Treat that as the base minor collection for now.",
+      payoff: "Later chord lessons build directly from this collection.",
+      expectation: "understand",
+    },
+  },
+  {
+    skillId: "minor-scales.lesson-3-harmonic-minor",
+    stepId: "harmonic-why",
+    patch: {
+      body: "In tonal minor music, degree 7 is often raised because putting it one half step below the tonic creates a stronger pull upward to home. That note is the leading tone you just learned.",
+      workedExample: "In A minor, G♯ sits one half step below A. The motion G♯→A gives the direct leading-tone pull back to the tonic.",
+    },
+  },
+  {
+    skillId: "minor-scales.lesson-3-harmonic-minor",
+    stepId: "harmonic-payoff",
+    patch: {
+      body: "Think of harmonic minor as one targeted change to natural minor: raise 7 to create the leading tone. The augmented 2nd between degrees 6 and 7 is the melodic side effect of that change.",
+      payoff: "Later chord lessons will reuse this raised 7, but you do not need those chord rules yet.",
+      expectation: "understand",
+    },
+  },
+]);
+
+const phase4 = patchSteps(priorPhase4Lessons(), [
+  {
+    skillId: "diatonic-chords.lesson-10-own-progressions",
+    stepId: "outside",
+    patch: {
+      body: "If one of your chords is outside the current scale, the app labels it outside the current diatonic set and explains the closest in-key result. It does not invent an explanation using theory you have not learned in this curriculum yet.",
+      workedExample: "In C major, D major is outside the current diatonic set while D minor is ii. D major can still be musically useful; this lesson simply marks it as outside the current set.",
+    },
+  },
+]);
+
+const phase5 = patchSteps(priorPhase5Lessons(), [
+  {
+    skillId: "relatives.lesson-1-relative-major-minor",
+    stepId: "tonic-interpretation",
+    patch: {
+      body: "Sharing notes does not make two keys sound or function the same. Melodies, chord emphasis, phrase endings, and repetition can make one tonic feel like the point of rest.",
+    },
+  },
+]);
+
+const phase6 = patchSteps(priorPhase6Lessons(), [
+  {
+    skillId: "circle-of-fifths.lesson-2-close-vs-distant",
+    stepId: "no-modulation-course",
+    patch: {
+      title: "Stay focused on the map",
+      body: "For this phase, use the relationships you already know: neighbors share a lot, far keys share less, relatives share a signature, and Roman numerals let you rebuild musical relationships elsewhere.",
+      workedExample: "You can choose A♭ major from C major and rebuild a progression there with Roman numerals without adding extra key-change techniques to this lesson.",
+    },
+  },
+]);
 
 const ALL_LESSONS = [...phase1, ...phase2, ...phase3, ...phase4, ...phase5, ...phase6];
 const BY_ID = new Map(ALL_LESSONS.map((lesson) => [lesson.skillId, lesson]));
