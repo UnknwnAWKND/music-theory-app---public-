@@ -52,15 +52,16 @@ const EXPECTED_PAIRS = [
 const generated = (id, count = 240) => Array.from({ length: count }, (_, index) => exerciseForSkill(id, index)).filter(Boolean);
 const normalize = (value) => String(value).replaceAll("#", "♯").replaceAll("b", "♭");
 
-test("Phase 5 is exactly four lessons and Phase 6 remains unbuilt", () => {
+test("Phase 5 remains exactly four lessons while Phase 6 is added afterward", () => {
   const skills = SKILLS.filter((skill) => skill.phase === 5);
   assert.deepEqual(skills.map((skill) => skill.id), IDS);
   assert.deepEqual(skills.map((skill) => skill.title), TITLES);
   assert.deepEqual(phase5Lessons().map((lesson) => lesson.skillId), IDS);
-  assert.deepEqual(activeLessonSkillIds().slice(-4), IDS);
-  assert.deepEqual(activeExerciseSkillIds().slice(-4), IDS);
-  assert.equal(SKILLS.some((skill) => skill.phase === 6), false);
-  assert.equal(checkpointDefinition(6), undefined);
+  assert.deepEqual(activeLessonSkillIds().slice(29, 33), IDS);
+  assert.deepEqual(activeExerciseSkillIds().slice(28, 32), IDS);
+  assert.equal(SKILLS.filter((skill) => skill.phase === 6).length, 4);
+  assert.equal(SKILLS.some((skill) => skill.phase > 6), false);
+  assert.ok(checkpointDefinition(6));
 });
 
 test("all conventional relative pairs through seven accidentals are exact", () => {
@@ -200,7 +201,7 @@ test("Phase 5 checkpoint targets relatives without over-testing altered minor fo
   assert.equal(ids.has("harmonic-alteration"), false);
   assert.equal(ids.has("melodic-alteration"), false);
   assert.ok(checkpoint.competencies.every((item) => item.critical));
-  assert.equal(checkpointDefinition(6), undefined);
+  assert.ok(checkpointDefinition(6));
 });
 
 test("Block 6 production transform activates only Phase 5 and leaves Phase 6 future", () => {

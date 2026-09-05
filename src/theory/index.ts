@@ -4,5 +4,6 @@ export * from "./scale.js";
 export * from "./chord.js";
 export * from "./harmony.js";
 export * from "./relatives.js";
+export * from "./circle.js";
 export * from "./chord-reference.js";
 export * from "./extended.js";
