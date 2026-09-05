@@ -31,13 +31,12 @@ test("all 37 rebuilt lessons and all 176 teaching pages receive the active QA ca
   assert.deepEqual(phases.map((items) => items.length), [10, 4, 5, 10, 4, 4]);
 });
 
-test("Phase 1 Lesson 1 defines number, quality, half step, and the exact C-to-G P5 without vague wording", () => {
+test("Phase 1 Lesson 1 defines interval number from letter names without prematurely teaching later quality rules", () => {
   const intro = step("intervals.lesson-1-unison-octave", "interval-means-distance");
   assert.ok(intro);
-  assert.match(intro.body, /number tells you how many letter names/i);
-  assert.match(intro.body, /Quality is the word that tells you the exact version/i);
-  assert.match(intro.body, /half steps.*semitones/i);
-  assert.match(intro.workedExample, /C→G.*Perfect 5th.*P5/i);
+  assert.match(intro.body, /interval number comes from counting letter names/i);
+  assert.match(intro.workedExample, /C→G.*five letter names.*5th/i);
+  assert.doesNotMatch(`${intro.body} ${intro.workedExample}`, /half steps|semitones|Major|Minor|Augmented|Diminished|inversion/i);
   assert.doesNotMatch(intro.workedExample, /some kind of/i);
 });
 
