@@ -2,10 +2,16 @@ const app = document.querySelector("#app");
 let observer = null;
 let source = null;
 let floating = null;
+let spacer = null;
 let queued = false;
 
 function backIcon() {
   return `<svg class="ui-icon" width="22" height="22" viewBox="0 0 20 20" aria-hidden="true"><path d="m12.8 4.5-5.5 5.5 5.5 5.5"/></svg>`;
+}
+
+function setFloatingVisible(visible) {
+  floating?.classList.toggle("is-visible", visible);
+  spacer?.classList.toggle("is-active", visible);
 }
 
 function removeFloating() {
@@ -14,6 +20,8 @@ function removeFloating() {
   source = null;
   floating?.remove();
   floating = null;
+  spacer?.remove();
+  spacer = null;
 }
 
 function eligibleNormalBack() {
@@ -26,15 +34,21 @@ function eligibleNormalBack() {
 }
 
 function sourceHasScrolledAboveViewport(element) {
-  const rect = element.getBoundingClientRect();
-  const safeTop = Number.parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--safe-top-px")) || 0;
-  return rect.bottom <= Math.max(0, safeTop);
+  return element.getBoundingClientRect().bottom <= 0;
 }
 
 function mountFor(candidate) {
   if (source === candidate && floating?.isConnected) return;
   removeFloating();
   source = candidate;
+
+  const header = candidate.closest(".page-header");
+  if (header) {
+    spacer = document.createElement("div");
+    spacer.className = "floating-back-spacer";
+    spacer.setAttribute("aria-hidden", "true");
+    header.insertAdjacentElement("afterend", spacer);
+  }
 
   const label = candidate.textContent?.trim() || "Back";
   floating = document.createElement("button");
@@ -49,7 +63,7 @@ function mountFor(candidate) {
     const entry = entries[0];
     if (!entry || !floating) return;
     const shouldFloat = !entry.isIntersecting && sourceHasScrolledAboveViewport(candidate);
-    floating.classList.toggle("is-visible", shouldFloat);
+    setFloatingVisible(shouldFloat);
   }, { root: null, threshold: 0.01 });
   observer.observe(candidate);
 }

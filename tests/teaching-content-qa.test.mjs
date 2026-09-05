@@ -60,11 +60,12 @@ test("first-use terminology fixes define pitch class, chord quality, Roman numer
   assert.match(step("relatives.lesson-1-relative-major-minor", "relative-definition").body, /A key signature is the set of sharps or flats/i);
 });
 
-test("scale tonic and chord root terminology no longer collapse into one definition", () => {
+test("scale tonic and chord root terminology no longer collapse into one definition or pre-teach scale degrees", () => {
   const scaleTonic = step("major-scales.lesson-1-formula", "scale-tonic-definition");
   assert.match(scaleTonic.body, /tonic is the word for the home note of a scale or key/i);
   assert.match(scaleTonic.body, /root is used mainly for the note a chord is built from/i);
-  assert.equal(scaleTonic.workedExample, "In D major, D is the tonic and scale degree 1.");
+  assert.equal(scaleTonic.workedExample, "In D major, D is the tonic.");
+  assert.doesNotMatch(`${scaleTonic.body} ${scaleTonic.workedExample}`, /\bscale degree\b/i);
 });
 
 test("piano teaching visuals use physical key IDs plus context-correct written labels", () => {
