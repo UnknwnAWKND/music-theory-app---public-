@@ -21,6 +21,10 @@ function id(prefix: string) {
   return `${prefix}-${counter}`;
 }
 
+function lessonProgressState(row: StoredLessonProgress): LessonProgressState {
+  return { lessonId: row.lessonId, completionCount: row.completionCount, firstCompletedAt: row.firstCompletedAt, lastCompletedAt: row.lastCompletedAt };
+}
+
 export class InMemoryTutorRepository implements TutorRepository {
   readonly sessions: StudySessionRecord[] = [];
   readonly attempts: StoredAttempt[] = [];
@@ -116,10 +120,13 @@ export class InMemoryTutorRepository implements TutorRepository {
     this.phaseProgressRows.set(`${record.userId}::${record.phase}`, { ...record });
   }
 
+  async allLessonProgress(userId: string): Promise<LessonProgressState[]> {
+    return [...this.lessonProgressRows.values()].filter((x) => x.userId === userId).map((row) => lessonProgressState(row));
+  }
+
   async getLessonProgress(userId: string, lessonId: string): Promise<LessonProgressState | undefined> {
     const row = this.lessonProgressRows.get(this.key(userId, lessonId));
-    if (!row) return undefined;
-    return { lessonId: row.lessonId, completionCount: row.completionCount, firstCompletedAt: row.firstCompletedAt, lastCompletedAt: row.lastCompletedAt };
+    return row ? lessonProgressState(row) : undefined;
   }
 
   async upsertLessonProgress(userId: string, progress: LessonProgressState): Promise<void> {
