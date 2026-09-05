@@ -1,3 +1,5 @@
+export const PHASE4_SAVED_PROGRESSION_KEY = "music-theory-tutor:phase4-last-major-progression";
+
 const ROOTS = ["C", "C#", "Db", "D", "Eb", "E", "F", "F#", "G", "G#", "Ab", "A", "Bb", "B"];
 const QUALITIES = ["major", "minor", "diminished", "augmented"];
 const FORMS = [
@@ -51,6 +53,20 @@ export function phase4ProgressionLabHtml() {
   </section>`;
 }
 
+function saveMajorProgression(tonic, form, rows) {
+  if (form !== "major" || rows.some((row) => !row.diatonic || !row.romanNumeral)) return;
+  try {
+    localStorage.setItem(PHASE4_SAVED_PROGRESSION_KEY, JSON.stringify({
+      tonic,
+      form,
+      romanNumerals: rows.map((row) => row.romanNumeral),
+      savedAt: new Date().toISOString(),
+    }));
+  } catch {
+    // Storage is optional. Phase 6 always has a safe fallback progression.
+  }
+}
+
 export function bindPhase4ProgressionLab(analyzeStructuredProgression) {
   document.querySelectorAll("[data-analyze-progression]").forEach((button) => {
     button.addEventListener("click", () => {
@@ -66,6 +82,7 @@ export function bindPhase4ProgressionLab(analyzeStructuredProgression) {
       try {
         const rows = analyzeStructuredProgression(tonic, form, inputs);
         output.innerHTML = `<div class="worked-example"><strong>Analysis</strong>${rows.map((row, chordIndex) => `<span><b>${chordIndex + 1}. ${row.diatonic ? esc(row.romanNumeral) : "Outside current diatonic set"}</b> — ${esc(row.explanation)}</span>`).join("")}</div>`;
+        saveMajorProgression(tonic, form, rows);
       } catch (error) {
         output.innerHTML = `<div class="feedback incorrect"><strong>Could not analyze</strong><p>${esc(error?.message ?? error)}</p></div>`;
       }

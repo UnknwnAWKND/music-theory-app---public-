@@ -6,4 +6,5 @@ export * from "./phase2-major-scales.js";
 export * from "./phase3-minor-scales.js";
 export * from "./phase4-diatonic-chords.js";
 export * from "./phase5-relatives.js";
-export * from "./catalog-block6.js";
+export * from "./phase6-circle-of-fifths.js";
+export * from "./catalog-block7.js";
