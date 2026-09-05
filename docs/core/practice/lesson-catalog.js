@@ -1,5 +1,6 @@
 import { phase1Lessons } from "./lessons.js";
 import { PHASE2_MAJOR_SCALE_LESSONS } from "./phase2-major-scales.js";
+import { PHASE3_MINOR_SCALE_LESSONS } from "./phase3-minor-scales.js";
 const PHASE2_LESSONS = PHASE2_MAJOR_SCALE_LESSONS.map((lesson) => {
     if (lesson.skillId !== "major-scales.lesson-4-instant-recall")
         return lesson;
@@ -14,6 +15,7 @@ const PHASE2_LESSONS = PHASE2_MAJOR_SCALE_LESSONS.map((lesson) => {
 const LESSONS = new Map([
     ...phase1Lessons().map((lesson) => [lesson.skillId, lesson]),
     ...PHASE2_LESSONS.map((lesson) => [lesson.skillId, lesson]),
+    ...PHASE3_MINOR_SCALE_LESSONS.map((lesson) => [lesson.skillId, lesson]),
 ]);
 export function registerLesson(content) {
     LESSONS.set(content.skillId, content);
@@ -27,4 +29,7 @@ export function activeLessonSkillIds() {
 export { phase1Lessons };
 export function phase2Lessons() {
     return PHASE2_LESSONS;
+}
+export function phase3Lessons() {
+    return PHASE3_MINOR_SCALE_LESSONS;
 }

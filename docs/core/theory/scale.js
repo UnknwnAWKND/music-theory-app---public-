@@ -19,11 +19,7 @@ export const SCALE_DEGREE_NAMES = [
 export const MAJOR_PITCH_CLASS_ROOTS = [
     "C", "Db", "D", "Eb", "E", "F", "F#", "G", "Ab", "A", "Bb", "B",
 ];
-/**
- * Conventional major-key spellings through seven accidentals. The three
- * enharmonic pairs (C#/Db, F#/Gb, B/Cb) intentionally coexist because their
- * written scales are different even when the piano pitches match.
- */
+/** Conventional major-key spellings through seven accidentals. */
 export const SUPPORTED_MAJOR_KEY_NAMES = [
     "C", "G", "D", "A", "E", "B", "F#", "C#",
     "F", "Bb", "Eb", "Ab", "Db", "Gb", "Cb",
@@ -31,6 +27,29 @@ export const SUPPORTED_MAJOR_KEY_NAMES = [
 export const NATURAL_MINOR_OFFSETS = [0, 2, 3, 5, 7, 8, 10];
 export const HARMONIC_MINOR_OFFSETS = [0, 2, 3, 5, 7, 8, 11];
 export const MELODIC_MINOR_ASC_OFFSETS = [0, 2, 3, 5, 7, 9, 11];
+export const NATURAL_MINOR_STEP_PATTERN = ["W", "H", "W", "W", "H", "W", "W"];
+export const HARMONIC_MINOR_SEMITONE_STEPS = [2, 1, 2, 2, 1, 3, 1];
+export const MELODIC_MINOR_ASC_STEP_PATTERN = ["W", "H", "W", "W", "W", "W", "H"];
+export const NATURAL_MINOR_DEGREE_INTERVALS = ["P1", "M2", "m3", "P4", "P5", "m6", "m7", "P8"];
+export const HARMONIC_MINOR_DEGREE_INTERVALS = ["P1", "M2", "m3", "P4", "P5", "m6", "M7", "P8"];
+export const MELODIC_MINOR_ASC_DEGREE_INTERVALS = ["P1", "M2", "m3", "P4", "P5", "M6", "M7", "P8"];
+/**
+ * One practical minor-key spelling for each pitch class. These defaults favor
+ * conventional spellings with manageable key signatures while still balancing
+ * all 12 piano pitch classes.
+ */
+export const MINOR_PITCH_CLASS_ROOTS = [
+    "C", "C#", "D", "Eb", "E", "F", "F#", "G", "G#", "A", "Bb", "B",
+];
+/**
+ * Conventional written minor keys through seven accidentals. The three pairs
+ * G#/Ab, D#/Eb, and A#/Bb are enharmonic on piano but require different exact
+ * scale spellings.
+ */
+export const SUPPORTED_MINOR_KEY_NAMES = [
+    "A", "E", "B", "F#", "C#", "G#", "D#", "A#",
+    "D", "G", "C", "F", "Bb", "Eb", "Ab",
+];
 export function scaleFromOffsets(tonic, offsets) {
     return offsets.map((offset, degreeIndex) => {
         const letter = letterAt(letterIndex(tonic.letter) + degreeIndex);
@@ -64,10 +83,7 @@ export function majorScaleDegreeForNote(tonicName, noteName) {
 export function majorRootForPitchClass(pc) {
     return MAJOR_PITCH_CLASS_ROOTS[mod(pc, 12)];
 }
-/**
- * Alternate conventional written roots for pitch classes that have two common
- * major-key spellings. The first item is the balanced 12-root practice name.
- */
+/** Alternate conventional written major roots for enharmonic pitch classes. */
 export function conventionalMajorRootsForPitchClass(pc) {
     switch (mod(pc, 12)) {
         case 1: return ["Db", "C#"];
@@ -79,16 +95,26 @@ export function conventionalMajorRootsForPitchClass(pc) {
 export function naturalMinorScale(tonic) {
     return scaleFromOffsets(tonic, NATURAL_MINOR_OFFSETS);
 }
+export function naturalMinorScaleNames(tonicName) {
+    return naturalMinorScale(parseNote(tonicName)).map(formatNote);
+}
 export function harmonicMinorScale(tonic) {
     return scaleFromOffsets(tonic, HARMONIC_MINOR_OFFSETS);
 }
-/** Ascending classical melodic minor; this is also the pitch collection commonly called jazz melodic minor. */
+export function harmonicMinorScaleNames(tonicName) {
+    return harmonicMinorScale(parseNote(tonicName)).map(formatNote);
+}
+/** Ascending classical melodic minor: natural minor with raised degrees 6 and 7. */
 export function melodicMinorAscendingScale(tonic) {
     return scaleFromOffsets(tonic, MELODIC_MINOR_ASC_OFFSETS);
 }
+export function melodicMinorAscendingScaleNames(tonicName) {
+    return melodicMinorAscendingScale(parseNote(tonicName)).map(formatNote);
+}
 /**
- * Classical melodic minor in traversal order, omitting the repeated octave tonic.
- * Ascending raises scale degrees 6 and 7; descending uses natural-minor 7 and 6.
+ * Classical melodic minor in traversal order, omitting the repeated ending
+ * tonic so each answer uses seven scale-degree names. Ascending raises 6 and 7;
+ * descending returns to natural minor for this curriculum.
  */
 export function classicalMelodicMinor(tonic) {
     const ascending = melodicMinorAscendingScale(tonic);
@@ -98,9 +124,48 @@ export function classicalMelodicMinor(tonic) {
         descending: [natural[0], natural[6], natural[5], natural[4], natural[3], natural[2], natural[1]],
     };
 }
+export function classicalMelodicMinorNames(tonicName) {
+    const result = classicalMelodicMinor(parseNote(tonicName));
+    return {
+        ascending: result.ascending.map(formatNote),
+        descending: result.descending.map(formatNote),
+    };
+}
 /** In common jazz usage, melodic minor normally keeps raised 6 and 7 in both directions. */
 export function jazzMelodicMinorScale(tonic) {
     return melodicMinorAscendingScale(tonic);
+}
+/** The harmonic-minor leading tone is the raised seventh, one semitone below tonic. */
+export function minorLeadingToneName(tonicName) {
+    return harmonicMinorScaleNames(tonicName)[6];
+}
+/**
+ * Degree 6 -> raised degree 7 in harmonic minor is an augmented second:
+ * adjacent letter names spanning three semitones.
+ */
+export function harmonicMinorAugmentedSecond(tonicName) {
+    const scale = harmonicMinorScaleNames(tonicName);
+    return { degree6: scale[5], degree7: scale[6], semitones: 3, interval: "A2" };
+}
+export function minorScaleDegreeNote(tonicName, form, degree) {
+    if (!Number.isInteger(degree) || degree < 1 || degree > 7)
+        throw new Error(`Invalid scale degree: ${degree}`);
+    if (form === "natural")
+        return naturalMinorScaleNames(tonicName)[degree - 1];
+    if (form === "harmonic")
+        return harmonicMinorScaleNames(tonicName)[degree - 1];
+    return melodicMinorAscendingScaleNames(tonicName)[degree - 1];
+}
+export function minorRootForPitchClass(pc) {
+    return MINOR_PITCH_CLASS_ROOTS[mod(pc, 12)];
+}
+export function conventionalMinorRootsForPitchClass(pc) {
+    switch (mod(pc, 12)) {
+        case 3: return ["Eb", "D#"];
+        case 8: return ["G#", "Ab"];
+        case 10: return ["Bb", "A#"];
+        default: return [minorRootForPitchClass(pc)];
+    }
 }
 /** Relative minor tonic = scale degree 6 of the major scale. */
 export function relativeMinorTonic(majorTonic) {

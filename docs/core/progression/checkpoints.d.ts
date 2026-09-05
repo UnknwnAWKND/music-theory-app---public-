@@ -50,7 +50,7 @@ export declare function checkpointDefinition(phase: PhaseNumber): PhaseCheckpoin
 export declare function allCheckpointDefinitions(): PhaseCheckpointDefinition[];
 export declare function evaluateCheckpoint(definition: PhaseCheckpointDefinition, results: readonly DiagnosticItemResult[]): AssessmentEvaluation;
 export declare function nextCheckpointCompetency(definition: PhaseCheckpointDefinition, results: readonly DiagnosticItemResult[]): CompetencyDefinition | undefined;
-/** Placement prerequisites remain graph-derived; Phase 3+ placement content is not authored in Block 3. */
+/** Placement prerequisites remain graph-derived; Phase 4+ placement content is not authored in Block 4. */
 export declare function placementPrerequisitePhases(targetPhase: PhaseNumber): PhaseNumber[];
 export declare function placementDefinition(targetPhase: PhaseNumber): PhaseCheckpointDefinition;
 export declare function recommendStartingPhase(targetPhase: PhaseNumber, evaluation: AssessmentEvaluation): PhaseNumber;

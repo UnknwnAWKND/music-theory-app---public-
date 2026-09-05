@@ -5,3 +5,4 @@ export declare function lessonForSkill(skillId: string): LessonContent | undefin
 export declare function activeLessonSkillIds(): string[];
 export { phase1Lessons };
 export declare function phase2Lessons(): readonly LessonContent[];
+export declare function phase3Lessons(): readonly LessonContent[];
