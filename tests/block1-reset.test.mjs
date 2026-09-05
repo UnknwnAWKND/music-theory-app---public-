@@ -27,7 +27,7 @@ import { renderPracticeRoundCounter, renderTeachingLesson } from "../web/lesson-
 const read = (path) => fs.readFileSync(path, "utf8");
 const migrationPath = "supabase/migrations/202609041700_block1_empty_curriculum.sql";
 const migration = read(migrationPath);
-const app = read("web/app-block3.js");
+const app = read("web/app-block8.js");
 const OLD_CURRICULUM_FILES = ["src/curriculum/skills-v09.ts", "src/exercises/catalog-v09.ts", "src/practice/lessons-v09.ts", "src/progression/checkpoints-v09.ts"];
 
 test("Block 1 six-phase shell remains exact", () => {
@@ -49,8 +49,19 @@ test("old pre-rebuild curriculum files remain absent and only Phases 1-6 are act
   assert.equal(allCheckpointDefinitions().length, 6);
 });
 
-test("no Phase 6 placement competency content is invented", () => {
-  for (const phase of CURRICULUM_PHASES.filter((x) => x.phase >= 6)) assert.deepEqual(placementDefinition(phase.phase).competencies, []);
+test("placement now tests prerequisites for Phases 2-6 without sampling destination material", () => {
+  for (const targetPhase of [2, 3, 4, 5, 6]) {
+    const definition = placementDefinition(targetPhase);
+    assert.ok(definition.competencies.length > 0, `Phase ${targetPhase} placement must contain prerequisite competencies`);
+    for (const competency of definition.competencies) {
+      assert.match(competency.id, /^placement-p[1-5]--/);
+      for (const skillId of competency.skillIds) {
+        const skill = SKILLS.find((candidate) => candidate.id === skillId);
+        assert.ok(skill, skillId);
+        assert.ok(skill.phase < targetPhase, `${skillId} must be prerequisite material for Phase ${targetPhase}`);
+      }
+    }
+  }
 });
 
 test("rebuild migration still preserves auth and clears application data", () => {
@@ -69,12 +80,12 @@ test("login still lazily creates profile/settings without wiping prior progress"
   assert.match(app, /getSettings\(userId\)/);
   assert.match(app, /upsertSettings\(settings\)/);
   assert.match(app, /music-theory-tutor:block2-phase1/);
-  assert.match(read("web/config.js"), /buildVersion:\s*"rebuild-block7-phase6-circle-of-fifths"/);
+  assert.match(read("web/config.js"), /buildVersion:\s*"rebuild-block8-final"/);
 });
 
 test("active app and schemas do not reintroduce hint UI/content", () => {
-  for (const path of ["web/app-block3.js", "web/lesson-ui.js", "src/exercises/types.ts", "src/exercises/generators.ts", "src/practice/types.ts", "src/practice/lessons.ts", "src/practice/phase2-major-scales.ts", "src/exercises/phase2-major-scales.ts", "src/practice/phase3-minor-scales.ts", "src/exercises/phase3-minor-scales.ts", "src/practice/phase4-diatonic-chords.ts", "src/exercises/phase4-diatonic-chords.ts", "web/phase4-ui.js"]) {
-    assert.doesNotMatch(read(path), /show\s+hint|need\s+a\s+hint|hintbutton|hintbtn|inputHint|hintText|showHint/i, path);
+  for (const path of ["web/app-block8.js", "web/lesson-ui.js", "web/styles.css", "web/design-system.css", "src/exercises/types.ts", "src/exercises/generators.ts", "src/practice/types.ts", "src/practice/lessons.ts", "src/practice/phase2-major-scales.ts", "src/exercises/phase2-major-scales.ts", "src/practice/phase3-minor-scales.ts", "src/exercises/phase3-minor-scales.ts", "src/practice/phase4-diatonic-chords.ts", "src/exercises/phase4-diatonic-chords.ts", "web/phase4-ui.js"]) {
+    assert.doesNotMatch(read(path), /show\s+hint|need\s+a\s+hint|hintbutton|hintbtn|inputHint|hintText|showHint|class=["'][^"']*\bhint\b/i, path);
   }
 });
 
@@ -151,12 +162,15 @@ test("old source-mutating build scripts and stale schema remain absent", () => {
   assert.equal(fs.existsSync("supabase/schema.sql"), false);
 });
 
-test("Block 3 source app remains a stable baseline for pure later-phase production transforms", () => {
-  execFileSync(process.execPath, ["--check", "web/app-block3.js"]);
-  assert.match(read("web/index.html"), /app-block3\.js/);
-  assert.match(app, /Phase 2/);
-  assert.match(app, /major scale|Major Scales/i);
-  assert.doesNotMatch(app, /minor-scales\.lesson-/);
-  assert.ok(fs.existsSync("scripts/block4-app-transform.mjs"));
-  assert.ok(fs.existsSync("scripts/block5-app-transform.mjs"));
+test("Block 8 final app is the production source and no longer depends on historical app transforms", () => {
+  execFileSync(process.execPath, ["--check", "web/app-block8.js"]);
+  execFileSync(process.execPath, ["--check", "web/final-ui.js"]);
+  const index = read("web/index.html");
+  assert.match(index, /app-block8\.js/);
+  assert.match(index, /design-system\.css/);
+  assert.doesNotMatch(index, /app-block3\.js/);
+  assert.match(app, /CURRICULUM_PHASES/);
+  assert.match(app, /placementDefinition/);
+  assert.match(app, /renderSettings/);
+  assert.match(app, /phase4SavedProgressionKey|bindPhase4ProgressionLab/);
 });
