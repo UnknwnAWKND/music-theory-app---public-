@@ -3,6 +3,9 @@ function id(prefix) {
     counter += 1;
     return `${prefix}-${counter}`;
 }
+function lessonProgressState(row) {
+    return { lessonId: row.lessonId, completionCount: row.completionCount, firstCompletedAt: row.firstCompletedAt, lastCompletedAt: row.lastCompletedAt };
+}
 export class InMemoryTutorRepository {
     sessions = [];
     attempts = [];
@@ -83,11 +86,12 @@ export class InMemoryTutorRepository {
     async upsertPhaseProgress(record) {
         this.phaseProgressRows.set(`${record.userId}::${record.phase}`, { ...record });
     }
+    async allLessonProgress(userId) {
+        return [...this.lessonProgressRows.values()].filter((x) => x.userId === userId).map((row) => lessonProgressState(row));
+    }
     async getLessonProgress(userId, lessonId) {
         const row = this.lessonProgressRows.get(this.key(userId, lessonId));
-        if (!row)
-            return undefined;
-        return { lessonId: row.lessonId, completionCount: row.completionCount, firstCompletedAt: row.firstCompletedAt, lastCompletedAt: row.lastCompletedAt };
+        return row ? lessonProgressState(row) : undefined;
     }
     async upsertLessonProgress(userId, progress) {
         this.lessonProgressRows.set(this.key(userId, progress.lessonId), { ...progress, userId, updatedAt: new Date().toISOString() });

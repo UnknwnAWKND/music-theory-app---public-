@@ -6,6 +6,9 @@ function uid(prefix) {
     const random = globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`;
     return `${prefix}-${random}`;
 }
+function lessonProgressState(row) {
+    return { lessonId: row.lessonId, completionCount: row.completionCount, firstCompletedAt: row.firstCompletedAt, lastCompletedAt: row.lastCompletedAt };
+}
 export class BrowserStorageTutorRepository {
     storage;
     storageKey;
@@ -114,9 +117,12 @@ export class BrowserStorageTutorRepository {
             db.phaseProgress.push(clone(record));
         this.write(db);
     }
+    async allLessonProgress(userId) {
+        return this.read().lessonProgress.filter((x) => x.userId === userId).map((row) => lessonProgressState(row));
+    }
     async getLessonProgress(userId, lessonId) {
         const row = this.read().lessonProgress.find((x) => x.userId === userId && x.lessonId === lessonId);
-        return row ? { lessonId: row.lessonId, completionCount: row.completionCount, firstCompletedAt: row.firstCompletedAt, lastCompletedAt: row.lastCompletedAt } : undefined;
+        return row ? lessonProgressState(row) : undefined;
     }
     async upsertLessonProgress(userId, progress) {
         const db = this.read();

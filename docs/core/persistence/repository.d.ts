@@ -24,6 +24,7 @@ export interface TutorRepository {
     acquiringSkillIds(userId: string): Promise<string[]>;
     phaseProgress(userId: string): Promise<PhaseProgressRecord[]>;
     upsertPhaseProgress(record: PhaseProgressRecord): Promise<void>;
+    allLessonProgress(userId: string): Promise<LessonProgressState[]>;
     getLessonProgress(userId: string, lessonId: string): Promise<LessonProgressState | undefined>;
     upsertLessonProgress(userId: string, progress: LessonProgressState): Promise<void>;
     getProfile(userId: string): Promise<UserProfile | undefined>;
