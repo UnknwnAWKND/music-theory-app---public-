@@ -1,0 +1,188 @@
+/* Appearance correction: warm beige Light mode + centralized, theme-aware accents. */
+
+:root {
+  --accent-foreground: #ffffff;
+  --accent-shadow: color-mix(in srgb, var(--accent-primary) 24%, transparent);
+}
+
+/* Light mode is intentionally beige enough that white piano keys stay distinct. */
+html[data-theme="light"] {
+  --bg-primary: #efe5d6;
+  --bg-secondary: #e7dac7;
+  --surface: #f7efe3;
+  --surface-raised: #fbf5ec;
+  --surface-soft: #e9ddcc;
+  --surface-hover: #e2d4c1;
+  --text-primary: #29251f;
+  --text-secondary: #554d44;
+  --text-muted: #766c61;
+  --border-subtle: rgba(66, 55, 43, .14);
+  --border-strong: rgba(66, 55, 43, .24);
+  --shadow-card: 0 18px 44px rgba(74, 58, 42, .09);
+  --shadow-float: 0 24px 60px rgba(74, 58, 42, .14);
+  --piano-white: #ffffff;
+  --piano-white-border: #918a80;
+  --piano-black: #24252b;
+  --piano-label: #202126;
+}
+
+html[data-theme="light"] body {
+  background:
+    radial-gradient(74% 42% at 100% 0%, color-mix(in srgb, var(--accent-primary) 7%, transparent), transparent 66%),
+    radial-gradient(60% 34% at 0% 100%, rgba(151, 116, 69, .06), transparent 68%),
+    var(--bg-primary);
+}
+
+/* Accent palettes. Purple remains the default. */
+html[data-theme="dark"][data-accent="purple"],
+html[data-theme="dark"]:not([data-accent]) { --accent-primary:#8b6cff; --accent-strong:#7357f6; --accent-hover:#a18bff; --accent-foreground:#fff; }
+html[data-theme="dark"][data-accent="red"]    { --accent-primary:#ff6f78; --accent-strong:#df4d59; --accent-hover:#ff8990; --accent-foreground:#fff; }
+html[data-theme="dark"][data-accent="green"]  { --accent-primary:#58d69a; --accent-strong:#27885f; --accent-hover:#74e3af; --accent-foreground:#fff; }
+html[data-theme="dark"][data-accent="yellow"] { --accent-primary:#f1c84b; --accent-strong:#d4a812; --accent-hover:#f8d86e; --accent-foreground:#241d06; }
+html[data-theme="dark"][data-accent="orange"] { --accent-primary:#ff914d; --accent-strong:#df6a2b; --accent-hover:#ffa66f; --accent-foreground:#fff; }
+html[data-theme="dark"][data-accent="blue"]   { --accent-primary:#6998ff; --accent-strong:#4774df; --accent-hover:#84abff; --accent-foreground:#fff; }
+html[data-theme="dark"][data-accent="black"]  { --accent-primary:#272c37; --accent-strong:#171a22; --accent-hover:#343a47; --accent-foreground:#fff; --accent-border:#687182; }
+html[data-theme="dark"][data-accent="white"]  { --accent-primary:#f3f4f1; --accent-strong:#d9dde3; --accent-hover:#ffffff; --accent-foreground:#15171b; --accent-border:#f3f4f1; }
+
+html[data-theme="light"][data-accent="purple"],
+html[data-theme="light"]:not([data-accent]) { --accent-primary:#6f59d9; --accent-strong:#5f49cb; --accent-hover:#604bc9; --accent-foreground:#fff; }
+html[data-theme="light"][data-accent="red"]    { --accent-primary:#c94f59; --accent-strong:#ad3d47; --accent-hover:#b94550; --accent-foreground:#fff; }
+html[data-theme="light"][data-accent="green"]  { --accent-primary:#277b58; --accent-strong:#1f684a; --accent-hover:#226f4f; --accent-foreground:#fff; }
+html[data-theme="light"][data-accent="yellow"] { --accent-primary:#d4a20e; --accent-strong:#c18f00; --accent-hover:#c99908; --accent-foreground:#241d06; }
+html[data-theme="light"][data-accent="orange"] { --accent-primary:#c76428; --accent-strong:#aa4e1c; --accent-hover:#b85720; --accent-foreground:#fff; }
+html[data-theme="light"][data-accent="blue"]   { --accent-primary:#416cc6; --accent-strong:#3158ac; --accent-hover:#365fba; --accent-foreground:#fff; }
+html[data-theme="light"][data-accent="black"]  { --accent-primary:#202124; --accent-strong:#111214; --accent-hover:#2d2f33; --accent-foreground:#fff; --accent-border:#202124; }
+html[data-theme="light"][data-accent="white"]  { --accent-primary:#ffffff; --accent-strong:#f7f7f3; --accent-hover:#ffffff; --accent-foreground:#24211d; --accent-border:#8b8378; --accent-shadow:rgba(60,50,40,.14); }
+
+html[data-theme] {
+  --accent-soft: color-mix(in srgb, var(--accent-primary) 14%, transparent);
+  --accent-border: color-mix(in srgb, var(--accent-primary) 42%, transparent);
+  --accent-shadow: color-mix(in srgb, var(--accent-primary) 25%, transparent);
+  --accent: var(--accent-primary);
+  --progress: var(--accent-primary);
+  --progress-soft: var(--accent-soft);
+}
+
+/* Re-assert the two contrast edge cases after derived defaults above. */
+html[data-theme="dark"][data-accent="black"] { --accent-border:#697283; --accent-shadow:rgba(0,0,0,.48); }
+html[data-theme="light"][data-accent="white"] { --accent-border:#8b8378; --accent-shadow:rgba(60,50,40,.14); }
+
+.primary {
+  color: var(--accent-foreground);
+  border-color: color-mix(in srgb, var(--accent-border) 68%, transparent);
+  background: linear-gradient(120deg, var(--accent-strong), var(--accent-primary));
+  box-shadow: 0 10px 26px var(--accent-shadow);
+}
+
+.eyebrow,
+.page-kicker,
+.lesson-status.current,
+.learning-expectation,
+.phase-state-final.current,
+.profile-progress-card .progress-label span {
+  color: var(--accent-primary);
+}
+
+.progress-bar { background: var(--progress); }
+
+.bottom-nav .nav-item.active {
+  color: var(--accent-primary);
+  background: color-mix(in srgb, var(--accent-primary) 15%, transparent);
+  outline: 1px solid color-mix(in srgb, var(--accent-border) 50%, transparent);
+}
+
+.theme-option[aria-pressed="true"] {
+  color: var(--accent-strong);
+  border-color: var(--accent-border);
+  background: var(--accent-soft);
+}
+
+.home-focus {
+  border-color: var(--accent-border);
+  background:
+    radial-gradient(88% 116% at 91% 51%, color-mix(in srgb, var(--accent-primary) 28%, transparent), transparent 53%),
+    radial-gradient(68% 74% at 24% 12%, color-mix(in srgb, var(--accent-primary) 11%, transparent), transparent 66%),
+    linear-gradient(145deg, rgba(44, 41, 88, .78), rgba(17, 24, 43, .97) 58%, rgba(11, 18, 31, .99));
+}
+
+.home-focus::before {
+  background: radial-gradient(circle at 40% 46%, color-mix(in srgb, var(--accent-primary) 35%, transparent), color-mix(in srgb, var(--accent-primary) 13%, transparent) 48%, transparent 70%);
+}
+
+html[data-theme="light"] .home-focus {
+  background:
+    radial-gradient(88% 116% at 91% 51%, color-mix(in srgb, var(--accent-primary) 15%, transparent), transparent 54%),
+    linear-gradient(145deg, #f4eadc, #f8efe3 62%, #f0e4d4);
+}
+
+html[data-theme="light"] .home-focus .eyebrow {
+  color: var(--accent-strong);
+  background: var(--accent-soft);
+}
+
+/* Compact Accent Color setting. */
+.accent-setting-block {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.accent-setting-copy strong,
+.accent-setting-copy small { display:block; }
+.accent-setting-copy small { margin-top:4px; color:var(--text-muted); }
+
+.accent-swatch-grid {
+  display:grid;
+  grid-template-columns:repeat(8, minmax(34px, 1fr));
+  gap:8px;
+  margin-top:14px;
+}
+
+.accent-swatch {
+  position:relative;
+  min-width:0;
+  min-height:44px;
+  padding:0;
+  border:1px solid var(--border-subtle);
+  border-radius:13px;
+  background:var(--surface-raised);
+  display:grid;
+  place-items:center;
+}
+
+.accent-swatch-dot {
+  width:22px;
+  height:22px;
+  border-radius:50%;
+  background:var(--swatch);
+  border:1px solid rgba(127,127,127,.4);
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.12);
+}
+
+.accent-swatch[aria-checked="true"] {
+  border-color:var(--accent-border);
+  background:var(--accent-soft);
+  box-shadow:0 0 0 2px color-mix(in srgb, var(--accent-primary) 24%, transparent);
+}
+
+.accent-swatch[aria-checked="true"]::after {
+  content:"";
+  position:absolute;
+  right:5px;
+  top:5px;
+  width:7px;
+  height:7px;
+  border-radius:50%;
+  background:var(--accent-primary);
+}
+
+.appearance-save-status {
+  min-height:18px;
+  margin-top:8px;
+  color:var(--text-muted);
+  font-size:.72rem;
+}
+
+@media (max-width: 430px) {
+  .accent-swatch-grid { grid-template-columns:repeat(4, minmax(44px, 1fr)); }
+}

@@ -1,0 +1,52 @@
+/* Viewport-level escape control for deep screens once the normal Back leaves view. */
+.floating-back-control {
+  position: fixed;
+  z-index: 120;
+  top: calc(env(safe-area-inset-top) + 10px);
+  left: max(12px, env(safe-area-inset-left));
+  width: 48px;
+  height: 48px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  color: var(--text-primary);
+  background: color-mix(in srgb, var(--surface-raised) 94%, transparent);
+  border: 1px solid var(--border-strong);
+  border-radius: 16px;
+  box-shadow: var(--shadow-float);
+  backdrop-filter: blur(22px) saturate(125%);
+  -webkit-backdrop-filter: blur(22px) saturate(125%);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-6px) scale(.97);
+  pointer-events: none;
+  transition: opacity 140ms ease, transform 140ms ease, visibility 140ms ease, border-color 140ms ease;
+}
+
+.floating-back-control.is-visible {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0) scale(1);
+  pointer-events: auto;
+}
+
+.floating-back-control:hover,
+.floating-back-control:focus-visible {
+  border-color: var(--accent-border);
+  background: color-mix(in srgb, var(--surface-raised) 90%, var(--accent-soft) 10%);
+}
+
+.floating-back-control .ui-icon {
+  width: 22px;
+  height: 22px;
+}
+
+.floating-back-control:active { transform: scale(.96); }
+
+@media (max-width: 360px) {
+  .floating-back-control {
+    width: 46px;
+    height: 46px;
+    left: max(9px, env(safe-area-inset-left));
+  }
+}
