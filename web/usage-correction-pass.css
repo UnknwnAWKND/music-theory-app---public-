@@ -22,6 +22,28 @@
   .home-focus .primary { max-width: 100% !important; width: 100% !important; }
 }
 
+/* Keep the Phase hero surface visually uniform. Accent color belongs in the border,
+   label, and CTA — not as a circular spotlight inside the card. */
+.home-focus {
+  background: linear-gradient(
+    145deg,
+    color-mix(in srgb, var(--surface-raised) 90%, var(--accent-primary) 10%),
+    var(--surface-raised)
+  ) !important;
+}
+.home-focus::before {
+  content: none !important;
+  display: none !important;
+  background: none !important;
+}
+html[data-theme="light"] .home-focus {
+  background: linear-gradient(
+    145deg,
+    color-mix(in srgb, var(--surface-raised) 94%, var(--accent-primary) 6%),
+    var(--surface-raised)
+  ) !important;
+}
+
 /* Connected educational piano: one complete C-to-C octave. */
 .piano-visual-v2 {
   position: relative;
