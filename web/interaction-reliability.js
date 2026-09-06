@@ -3,6 +3,7 @@ const app = document.querySelector("#app");
 export const INTERACTION_TIMEOUT_MS = 12000;
 const BROWSING_ROUTES = new Set(["home", "learn", "profile"]);
 const DEBUG_KEY = "music-theory-tutor:debug-interactions";
+const TRANSIENT_RECOVERY_SELECTOR = "#submitAnswer:disabled, #guidedToggle:disabled";
 
 export class InteractionTimeoutError extends Error {
   constructor(message = "The request took too long. Please try again.") {
@@ -52,6 +53,24 @@ function combinedSignal(existing, timeoutSignal) {
   };
 }
 
+let activeFetches = 0;
+let networkIdleTimer = null;
+function markNetworkStart() {
+  activeFetches += 1;
+  if (networkIdleTimer) window.clearTimeout(networkIdleTimer);
+  networkIdleTimer = null;
+}
+
+function markNetworkFinish() {
+  activeFetches = Math.max(0, activeFetches - 1);
+  if (activeFetches !== 0) return;
+  if (networkIdleTimer) window.clearTimeout(networkIdleTimer);
+  networkIdleTimer = window.setTimeout(() => {
+    networkIdleTimer = null;
+    window.dispatchEvent(new CustomEvent("interaction-network-idle"));
+  }, 300);
+}
+
 function installFetchTimeout() {
   if (typeof window.fetch !== "function" || window.fetch.__interactionReliable === true) return;
   const nativeFetch = window.fetch.bind(window);
@@ -59,6 +78,7 @@ function installFetchTimeout() {
     const controller = new AbortController();
     const merged = combinedSignal(init?.signal, controller.signal);
     let timedOut = false;
+    markNetworkStart();
     const timer = window.setTimeout(() => {
       timedOut = true;
       controller.abort(new InteractionTimeoutError());
@@ -74,6 +94,7 @@ function installFetchTimeout() {
     } finally {
       window.clearTimeout(timer);
       merged.cleanup();
+      markNetworkFinish();
     }
   };
   reliableFetch.__interactionReliable = true;
@@ -100,6 +121,15 @@ function showRecoveryMessage(message = "That took too long. Please try again.") 
 function timeoutLike(error) {
   const text = String(error?.message ?? error ?? "").toLowerCase();
   return error?.name === "InteractionTimeoutError" || error?.code === "interaction-timeout" || /took too long|timed out|timeout/.test(text);
+}
+
+function recoverTransientControls() {
+  document.querySelectorAll(TRANSIENT_RECOVERY_SELECTOR).forEach((control) => {
+    if (!control.isConnected) return;
+    control.disabled = false;
+    control.removeAttribute("aria-busy");
+    interactionDebug("transient-control-reenabled", { id: control.id });
+  });
 }
 
 function activeDockRoute() {
@@ -134,7 +164,13 @@ function scheduleReconcile() {
 
 installFetchTimeout();
 
+window.addEventListener("interaction-network-idle", recoverTransientControls);
 window.addEventListener("unhandledrejection", (event) => {
+  const settingsToggle = document.querySelector("#guidedToggle:disabled");
+  if (settingsToggle) {
+    settingsToggle.disabled = false;
+    showRecoveryMessage("Could not save that setting. Please try again.");
+  }
   if (!timeoutLike(event.reason)) return;
   interactionDebug("unhandled-timeout-recovered", { reason: String(event.reason?.message ?? event.reason) });
   showRecoveryMessage();
