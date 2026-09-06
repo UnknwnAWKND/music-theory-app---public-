@@ -5,6 +5,7 @@ import {
   PULL_REFRESH_ROUTES,
   PULL_REFRESH_DISABLED_ROUTES,
   PULL_THRESHOLD_PX,
+  TOP_SCROLL_TOLERANCE_PX,
   appRoute,
   canStartPullRefresh,
   pullGestureMetrics,
@@ -35,8 +36,11 @@ test("only Home, Learn, and Profile are supported browsing routes", () => {
   assert.equal(appRoute("#/profile"), "profile");
 });
 
-test("refresh can only begin from the top with one non-interactive touch", () => {
+test("refresh can begin at the visual top with a small iPhone scroll-position tolerance", () => {
+  assert.equal(TOP_SCROLL_TOLERANCE_PX, 4);
   assert.equal(canStartPullRefresh({ route: "home", scrollTop: 0 }), true);
+  assert.equal(canStartPullRefresh({ route: "home", scrollTop: 4 }), true);
+  assert.equal(canStartPullRefresh({ route: "home", scrollTop: 5 }), false);
   assert.equal(canStartPullRefresh({ route: "home", scrollTop: 12 }), false);
   assert.equal(canStartPullRefresh({ route: "learn", scrollTop: 0, interactive: true }), false);
   assert.equal(canStartPullRefresh({ route: "profile", scrollTop: 0, refreshing: true }), false);
@@ -44,7 +48,8 @@ test("refresh can only begin from the top with one non-interactive touch", () =>
   assert.equal(canStartPullRefresh({ route: "practice", scrollTop: 0 }), false);
 });
 
-test("gesture threshold requires an intentional mostly-vertical downward pull", () => {
+test("gesture threshold is easier to reach while remaining intentional and vertical", () => {
+  assert.equal(PULL_THRESHOLD_PX, 64);
   const below = pullGestureMetrics(10, 100, 12, 100 + PULL_THRESHOLD_PX - 1);
   assert.equal(below.ready, false);
   const ready = pullGestureMetrics(10, 100, 12, 100 + PULL_THRESHOLD_PX + 4);
@@ -53,6 +58,24 @@ test("gesture threshold requires an intentional mostly-vertical downward pull", 
   const sideways = pullGestureMetrics(10, 100, 120, 150);
   assert.equal(sideways.directionValid, false);
   assert.equal(sideways.rawDistance, 0);
+});
+
+test("ordinary CTA buttons do not block pull-to-refresh, but drag/input controls still do", () => {
+  const selectorBlock = ptrJs.match(/const INTERACTIVE_SELECTOR = \[[\s\S]*?\]\.join\(", "\);/)?.[0] ?? "";
+  assert.ok(selectorBlock);
+  assert.doesNotMatch(selectorBlock, /^|[\s,]"button"/);
+  assert.match(selectorBlock, /input/);
+  assert.match(selectorBlock, /role='slider'/);
+  assert.match(selectorBlock, /role='switch'/);
+  assert.match(selectorBlock, /bottom-nav/);
+  assert.match(selectorBlock, /floating-back-control/);
+});
+
+test("iPhone touch handling uses non-passive capture listeners so Safari overscroll can be cancelled", () => {
+  assert.match(ptrJs, /document\.addEventListener\("touchstart", beginGesture, \{ passive: false, capture: true \}\)/);
+  assert.match(ptrJs, /document\.addEventListener\("touchmove", moveGesture, \{ passive: false, capture: true \}\)/);
+  assert.match(ptrJs, /metrics\.dy > 2 && event\.cancelable/);
+  assert.match(ptrJs, /event\.preventDefault\(\)/);
 });
 
 test("refresh is data-only and never hard reloads or writes learning state", () => {
@@ -83,6 +106,14 @@ test("duplicate refreshes are rejected and failures preserve the existing view b
   assert.match(ptrJs, /if \(refreshing \|\| !pullRefreshSupported\(route\)\) return/);
   assert.match(ptrJs, /Read first so ordinary network failures leave the currently rendered screen untouched/);
   assert.match(ptrJs, /Couldn't refresh\. Try again\./);
+});
+
+test("indicator uses a recognizable refresh-arrow icon and appears with minimal pull distance", () => {
+  assert.match(ptrJs, /ptr-refresh-icon/);
+  assert.match(ptrJs, /<svg viewBox="0 0 24 24"/);
+  assert.match(ptrJs, /visible: metrics\.rawDistance > 2/);
+  assert.match(ptrCss, /\.ptr-refresh-icon/);
+  assert.match(ptrCss, /stroke:\s*currentColor/);
 });
 
 test("indicator is safe-area aware, accent-aware, subtle, and not a full-screen overlay", () => {
