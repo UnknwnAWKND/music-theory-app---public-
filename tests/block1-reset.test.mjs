@@ -108,11 +108,14 @@ test("lesson replay behavior remains global", () => {
   assert.ok(html.indexOf("Skip to Review") > html.indexOf("Teach first."));
 });
 
-test("real assessed practice rounds still have a 30-question minimum and do not grant mastery", () => {
+test("assessed practice keeps the 30-question floor except the explicit Lesson 1 acquisition correction, and rounds never grant mastery", () => {
+  const shortId = "intervals.lesson-1-unison-octave";
   for (const skill of SKILLS.filter((skill) => skill.assessed)) {
     const round = practiceRoundPlan(skill.id, "new");
-    assert.ok(round.size >= 30, skill.id);
+    if (skill.id === shortId) assert.equal(round.size, 10, skill.id);
+    else assert.ok(round.size >= 30, skill.id);
   }
+  assert.equal(practiceRoundPlan(shortId, "review").size, 30);
   const reference = SKILLS.find((skill) => skill.contentKind === "reference");
   assert.ok(reference);
   assert.equal(reference.assessed, false);
