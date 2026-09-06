@@ -63,7 +63,7 @@ test("gesture threshold is easier to reach while remaining intentional and verti
 test("ordinary CTA buttons do not block pull-to-refresh, but drag/input controls still do", () => {
   const selectorBlock = ptrJs.match(/const INTERACTIVE_SELECTOR = \[[\s\S]*?\]\.join\(", "\);/)?.[0] ?? "";
   assert.ok(selectorBlock);
-  assert.doesNotMatch(selectorBlock, /^|[\s,]"button"/);
+  assert.ok(!selectorBlock.includes('"button"'));
   assert.match(selectorBlock, /input/);
   assert.match(selectorBlock, /role='slider'/);
   assert.match(selectorBlock, /role='switch'/);
