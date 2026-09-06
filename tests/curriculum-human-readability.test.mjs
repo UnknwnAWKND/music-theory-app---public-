@@ -81,7 +81,7 @@ test("Phase 4 introduces triad vocabulary before relying on it", () => {
   const method = step("diatonic-chords.lesson-1-stacking-thirds", "method");
   const terms = step("diatonic-chords.lesson-1-stacking-thirds", "terms");
   assert.doesNotMatch(method.body, /tertian harmony|root, 3rd, 5th/i);
-  assert.match(method.body, /every other scale note/i);
+  assert.match(method.body, /skip the next scale note, take the following note/i);
   assert.match(terms.body, /A chord is a group of notes sounding together/i);
   assert.match(terms.body, /A triad is a three-note chord/i);
   assert.match(terms.body, /Diatonic means/i);
