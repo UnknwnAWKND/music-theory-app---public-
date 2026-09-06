@@ -56,13 +56,27 @@ function mountFor(candidate) {
   floating.type = "button";
   floating.setAttribute("aria-label", label.startsWith("Back") ? label : `Back to ${label}`);
   floating.innerHTML = backIcon();
-  floating.addEventListener("click", () => source?.click());
+  floating.addEventListener("click", () => {
+    // A screen can rerender between IntersectionObserver delivery and the tap.
+    // Resolve the current live source at click time instead of clicking a
+    // detached stale button, which otherwise makes Back appear intermittently dead.
+    const current = eligibleNormalBack();
+    if (!current?.isConnected) {
+      removeFloating();
+      scheduleRefresh();
+      return;
+    }
+    source = current;
+    source?.click();
+  });
   document.body.appendChild(floating);
 
   observer = new IntersectionObserver((entries) => {
     const entry = entries[0];
     if (!entry || !floating) return;
-    const shouldFloat = !entry.isIntersecting && sourceHasScrolledAboveViewport(candidate);
+    const shouldFloat = !entry.isIntersecting
+      && sourceHasScrolledAboveViewport(candidate)
+      && candidate.isConnected;
     setFloatingVisible(shouldFloat);
   }, { root: null, threshold: 0.01 });
   observer.observe(candidate);
