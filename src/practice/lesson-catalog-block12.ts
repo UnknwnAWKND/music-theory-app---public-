@@ -109,7 +109,7 @@ const phase3 = patchSteps(priorPhase3Lessons(), [
     stepId: "melodic-curriculum-form",
     patch: {
       title: "Classical melodic minor changes with direction",
-      body: "In the classical form taught here, ascending melodic minor starts from natural minor and raises degrees 6 and 7 by one half step. Descending, it returns to the natural-minor pitches.",
+      body: "In the classical form taught here, start from natural minor and raise degrees 6 and 7 by one half step when ascending. Descending, return to the natural-minor pitches.",
       workedExample: "A ascending: A B C D E F♯ G♯ A. Descending: A G F E D C B A.",
     },
   },
