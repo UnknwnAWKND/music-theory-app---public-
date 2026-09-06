@@ -119,6 +119,9 @@ html[data-theme="light"] .home-focus {
   font-weight: 650;
   line-height: 1.05;
   text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: clip;
   box-shadow: 0 5px 8px rgba(0,0,0,.25);
 }
 
