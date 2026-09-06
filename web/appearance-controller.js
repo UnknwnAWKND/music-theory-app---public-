@@ -25,6 +25,8 @@ let currentUserId = "local-preview";
 let currentAccent = "purple";
 let contextReady = false;
 let refreshPromise = null;
+let accentSaveQueue = Promise.resolve();
+let accentSaveVersion = 0;
 
 function normalizeAccent(value) {
   const next = String(value ?? "").toLowerCase();
@@ -104,25 +106,38 @@ function setSaveStatus(text) {
   if (status) status.textContent = text;
 }
 
-async function saveAccent(value) {
-  const context = await loadAccentForCurrentUser();
+function saveAccent(value) {
+  // Apply immediately so settings never feel frozen. Persistence is serialized
+  // so rapid taps cannot complete out of order and leave an older accent saved.
   const next = applyAccent(value);
+  const version = ++accentSaveVersion;
   writeCached(currentUserId, next);
   setSaveStatus("Saving…");
-  if (context.authenticated && context.client) {
-    const { error } = await context.client.from("user_appearance_settings").upsert({
-      user_id: currentUserId,
-      accent_color: next,
-      updated_at: new Date().toISOString(),
-    }, { onConflict: "user_id" });
-    if (error) {
-      console.error("Accent color save failed", error);
-      setSaveStatus("Could not save accent color.");
-      return;
+
+  accentSaveQueue = accentSaveQueue.catch(() => {}).then(async () => {
+    const context = await loadAccentForCurrentUser();
+    // A context refresh can briefly re-apply stored data; restore this queued
+    // choice before persisting it.
+    applyAccent(next);
+    writeCached(currentUserId, next);
+    if (context.authenticated && context.client) {
+      const { error } = await context.client.from("user_appearance_settings").upsert({
+        user_id: currentUserId,
+        accent_color: next,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: "user_id" });
+      if (error) throw error;
     }
-  }
-  setSaveStatus("Saved");
-  window.setTimeout(() => setSaveStatus(""), 900);
+    if (version === accentSaveVersion) {
+      setSaveStatus("Saved");
+      window.setTimeout(() => { if (version === accentSaveVersion) setSaveStatus(""); }, 900);
+    }
+  }).catch((error) => {
+    console.error("Accent color save failed", error);
+    if (version === accentSaveVersion) setSaveStatus("Could not save accent color. Try again.");
+  });
+
+  return accentSaveQueue;
 }
 
 function swatchMarkup() {
