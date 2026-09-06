@@ -59,8 +59,10 @@ export function renderTeachingStep({ lesson, openingState, stepIndex }) {
   </div>`;
 }
 
-export function renderPracticeRoundCounter(answered, size, roundNumber = 1) {
+export function renderPracticeRoundCounter(answered, size, correctFirstAttempt = 0) {
   const safeSize = Math.max(1, Number(size) || 1);
-  const questionNumber = Math.min(safeSize, Math.max(0, Number(answered) || 0) + 1);
-  return `<div class="question-meta"><span>Question ${questionNumber} of ${safeSize}</span><span>Round ${Math.max(1, Number(roundNumber) || 1)}</span></div>`;
+  const safeAnswered = Math.max(0, Math.min(safeSize, Number(answered) || 0));
+  const safeCorrect = Math.max(0, Math.min(safeAnswered, Number(correctFirstAttempt) || 0));
+  const questionNumber = Math.min(safeSize, safeAnswered + 1);
+  return `<div class="question-meta"><span>Question ${questionNumber} of ${safeSize}</span><span>${safeCorrect}/${safeAnswered} correct</span></div>`;
 }
