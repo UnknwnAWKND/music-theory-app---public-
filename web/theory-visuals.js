@@ -13,12 +13,15 @@ const PIANO_WHITE_KEYS = [
   { id: "C5", pitch: "C", label: "C" },
 ];
 
+// Keep the default black-key label compact. Theory-specific flat spellings are
+// supplied through displayLabels by the lesson that needs them, so a narrow key
+// never has to carry a generic "sharp/flat" slash label.
 const PIANO_BLACK_KEYS = [
-  { id: "C#4", pitch: "C#", label: "C#/Db", left: 12.5 },
-  { id: "D#4", pitch: "D#", label: "D#/Eb", left: 25 },
-  { id: "F#4", pitch: "F#", label: "F#/Gb", left: 50 },
-  { id: "G#4", pitch: "G#", label: "G#/Ab", left: 62.5 },
-  { id: "A#4", pitch: "A#", label: "A#/Bb", left: 75 },
+  { id: "C#4", pitch: "C#", label: "C♯", left: 12.5 },
+  { id: "D#4", pitch: "D#", label: "D♯", left: 25 },
+  { id: "F#4", pitch: "F#", label: "F♯", left: 50 },
+  { id: "G#4", pitch: "G#", label: "G♯", left: 62.5 },
+  { id: "A#4", pitch: "A#", label: "A♯", left: 75 },
 ];
 
 /**
