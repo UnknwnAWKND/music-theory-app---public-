@@ -10,10 +10,10 @@ import type { LessonContent } from "./types.js";
 
 const LESSON1_ID = "intervals.lesson-1-unison-octave";
 
-const LESSON1: LessonContent = Object.freeze({
+const LESSON1: LessonContent = {
   skillId: LESSON1_ID,
   title: "Perfect Unison & Perfect Octave",
-  teachingSteps: Object.freeze([
+  teachingSteps: [
     {
       id: "interval-name-parts",
       title: "What an interval name tells you",
@@ -34,8 +34,8 @@ const LESSON1: LessonContent = Object.freeze({
       expectation: "understand",
       visual: { kind: "piano", data: { highlightedKeys: ["C4", "C5"] } },
     },
-  ]),
-});
+  ],
+};
 
 const phase1 = priorPhase1Lessons().map((lesson) => lesson.skillId === LESSON1_ID ? LESSON1 : lesson);
 const ALL_LESSONS = [...phase1, ...phase2Lessons(), ...phase3Lessons(), ...phase4Lessons(), ...phase5Lessons(), ...phase6Lessons()];
