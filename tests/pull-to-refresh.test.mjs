@@ -60,22 +60,24 @@ test("gesture threshold is easier to reach while remaining intentional and verti
   assert.equal(sideways.rawDistance, 0);
 });
 
-test("ordinary CTA buttons do not block pull-to-refresh, but drag/input controls still do", () => {
+test("ordinary tap targets win over pull-to-refresh on iPhone", () => {
   const selectorBlock = ptrJs.match(/const INTERACTIVE_SELECTOR = \[[\s\S]*?\]\.join\(", "\);/)?.[0] ?? "";
   assert.ok(selectorBlock);
-  assert.ok(!selectorBlock.includes('"button"'));
+  assert.match(selectorBlock, /"button"/);
+  assert.match(selectorBlock, /a\[href\]/);
+  assert.match(selectorBlock, /role='button'/);
   assert.match(selectorBlock, /input/);
-  assert.match(selectorBlock, /role='slider'/);
-  assert.match(selectorBlock, /role='switch'/);
   assert.match(selectorBlock, /bottom-nav/);
   assert.match(selectorBlock, /floating-back-control/);
 });
 
-test("iPhone touch handling uses non-passive capture listeners so Safari overscroll can be cancelled", () => {
+test("iPhone touch capture starts only after an intentional non-control drag", () => {
+  assert.match(ptrJs, /const DRAG_CAPTURE_PX = 12/);
   assert.match(ptrJs, /document\.addEventListener\("touchstart", beginGesture, \{ passive: false, capture: true \}\)/);
   assert.match(ptrJs, /document\.addEventListener\("touchmove", moveGesture, \{ passive: false, capture: true \}\)/);
-  assert.match(ptrJs, /metrics\.dy > 2 && event\.cancelable/);
-  assert.match(ptrJs, /event\.preventDefault\(\)/);
+  assert.match(ptrJs, /if \(!gesture\.eligible\) return/);
+  assert.match(ptrJs, /metrics\.dy >= DRAG_CAPTURE_PX && event\.cancelable/);
+  assert.doesNotMatch(ptrJs, /!gesture\.eligible[\s\S]{0,240}preventDefault/);
 });
 
 test("refresh is data-only and never hard reloads or writes learning state", () => {
@@ -99,13 +101,14 @@ test("active lessons, assessments, settings, and edit/account forms stay outside
   for (const route of ["lesson", "practice", "checkpoint", "placement", "settings", "edit-profile", "account-email", "account-password"]) {
     assert.ok(PULL_REFRESH_DISABLED_ROUTES.includes(route));
   }
-  assert.match(ptrJs, /prevents Safari\/PWA native pull-to-refresh from hard-reloading in-progress state/);
+  assert.match(ptrJs, /Disabled routes and touches that began on controls never cancel browser touch/);
 });
 
 test("duplicate refreshes are rejected and failures preserve the existing view before rerender", () => {
   assert.match(ptrJs, /if \(refreshing \|\| !pullRefreshSupported\(route\)\) return/);
   assert.match(ptrJs, /Read first so ordinary network failures leave the currently rendered screen untouched/);
   assert.match(ptrJs, /Couldn't refresh\. Try again\./);
+  assert.match(ptrJs, /finally \{[\s\S]*refreshing = false;[\s\S]*gesture = null;/);
 });
 
 test("indicator uses a recognizable refresh-arrow icon and appears with minimal pull distance", () => {
@@ -121,6 +124,7 @@ test("indicator is safe-area aware, accent-aware, subtle, and not a full-screen 
   assert.match(ptrCss, /var\(--accent-primary\)/);
   assert.match(ptrCss, /border-radius:\s*999px/);
   assert.match(ptrCss, /overscroll-behavior-y:\s*none/);
+  assert.match(ptrCss, /pointer-events:\s*none/);
   assert.doesNotMatch(ptrCss, /position:\s*fixed[\s\S]{0,220}inset:\s*0/);
 });
 
