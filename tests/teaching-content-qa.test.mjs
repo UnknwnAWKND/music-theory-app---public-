@@ -25,19 +25,19 @@ const lesson = (skillId) => allLessons.find((item) => item.skillId === skillId);
 const step = (skillId, stepId) => lesson(skillId)?.teachingSteps.find((item) => item.id === stepId);
 const teachingText = () => allSteps.map(({ step: item }) => [item.title, item.body, item.workedExample, item.payoff].filter(Boolean).join(" ")).join("\n");
 
-test("all 37 rebuilt lessons and all 176 teaching pages receive the active QA catalog", () => {
+test("all 37 rebuilt lessons and corrected teaching pages receive the active QA catalog", () => {
   assert.equal(allLessons.length, 37);
-  assert.equal(allSteps.length, 176);
+  assert.equal(allSteps.length, 174);
   assert.deepEqual(phases.map((items) => items.length), [10, 4, 5, 10, 4, 4]);
 });
 
-test("Phase 1 Lesson 1 defines interval number from letter names without prematurely teaching later quality rules", () => {
-  const intro = step("intervals.lesson-1-unison-octave", "interval-means-distance");
+test("Phase 1 Lesson 1 introduces size plus quality without dumping later quality categories", () => {
+  const intro = step("intervals.lesson-1-unison-octave", "interval-name-parts");
   assert.ok(intro);
-  assert.match(intro.body, /interval number comes from counting letter names/i);
-  assert.match(intro.workedExample, /C→G.*five letter names.*5th/i);
-  assert.doesNotMatch(`${intro.body} ${intro.workedExample}`, /half steps|semitones|Major|Minor|Augmented|Diminished|inversion/i);
-  assert.doesNotMatch(intro.workedExample, /some kind of/i);
+  assert.match(intro.body, /distance in pitch between two notes/i);
+  assert.match(intro.body, /size.*number of letter names spanned/i);
+  assert.match(intro.body, /quality.*number of half-steps or semitones/i);
+  assert.doesNotMatch(intro.body, /\bMajor\b|\bMinor\b|\bAugmented\b|\bDiminished\b|inversion/i);
 });
 
 test("vague 'some kind of' interval wording is absent from every active teaching page", () => {
@@ -69,6 +69,11 @@ test("scale tonic and chord root terminology no longer collapse into one definit
 });
 
 test("piano teaching visuals use physical key IDs plus context-correct written labels", () => {
+  const p1 = step("intervals.lesson-1-unison-octave", "p1").visual.data;
+  const p8 = step("intervals.lesson-1-unison-octave", "p8").visual.data;
+  assert.deepEqual(p1.highlightedKeys, ["C4"]);
+  assert.deepEqual(p8.highlightedKeys, ["C4", "C5"]);
+
   const minor3 = step("intervals.lesson-4-thirds", "minor3").visual.data;
   assert.deepEqual(minor3.highlighted, ["F", "G#"]);
   assert.equal(minor3.displayLabels["G#"], "A♭");
@@ -87,17 +92,10 @@ test("piano teaching visuals use physical key IDs plus context-correct written l
 
 test("interval spelling examples are exact for the requested canonical cases", () => {
   const cases = [
-    ["C", "P5", "G"],
-    ["F", "P5", "C"],
-    ["C", "P4", "F"],
-    ["C", "M3", "E"],
-    ["C", "m3", "E♭"],
-    ["C", "A4", "F♯"],
-    ["C", "d5", "G♭"],
+    ["C", "P5", "G"], ["F", "P5", "C"], ["C", "P4", "F"], ["C", "M3", "E"],
+    ["C", "m3", "E♭"], ["C", "A4", "F♯"], ["C", "d5", "G♭"],
   ];
-  for (const [root, intervalName, expected] of cases) {
-    assert.equal(formatNote(intervalAbove(parseNote(root), INTERVALS[intervalName])), expected, `${root} ${intervalName}`);
-  }
+  for (const [root, intervalName, expected] of cases) assert.equal(formatNote(intervalAbove(parseNote(root), INTERVALS[intervalName])), expected, `${root} ${intervalName}`);
 });
 
 test("Phase 1 interval construction stays exact across varied natural, sharp, and flat roots", () => {
@@ -138,18 +136,13 @@ test("minor-scale teaching qualifies the classical descending melodic-minor conv
 
 test("conceptual explanation pages are not mislabeled as automatic-memory requirements", () => {
   const conceptualSteps = [
-    ["intervals.lesson-3-perfect-fourth", "p4-payoff"],
-    ["intervals.lesson-4-thirds", "third-payoff"],
-    ["major-scales.lesson-1-formula", "formula-payoff"],
-    ["major-scales.lesson-3-build-all-roots", "build-payoff"],
-    ["major-scales.lesson-4-instant-recall", "balanced-roots"],
-    ["major-scales.lesson-4-instant-recall", "recall-payoff"],
-    ["minor-scales.lesson-1-natural-formula", "natural-minor-payoff"],
-    ["minor-scales.lesson-2-natural-all-roots", "natural-all-roots-payoff"],
-    ["minor-scales.lesson-3-harmonic-minor", "augmented-second-definition"],
-    ["minor-scales.lesson-5-instant-recall", "minor-balanced-roots"],
-    ["minor-scales.lesson-5-instant-recall", "minor-recall-payoff"],
-    ["diatonic-chords.lesson-10-own-progressions", "goal"],
+    ["intervals.lesson-1-unison-octave", "interval-name-parts"],
+    ["intervals.lesson-3-perfect-fourth", "p4-payoff"], ["intervals.lesson-4-thirds", "third-payoff"],
+    ["major-scales.lesson-1-formula", "formula-payoff"], ["major-scales.lesson-3-build-all-roots", "build-payoff"],
+    ["major-scales.lesson-4-instant-recall", "balanced-roots"], ["major-scales.lesson-4-instant-recall", "recall-payoff"],
+    ["minor-scales.lesson-1-natural-formula", "natural-minor-payoff"], ["minor-scales.lesson-2-natural-all-roots", "natural-all-roots-payoff"],
+    ["minor-scales.lesson-3-harmonic-minor", "augmented-second-definition"], ["minor-scales.lesson-5-instant-recall", "minor-balanced-roots"],
+    ["minor-scales.lesson-5-instant-recall", "minor-recall-payoff"], ["diatonic-chords.lesson-10-own-progressions", "goal"],
   ];
   for (const [skillId, stepId] of conceptualSteps) assert.equal(step(skillId, stepId).expectation, "understand", `${skillId}/${stepId}`);
 });

@@ -33,7 +33,7 @@ test("Block 8 final curriculum is still exactly six phases with the requested le
   assert.equal(SKILLS.some((skill) => skill.phase === 0 || skill.phase > 6), false);
 });
 
-test("placement tests are prerequisite-based and never sample the destination phase", () => {
+test("placement utilities remain prerequisite-based and never sample destination material", () => {
   assert.deepEqual(placementPrerequisitePhases(2), [1]);
   assert.deepEqual(placementPrerequisitePhases(6), [1, 2, 3, 4, 5]);
   for (const targetPhase of [2, 3, 4, 5, 6]) {
@@ -49,14 +49,17 @@ test("placement tests are prerequisite-based and never sample the destination ph
   }
 });
 
-test("placement copy does not pretend a skip-ahead pass grants mastery or retention", () => {
+test("legacy placement copy never pretends a diagnostic pass grants mastery or retention", () => {
   assert.match(app, /does not mark earlier material retained/i);
   assert.match(app, /does not mark earlier skills retained or complete/i);
   assert.match(app, /prerequisite skills needed before that phase/i);
 });
 
-test("all assessed learning still uses real 30+ question rounds", () => {
-  for (const skill of activeAssessedSkills(SKILLS)) {
+test("only Phase 1 Lesson 1 has the explicit 10-question acquisition exception", () => {
+  const shortId = "intervals.lesson-1-unison-octave";
+  assert.equal(practiceRoundPlan(shortId, "new").size, 10);
+  assert.equal(practiceRoundPlan(shortId, "review").size, 30);
+  for (const skill of activeAssessedSkills(SKILLS).filter((skill) => skill.id !== shortId)) {
     assert.ok(practiceRoundPlan(skill.id, "new").size >= 30, skill.id);
     assert.ok(practiceRoundPlan(skill.id, "review").size >= 30, skill.id);
   }

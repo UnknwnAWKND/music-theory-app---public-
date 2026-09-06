@@ -2,18 +2,21 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 
-const [indexHtml, cleanupJs, cleanupCss, dockCss] = await Promise.all([
+const [indexHtml, cleanupJs, cleanupCss, dockCss, correctionCss] = await Promise.all([
   readFile(new URL("../web/index.html", import.meta.url), "utf8"),
   readFile(new URL("../web/home-ui-cleanup.js", import.meta.url), "utf8"),
   readFile(new URL("../web/home-hero-cleanup.css", import.meta.url), "utf8"),
   readFile(new URL("../web/persistent-floating-dock.css", import.meta.url), "utf8"),
+  readFile(new URL("../web/usage-correction-pass.css", import.meta.url), "utf8"),
 ]);
 
 test("focused Home cleanup loads after the persistent dock layer", () => {
   const dock = indexHtml.indexOf("persistent-floating-dock.css");
   const home = indexHtml.indexOf("home-hero-cleanup.css");
+  const correction = indexHtml.indexOf("usage-correction-pass.css");
   assert.ok(dock >= 0);
   assert.ok(home > dock);
+  assert.ok(correction > home);
   assert.match(indexHtml, /home-ui-cleanup\.js/);
 });
 
@@ -29,11 +32,10 @@ test("Home remains only hero plus the two learning summary stat cards", () => {
   assert.doesNotMatch(cleanupCss, /motivational|quote|badge|curriculum summary/i);
 });
 
-test("hero piano is softly embedded instead of a hard rectangular block", () => {
-  assert.match(cleanupCss, /\.home-focus::after\s*\{[\s\S]*?repeating-linear-gradient/);
-  assert.match(cleanupCss, /\.home-focus::after\s*\{[\s\S]*?mask-image:\s*radial-gradient/);
-  assert.match(cleanupCss, /\.home-focus::after\s*\{[\s\S]*?perspective\(620px\)/);
-  assert.match(cleanupCss, /\.home-focus::before\s*\{[\s\S]*?filter:\s*blur\(5px\)/);
+test("Home hero artwork is completely disabled and layout is rebalanced", () => {
+  assert.match(correctionCss, /\.home-focus::after\s*\{[\s\S]*?content:\s*none\s*!important/);
+  assert.match(correctionCss, /\.home-focus::after\s*\{[\s\S]*?display:\s*none\s*!important/);
+  assert.match(correctionCss, /\.home-focus h1,[\s\S]*?max-width:\s*min\(760px,\s*100%\)/);
 });
 
 test("persistent floating dock behavior remains intact", () => {
