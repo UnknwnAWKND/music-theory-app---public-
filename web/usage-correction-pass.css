@@ -1,0 +1,147 @@
+/* Focused correction pass: avatar geometry, Home cleanup, piano geometry, contextual checkpoint UX. */
+
+/* Avatars are circular everywhere, including fallbacks and editor previews. */
+.profile-avatar-xl,
+.profile-avatar-edit-preview,
+.profile-avatar-fallback,
+.profile-avatar-xl img,
+.profile-avatar-edit-preview img {
+  border-radius: 50% !important;
+}
+.profile-avatar-xl img,
+.profile-avatar-edit-preview img { object-fit: cover; }
+
+/* Home hero uses typography and atmosphere only — no piano artwork. */
+.home-focus::after { content: none !important; display: none !important; background: none !important; }
+.home-focus h1,
+.home-focus p { max-width: min(760px, 100%) !important; }
+.home-focus .primary { width: auto !important; min-width: min(100%, 280px); }
+@media (max-width: 420px) {
+  .home-focus h1,
+  .home-focus p,
+  .home-focus .primary { max-width: 100% !important; width: 100% !important; }
+}
+
+/* Connected educational piano: one complete C-to-C octave. */
+.piano-visual-v2 {
+  position: relative;
+  display: block !important;
+  width: 100%;
+  max-width: 760px;
+  min-height: 250px;
+  margin-inline: auto;
+  padding: 18px !important;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+.piano-white-row {
+  position: relative;
+  display: flex;
+  width: 100%;
+  height: 214px;
+  gap: 0 !important;
+  align-items: stretch;
+}
+.piano-visual-v2 .piano-key.white {
+  position: relative !important;
+  flex: 1 1 12.5%;
+  width: 12.5% !important;
+  min-width: 0;
+  height: 100% !important;
+  margin: 0 !important;
+  padding: 0 3px 13px !important;
+  display: flex !important;
+  align-items: flex-end;
+  justify-content: center;
+  border: 0 !important;
+  border-left: 1px solid var(--piano-white-border) !important;
+  border-bottom: 1px solid var(--piano-white-border) !important;
+  background: var(--piano-white) !important;
+  color: var(--piano-label) !important;
+  border-radius: 0 !important;
+  box-sizing: border-box;
+  font-size: clamp(.72rem, 2.6vw, .98rem);
+  font-weight: 700;
+  z-index: 1;
+}
+.piano-visual-v2 .piano-key.white:last-child { border-right: 1px solid var(--piano-white-border) !important; }
+.piano-black-layer {
+  position: absolute;
+  left: 18px;
+  right: 18px;
+  top: 18px;
+  height: 214px;
+  pointer-events: none;
+  z-index: 3;
+}
+.piano-visual-v2 .piano-key.black {
+  position: absolute !important;
+  left: var(--piano-black-left) !important;
+  top: 0 !important;
+  transform: translateX(-50%);
+  width: 7.1% !important;
+  min-width: 30px;
+  max-width: 56px;
+  height: 62% !important;
+  margin: 0 !important;
+  padding: 0 3px 10px !important;
+  display: flex !important;
+  align-items: flex-end;
+  justify-content: center;
+  border: 1px solid #080a0f !important;
+  background: var(--piano-black, #20232b) !important;
+  color: #f7f8fb !important;
+  border-radius: 0 0 5px 5px !important;
+  box-sizing: border-box;
+  font-size: clamp(.58rem, 1.8vw, .78rem);
+  font-weight: 650;
+  line-height: 1.05;
+  text-align: center;
+  box-shadow: 0 5px 8px rgba(0,0,0,.25);
+}
+
+/* Highlight means the entire key surface changes, not an outline-only state. */
+.piano-visual-v2 .piano-key.active.white,
+.piano-visual-v2 .piano-key.active.black {
+  background: linear-gradient(180deg, var(--accent-button-start), var(--accent-button-end)) !important;
+  color: var(--accent-foreground) !important;
+  border-color: var(--accent-border) !important;
+  box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--accent-border) 80%, transparent), 0 7px 18px var(--accent-shadow) !important;
+}
+
+.lesson-step-body { display: grid; gap: 10px; }
+.lesson-step-body p { margin: 0; }
+
+@media (max-width: 520px) {
+  .piano-visual-v2 { min-height: 210px; padding: 12px !important; }
+  .piano-white-row { height: 180px; }
+  .piano-black-layer { left: 12px; right: 12px; top: 12px; height: 180px; }
+  .piano-visual-v2 .piano-key.black { min-width: 24px; padding-inline: 1px !important; font-size: .56rem; }
+}
+
+/* Contextual prerequisite checkpoint UI. */
+.context-lock-dialog,
+.context-checkpoint-dialog {
+  width: min(calc(100vw - 28px), 620px);
+  max-height: calc(100dvh - max(28px, env(safe-area-inset-top)) - max(28px, env(safe-area-inset-bottom)));
+  overflow: auto;
+  padding: 0;
+  border: 1px solid var(--border-strong);
+  border-radius: 26px;
+  color: var(--text-primary);
+  background: var(--surface-raised);
+  box-shadow: var(--shadow-float);
+}
+.context-lock-dialog::backdrop,
+.context-checkpoint-dialog::backdrop { background: rgba(4,7,14,.68); backdrop-filter: blur(5px); }
+.context-dialog-body { padding: 22px; }
+.context-dialog-body h2 { margin: 4px 0 10px; }
+.context-dialog-body p { color: var(--text-secondary); line-height: 1.55; }
+.context-dialog-actions { display: grid; gap: 10px; margin-top: 18px; }
+.context-checkpoint-meta { display:flex; justify-content:space-between; gap:14px; color:var(--text-muted); font-size:.8rem; margin-bottom:16px; }
+.context-checkpoint-feedback { margin-top:14px; padding:13px; border-radius:16px; background:var(--surface-soft); }
+.context-checkpoint-feedback.correct strong { color:var(--success); }
+.context-checkpoint-feedback.incorrect strong { color:var(--error); }
+
+/* Locked lesson rows stay visually locked but become tappable for contextual validation. */
+.lesson-row[data-context-locked="true"] { cursor: pointer; opacity: 1; }
