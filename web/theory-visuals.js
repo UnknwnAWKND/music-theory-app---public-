@@ -2,21 +2,64 @@ function esc(value) {
   return String(value ?? "").replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[char]));
 }
 
+const WHITE_KEYS = Object.freeze([
+  { id: "C4", pitch: "C", label: "C" },
+  { id: "D4", pitch: "D", label: "D" },
+  { id: "E4", pitch: "E", label: "E" },
+  { id: "F4", pitch: "F", label: "F" },
+  { id: "G4", pitch: "G", label: "G" },
+  { id: "A4", pitch: "A", label: "A" },
+  { id: "B4", pitch: "B", label: "B" },
+  { id: "C5", pitch: "C", label: "C" },
+]);
+
+const BLACK_KEYS = Object.freeze([
+  { id: "C#4", pitch: "C#", left: 12.5, label: "C#/Db" },
+  { id: "D#4", pitch: "D#", left: 25, label: "D#/Eb" },
+  { id: "F#4", pitch: "F#", left: 50, label: "F#/Gb" },
+  { id: "G#4", pitch: "G#", left: 62.5, label: "G#/Ab" },
+  { id: "A#4", pitch: "A#", left: 75, label: "A#/Bb" },
+]);
+
+function normalizeHighlightSet(highlighted) {
+  const exact = new Set();
+  const pitchClasses = new Set();
+  for (const value of highlighted ?? []) {
+    const text = String(value);
+    if (/^[A-G](?:#|b)?\d+$/.test(text)) exact.add(text.replace("b", "♭"));
+    else pitchClasses.add(text.replace("♭", "b"));
+  }
+  return { exact, pitchClasses };
+}
+
+function keyIsActive(key, index, highlights) {
+  if (highlights.exact.has(key.id)) return true;
+  if (!highlights.pitchClasses.has(key.pitch)) return false;
+  // Pitch-class-only callers historically had one C. Keep that behavior by
+  // highlighting the lower C only when the one-octave component adds C5.
+  return key.pitch !== "C" || index === 0;
+}
+
+function labelFor(key, displayLabels) {
+  return displayLabels[key.id] ?? displayLabels[key.pitch] ?? key.label;
+}
+
 /**
- * `highlighted` uses physical equal-tempered pitch-class keys (C, C#, ...).
- * `displayLabels` can override the printed spelling so the same black key can
- * correctly appear as F# in an A4 context or G♭ in a d5 context. When no
- * spelling is supplied, black keys show both common enharmonic names rather
- * than silently implying that the sharp spelling is always correct.
+ * Connected C4→C5 educational keyboard. White keys form one continuous bed;
+ * black keys overlay the correct five gaps. Callers may use octave-aware IDs
+ * (C4/C5) when the same pitch class must be shown twice, such as P8.
  */
 export function pianoVisual({ highlighted = [], displayLabels = {} } = {}) {
-  const active = new Set(highlighted);
-  const notes = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
-  const defaults = { "C#": "C#/Db", "D#": "D#/Eb", "F#": "F#/Gb", "G#": "G#/Ab", "A#": "A#/Bb" };
-  return `<div class="theory-visual piano-visual" aria-label="Piano keyboard">${notes.map((note) => {
-    const label = displayLabels[note] ?? defaults[note] ?? note;
-    return `<span class="piano-key ${note.includes("#") ? "black" : "white"} ${active.has(note) ? "active" : ""}" data-note="${esc(note)}" aria-label="${esc(label)}">${esc(label)}</span>`;
-  }).join("")}</div>`;
+  const highlights = normalizeHighlightSet(highlighted);
+  const whites = WHITE_KEYS.map((key, index) => {
+    const label = labelFor(key, displayLabels);
+    return `<span class="piano-key white ${keyIsActive(key, index, highlights) ? "active" : ""}" data-note="${esc(key.id)}" data-pitch-class="${esc(key.pitch)}" aria-label="${esc(label)}"><span>${esc(label)}</span></span>`;
+  }).join("");
+  const blacks = BLACK_KEYS.map((key) => {
+    const label = labelFor(key, displayLabels);
+    return `<span class="piano-key black ${keyIsActive(key, -1, highlights) ? "active" : ""}" style="left:${key.left}%" data-note="${esc(key.id)}" data-pitch-class="${esc(key.pitch)}" aria-label="${esc(label)}"><span>${esc(label)}</span></span>`;
+  }).join("");
+  return `<div class="theory-visual piano-visual" data-full-octave="C4-C5" aria-label="Piano keyboard from C to the next C"><div class="piano-white-row">${whites}</div><div class="piano-black-layer" aria-hidden="false">${blacks}</div></div>`;
 }
 
 export function intervalVisual({ root = "", target = "", label = "" } = {}) {
