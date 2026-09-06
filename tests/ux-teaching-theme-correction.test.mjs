@@ -71,36 +71,48 @@ test("Phase 1 Lesson 1 introduces interval size and quality without teaching lat
   assert.match(text, /size.*note names.*counted by letter/i);
   assert.match(text, /quality.*half-step.*semitone/i);
   assert.match(text, /C to C at the same octave/i);
+  assert.match(text, /0 semitones/i);
   assert.match(text, /C–D–E–F–G–A–B–C spans eight note names/i);
+  assert.match(text, /12 semitones/i);
   assert.doesNotMatch(text, /\bMajor\b|\bMinor\b|Augmented|Diminished|inversion/i);
 });
 
-test("Perfect 5th is named from five written note names, not five whole steps or seven-semitone reasoning", () => {
+test("Perfect 5th keeps its number from written notes while linking Perfect quality to seven semitones", () => {
   const text = lessonText("intervals.lesson-2-perfect-fifth");
   assert.match(text, /C.?D.?E.?F.?G/i);
   assert.match(text, /five note names/i);
-  assert.match(text, /reference Perfect 5th|quality name here is Perfect/i);
+  assert.match(text, /exact distance is 7 semitones|spans 7 semitones/i);
   assert.doesNotMatch(text, /five whole steps|5 whole steps/i);
-  assert.doesNotMatch(text, /seven semitones|7 semitones|seven half steps|7 half steps/i);
   assert.doesNotMatch(text, /\bMajor\b|\bMinor\b|Augmented|Diminished|inversion/i);
 });
 
-test("exact chromatic-size comparison arrives with Major/Minor in Lesson 4", () => {
+test("exact semitone links arrive progressively as each interval quality is taught", () => {
+  const lesson1 = lessonText("intervals.lesson-1-unison-octave");
+  const lesson2 = lessonText("intervals.lesson-2-perfect-fifth");
   const lesson3 = lessonText("intervals.lesson-3-perfect-fourth");
   const lesson4 = lessonText("intervals.lesson-4-thirds");
-  assert.doesNotMatch(lesson3, /semitones?|half steps?/i);
+  assert.match(lesson1, /0 semitones/i);
+  assert.match(lesson1, /12 semitones/i);
+  assert.match(lesson2, /7 semitones/i);
+  assert.match(lesson3, /5 semitones/i);
+  assert.doesNotMatch(`${lesson1} ${lesson2} ${lesson3}`, /\bMajor\b|\bMinor\b|Augmented|Diminished/i);
   assert.match(lesson4, /interval number still comes from the written note-letter span/i);
   assert.match(lesson4, /half steps distinguish the exact quality/i);
+  assert.match(lesson4, /4 half steps.*M3/i);
+  assert.match(lesson4, /3 half steps.*m3/i);
 });
 
-test("early Phase 1 questions, choices, and corrective feedback do not leak later concepts", () => {
+test("early Phase 1 questions use semitones without leaking untaught interval qualities", () => {
   const lesson1 = generatedText("intervals.lesson-1-unison-octave");
   const lesson2 = generatedText("intervals.lesson-2-perfect-fifth");
   const lesson3 = generatedText("intervals.lesson-3-perfect-fourth");
 
-  assert.doesNotMatch(lesson1, /\bP4\b|\bP5\b|\bMajor\b|\bMinor\b|Augmented|Diminished|semitones?|half steps?|invert|inversion/i);
-  assert.doesNotMatch(lesson2, /\bP4\b|\bMajor\b|\bMinor\b|Augmented|Diminished|semitones?|half steps?|invert|inversion/i);
-  assert.doesNotMatch(lesson3, /\bMajor\b|\bMinor\b|Augmented|Diminished|semitones?|half steps?/i);
+  assert.match(lesson1, /semitone/i);
+  assert.doesNotMatch(lesson1, /\bP4\b|\bP5\b|\bMajor\b|\bMinor\b|Augmented|Diminished|invert|inversion/i);
+  assert.match(lesson2, /7 semitones|seven semitones/i);
+  assert.doesNotMatch(lesson2, /\bP4\b|\bMajor\b|\bMinor\b|Augmented|Diminished|invert|inversion/i);
+  assert.match(lesson3, /5 semitones|five semitones/i);
+  assert.doesNotMatch(lesson3, /\bMajor\b|\bMinor\b|Augmented|Diminished/i);
   assert.match(generatedText("intervals.lesson-4-thirds"), /semitone|half step/i);
 });
 
