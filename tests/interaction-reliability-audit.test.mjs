@@ -70,7 +70,8 @@ test("bottom navigation remains excluded from pull capture after refresh", () =>
 test("floating Back resolves the current live Back source at tap time", () => {
   assert.match(floatingBackJs, /const current = eligibleNormalBack\(\)/);
   assert.match(floatingBackJs, /current\?\.isConnected/);
-  assert.match(floatingBackJs, /current\.click\(\)/);
+  assert.match(floatingBackJs, /source = current/);
+  assert.match(floatingBackJs, /source\?\.click\(\)/);
   assert.match(floatingBackCss, /pointer-events:\s*none/);
   assert.match(floatingBackCss, /\.floating-back-control\.is-visible[\s\S]*pointer-events:\s*auto/);
 });
