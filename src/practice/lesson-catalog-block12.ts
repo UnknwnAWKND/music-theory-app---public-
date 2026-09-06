@@ -115,7 +115,18 @@ const phase3 = patchSteps(priorPhase3Lessons(), [
   },
 ]);
 
-const phase4 = priorPhase4Lessons().map(cloneLesson);
+const phase4 = patchSteps(priorPhase4Lessons(), [
+  {
+    skillId: "diatonic-chords.lesson-7-reference",
+    stepId: "other7",
+    patch: {
+      title: "Less-common seventh-chord lookup",
+      body: "Diminished 7: m3 d5 d7 · 1–♭3–♭5–𝄫7. Here d7 is one half step smaller than m7. Minor-major 7: m3 P5 M7 · 1–♭3–5–7. Augmented-major 7: M3 A5 M7 · 1–3–♯5–7.",
+      payoff: "Use this page as a lookup when a symbol is unfamiliar. There is no mastery quiz for this reference page, so you do not need to memorize the whole table at once.",
+      expectation: "understand",
+    },
+  },
+]);
 const phase5 = priorPhase5Lessons().map(cloneLesson);
 const phase6 = patchSteps(priorPhase6Lessons(), [
   {
