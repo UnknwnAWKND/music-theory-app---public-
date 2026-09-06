@@ -15,16 +15,22 @@ import {
 
 const app = document.querySelector("#app");
 const config = runtimeConfig();
+const DRAG_CAPTURE_PX = 12;
 
-// Pull-to-refresh should not hijack true input/drag controls. Ordinary content
-// buttons are intentionally NOT blocked: on the Home screen the large CTA covers
-// a substantial part of the viewport, and starting a downward pull there should
-// still be able to refresh once the gesture clearly becomes a drag.
+// A tap target must win over pull-to-refresh. On iPhone, cancelling touchmove on
+// a button can suppress the synthetic click and make a perfectly normal button
+// look intermittently dead. Start pull gestures only from non-control content.
 const INTERACTIVE_SELECTOR = [
+  "button",
+  "a[href]",
+  "label",
+  "summary",
   "input",
   "textarea",
   "select",
   "[contenteditable='true']",
+  "[role='button']",
+  "[role='link']",
   "[role='slider']",
   "[role='switch']",
   ".accent-swatch-grid",
@@ -218,6 +224,7 @@ async function performRefresh(route) {
     window.setTimeout(() => { if (!refreshing) setIndicator({ visible: false }); }, 1500);
   } finally {
     refreshing = false;
+    gesture = null;
     app?.classList.remove("ptr-pulling", "ptr-settling");
     app?.style.setProperty("--ptr-content-y", "0px");
   }
@@ -258,21 +265,18 @@ function moveGesture(event) {
     return;
   }
 
-  if (!gesture.eligible) {
-    // Active lessons/forms never get app pull-to-refresh. This top-edge guard also
-    // prevents Safari/PWA native pull-to-refresh from hard-reloading in-progress state.
-    if (gesture.atTop && !gesture.interactive && metrics.dy > 4 && event.cancelable) event.preventDefault();
-    return;
-  }
+  // Disabled routes and touches that began on controls never cancel browser touch
+  // delivery. This guarantees that a small finger drift cannot suppress a tap.
+  if (!gesture.eligible) return;
+
   if (!metrics.directionValid) {
     if (metrics.dy <= 0) settlePull();
     return;
   }
 
-  // Cancel Safari's native rubber-band/browser refresh as soon as this is clearly
-  // our downward gesture. Using a non-passive capture listener makes this reliable
-  // in standalone/PWA and normal iPhone Safari contexts.
-  if (metrics.dy > 2 && event.cancelable) event.preventDefault();
+  // Once a non-control gesture is clearly a vertical drag, take ownership from
+  // Safari so native rubber-band refresh cannot compete with the app gesture.
+  if (metrics.dy >= DRAG_CAPTURE_PX && event.cancelable) event.preventDefault();
   showPull(metrics);
 }
 
