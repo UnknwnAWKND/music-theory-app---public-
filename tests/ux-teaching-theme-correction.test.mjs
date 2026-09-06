@@ -68,18 +68,18 @@ function contrast(a, b) {
 test("Phase 1 Lesson 1 introduces interval size and quality without teaching later quality categories", () => {
   const text = lessonText("intervals.lesson-1-unison-octave");
   assert.match(text, /distance in pitch between two notes/i);
-  assert.match(text, /size.*number of letter names spanned/i);
-  assert.match(text, /quality.*number of half-steps or semitones/i);
+  assert.match(text, /size.*note names.*counted by letter/i);
+  assert.match(text, /quality.*half-step.*semitone/i);
   assert.match(text, /C to C at the same octave/i);
-  assert.match(text, /C–D–E–F–G–A–B–C spans eight letter names/i);
+  assert.match(text, /C–D–E–F–G–A–B–C spans eight note names/i);
   assert.doesNotMatch(text, /\bMajor\b|\bMinor\b|Augmented|Diminished|inversion/i);
 });
 
-test("Perfect 5th is named from five letters, not five whole steps or seven-semitone reasoning", () => {
+test("Perfect 5th is named from five written note names, not five whole steps or seven-semitone reasoning", () => {
   const text = lessonText("intervals.lesson-2-perfect-fifth");
   assert.match(text, /C.?D.?E.?F.?G/i);
-  assert.match(text, /five letter names/i);
-  assert.match(text, /called a Perfect 5th/i);
+  assert.match(text, /five note names/i);
+  assert.match(text, /reference Perfect 5th|quality name here is Perfect/i);
   assert.doesNotMatch(text, /five whole steps|5 whole steps/i);
   assert.doesNotMatch(text, /seven semitones|7 semitones|seven half steps|7 half steps/i);
   assert.doesNotMatch(text, /\bMajor\b|\bMinor\b|Augmented|Diminished|inversion/i);
@@ -89,8 +89,8 @@ test("exact chromatic-size comparison arrives with Major/Minor in Lesson 4", () 
   const lesson3 = lessonText("intervals.lesson-3-perfect-fourth");
   const lesson4 = lessonText("intervals.lesson-4-thirds");
   assert.doesNotMatch(lesson3, /semitones?|half steps?/i);
-  assert.match(lesson4, /interval number still comes from the written letter span/i);
-  assert.match(lesson4, /Half steps help distinguish the exact Major or Minor version/i);
+  assert.match(lesson4, /interval number still comes from the written note-letter span/i);
+  assert.match(lesson4, /half steps distinguish the exact quality/i);
 });
 
 test("early Phase 1 questions, choices, and corrective feedback do not leak later concepts", () => {
@@ -130,7 +130,7 @@ test("all six phases remain present and ordered while dependency pass changes co
   const phases = [phase1Lessons(), phase2Lessons(), phase3Lessons(), phase4Lessons(), phase5Lessons(), phase6Lessons()];
   assert.deepEqual(phases.map((lessons) => lessons.length), [10, 4, 5, 10, 4, 4]);
   assert.match(lessonText("major-scales.lesson-1-formula"), /scale is|tonic/i);
-  assert.match(lessonText("relatives.lesson-1-relative-major-minor"), /Relative keys are/i);
+  assert.match(lessonText("relatives.lesson-1-relative-major-minor"), /relative natural minor.*same seven pitch classes.*same key signature/i);
   assert.match(lessonText("circle-of-fifths.lesson-1-what-it-represents"), /Circle of Fifths/i);
 });
 
