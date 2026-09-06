@@ -236,7 +236,8 @@ test("Phase 3 teaching is short-screen, example-driven, piano-aware, and separat
     assert.ok(lesson.teachingSteps.some((x)=>["piano","scale","interval"].includes(x.visual?.kind)),`${lesson.title} visual`);
   }
   const learnerText=phase3Lessons().flatMap((x)=>x.teachingSteps).map((x)=>`${x.title} ${x.body} ${x.workedExample??""}`).join(" ");
-  for (const term of ["W-H-W-W-H-W-W","leading tone","augmented 2nd","raised 7 creates a leading tone","raise degrees 6 and 7","natural-minor form","dominant"] ) assert.match(learnerText,new RegExp(term.replace(/[.*+?^${}()|[\]\\]/g,"\\$&"),"i"),term);
+  for (const term of ["W-H-W-W-H-W-W","leading tone","augmented 2nd","raised 7 creates a leading tone","raise degrees 6 and 7","natural-minor form"] ) assert.match(learnerText,new RegExp(term.replace(/[.*+?^${}()|[\]\\]/g,"\\$&"),"i"),term);
+  assert.doesNotMatch(learnerText,/\bdominant\b/i,"Phase 3 teaching must not depend on Phase 4 dominant-chord/function terminology");
   assert.doesNotMatch(learnerText,/jazz/i,"alternate melodic-minor terminology should not enter this learner lesson");
 });
 

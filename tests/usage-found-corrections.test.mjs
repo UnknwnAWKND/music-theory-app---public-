@@ -20,28 +20,35 @@ const index = read("web/index.html");
 
 const LESSON1 = "intervals.lesson-1-unison-octave";
 
-test("Phase 1 Lesson 1 is exactly the corrected three-screen sequence", () => {
+test("Phase 1 Lesson 1 is exactly the corrected three-screen sequence without heading restatement", () => {
   const lesson = lessonForSkill(LESSON1);
   assert.ok(lesson);
   assert.deepEqual(lesson.teachingSteps.map((step) => step.id), ["interval-name-parts", "p1", "p8"]);
   assert.equal(lesson.teachingSteps.length, 3);
   const [intro, p1, p8] = lesson.teachingSteps;
+  assert.equal(intro.title, "Intervals");
   assert.match(intro.body, /An interval is the distance in pitch between two notes\./);
-  assert.match(intro.body, /size — the number of letter names spanned/);
-  assert.match(intro.body, /quality — the exact size of that interval, determined by its number of half-steps or semitones/);
+  assert.match(intro.body, /Size tells you how many note names are spanned, counted by letter/);
+  assert.match(intro.body, /Quality tells you the exact version of that size, measured by its half-step \(semitone\) distance/);
   assert.doesNotMatch(intro.body, /\bMajor\b|\bMinor\b|\bAugmented\b|\bDiminished\b|inversion/i);
+
+  assert.equal(p1.title, "Perfect Unison (P1)");
   assert.match(p1.body, /C to C at the same octave\./);
-  assert.match(p1.body, /interval size is 1 because only the letter C is spanned/i);
-  assert.match(p1.body, /Perfect Unison, written P1/i);
+  assert.match(p1.body, /interval size is 1 because only C is spanned/i);
+  assert.match(p1.body, /Both notes occupy the same piano key/i);
+  assert.doesNotMatch(p1.body, /Its name is Perfect Unison|written P1/i);
   assert.deepEqual(p1.visual.data.highlightedKeys, ["C4"]);
+
+  assert.equal(p8.title, "Perfect Octave (P8)");
   assert.match(p8.body, /C to the next C above\./);
-  assert.match(p8.body, /C–D–E–F–G–A–B–C spans eight letter names/i);
-  assert.match(p8.body, /Perfect Octave, written P8/i);
+  assert.match(p8.body, /C–D–E–F–G–A–B–C spans eight note names/i);
+  assert.match(p8.body, /two Cs are different piano keys/i);
+  assert.doesNotMatch(p8.body, /Its name is Perfect Octave|written P8/i);
   assert.deepEqual(p8.visual.data.highlightedKeys, ["C4", "C5"]);
   assert.equal(lesson.teachingSteps.some((step) => ["perfect-family", "simple-term"].includes(step.id)), false);
 });
 
-test("educational piano renders a connected complete C-to-C octave with correct black-key geometry", () => {
+test("educational piano renders a connected complete C-to-C octave with correct black-key geometry and compact labels", () => {
   const html = pianoVisual({ highlightedKeys: ["C4", "C5"] });
   assert.equal((html.match(/class="piano-key white/g) ?? []).length, 8);
   assert.equal((html.match(/class="piano-key black/g) ?? []).length, 5);
@@ -49,9 +56,13 @@ test("educational piano renders a connected complete C-to-C octave with correct 
   for (const position of ["12.5%", "25%", "50%", "62.5%", "75%"]) assert.match(html, new RegExp(position.replace(".", "\\.")));
   assert.doesNotMatch(html, /37\.5%|87\.5%/);
   assert.equal((html.match(/piano-key white active/g) ?? []).length, 2);
+  assert.match(html, />C♯<|>D♯<|>F♯<|>G♯<|>A♯</);
+  assert.doesNotMatch(html, /C#\/Db|D#\/Eb|F#\/Gb|G#\/Ab|A#\/Bb/);
   assert.match(css, /\.piano-white-row[\s\S]*?gap:\s*0\s*!important/);
   assert.match(css, /\.piano-key\.active\.white,[\s\S]*?background:\s*linear-gradient/);
   assert.match(css, /\.piano-key\.active\.black[\s\S]*?background:\s*linear-gradient/);
+  assert.match(css, /white-space:\s*nowrap/);
+  assert.match(css, /overflow:\s*hidden/);
 });
 
 test("all lesson piano visuals inherit at least one complete octave and phone geometry", () => {

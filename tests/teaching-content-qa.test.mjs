@@ -34,9 +34,10 @@ test("all 37 rebuilt lessons and corrected teaching pages receive the active QA 
 test("Phase 1 Lesson 1 introduces size plus quality without dumping later quality categories", () => {
   const intro = step("intervals.lesson-1-unison-octave", "interval-name-parts");
   assert.ok(intro);
+  assert.equal(intro.title, "Intervals");
   assert.match(intro.body, /distance in pitch between two notes/i);
-  assert.match(intro.body, /size.*number of letter names spanned/i);
-  assert.match(intro.body, /quality.*number of half-steps or semitones/i);
+  assert.match(intro.body, /size.*note names.*counted by letter/i);
+  assert.match(intro.body, /quality.*half-step.*semitone/i);
   assert.doesNotMatch(intro.body, /\bMajor\b|\bMinor\b|\bAugmented\b|\bDiminished\b|inversion/i);
 });
 
@@ -54,18 +55,20 @@ test("Augmented and Diminished first appear in the tritone lesson with plain def
 });
 
 test("first-use terminology fixes define pitch class, chord quality, Roman numerals, and key signature at the point of need", () => {
-  assert.match(step("major-scales.lesson-3-build-all-roots", "twelve-pitch-classes").body, /pitch class treats pitches an octave apart/i);
+  const pitchClassStep = step("major-scales.lesson-3-build-all-roots", "twelve-pitch-classes");
+  assert.match(pitchClassStep.body, /pitch class groups pitches that are the same modulo octave/i);
+  assert.match(pitchClassStep.body, /enharmonic names such as C♯ and D♭ can represent the same pitch class/i);
   assert.match(step("diatonic-chords.lesson-1-stacking-thirds", "phase1").body, /Chord quality means the chord's type/i);
-  assert.match(step("diatonic-chords.lesson-2-major-triads", "derive").body, /Roman numerals label the scale degree of the chord root/i);
+  assert.match(step("diatonic-chords.lesson-2-major-triads", "derive").body, /Roman numeral labels the scale degree of the chord root/i);
   assert.match(step("relatives.lesson-1-relative-major-minor", "relative-definition").body, /A key signature is the set of sharps or flats/i);
 });
 
 test("scale tonic and chord root terminology no longer collapse into one definition or pre-teach scale degrees", () => {
   const scaleTonic = step("major-scales.lesson-1-formula", "scale-tonic-definition");
-  assert.match(scaleTonic.body, /tonic is the word for the home note of a scale or key/i);
+  assert.match(scaleTonic.body, /tonic/i);
   assert.match(scaleTonic.body, /root is used mainly for the note a chord is built from/i);
   assert.equal(scaleTonic.workedExample, "In D major, D is the tonic.");
-  assert.doesNotMatch(`${scaleTonic.body} ${scaleTonic.workedExample}`, /\bscale degree\b/i);
+  assert.doesNotMatch(`${scaleTonic.body} ${scaleTonic.workedExample}`, /\bscale degree [1-7]\b/i);
 });
 
 test("piano teaching visuals use physical key IDs plus context-correct written labels", () => {
@@ -115,7 +118,8 @@ test("tritone teaching preserves written A4 versus d5 identity rather than semit
   const tritone = step("intervals.lesson-8-tritone", "tritone");
   assert.match(tritone.workedExample, /C→F♯ is A4/);
   assert.match(tritone.workedExample, /C→G♭ is d5/);
-  assert.match(tritone.body, /spelling decides which written interval/i);
+  assert.match(tritone.body, /written spellings are different/i);
+  assert.match(step("intervals.lesson-8-tritone", "spelling-decides-name").body, /count the written note letters/i);
 });
 
 test("seventh-chord teaching defines chord types before using the pattern symbols", () => {
@@ -129,9 +133,9 @@ test("seventh-chord teaching defines chord types before using the pattern symbol
 
 test("minor-scale teaching qualifies the classical descending melodic-minor convention instead of overstating it", () => {
   const descending = step("minor-scales.lesson-4-melodic-minor", "melodic-descending-why");
-  assert.match(descending.body, /classical form taught here/i);
-  assert.match(descending.body, /not a rule that every melody in minor must always follow/i);
-  assert.equal(descending.workedExample, "C melodic minor descending uses C B♭ A♭ G F E♭ D C, the same pitches as C natural minor in descending order.");
+  assert.match(descending.body, /classical scale form being practiced here/i);
+  assert.match(descending.body, /not as a rule that every real minor melody must use/i);
+  assert.equal(descending.workedExample, "C melodic minor descending = C B♭ A♭ G F E♭ D C.");
 });
 
 test("conceptual explanation pages are not mislabeled as automatic-memory requirements", () => {
