@@ -2,21 +2,53 @@ function esc(value) {
   return String(value ?? "").replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[char]));
 }
 
+const PIANO_WHITE_KEYS = [
+  { id: "C4", pitch: "C", label: "C" },
+  { id: "D4", pitch: "D", label: "D" },
+  { id: "E4", pitch: "E", label: "E" },
+  { id: "F4", pitch: "F", label: "F" },
+  { id: "G4", pitch: "G", label: "G" },
+  { id: "A4", pitch: "A", label: "A" },
+  { id: "B4", pitch: "B", label: "B" },
+  { id: "C5", pitch: "C", label: "C" },
+];
+
+const PIANO_BLACK_KEYS = [
+  { id: "C#4", pitch: "C#", label: "C#/Db", left: 12.5 },
+  { id: "D#4", pitch: "D#", label: "D#/Eb", left: 25 },
+  { id: "F#4", pitch: "F#", label: "F#/Gb", left: 50 },
+  { id: "G#4", pitch: "G#", label: "G#/Ab", left: 62.5 },
+  { id: "A#4", pitch: "A#", label: "A#/Bb", left: 75 },
+];
+
 /**
- * `highlighted` uses physical equal-tempered pitch-class keys (C, C#, ...).
- * `displayLabels` can override the printed spelling so the same black key can
- * correctly appear as F# in an A4 context or G♭ in a d5 context. When no
- * spelling is supplied, black keys show both common enharmonic names rather
- * than silently implying that the sharp spelling is always correct.
+ * Connected one-octave educational keyboard. `highlightedKeys` addresses exact
+ * visible keys (C4/C5) so octave examples can highlight both ends. Legacy
+ * `highlighted` pitch-class values remain supported and target the first
+ * visible matching key, which avoids accidentally lighting both Cs.
  */
-export function pianoVisual({ highlighted = [], displayLabels = {} } = {}) {
-  const active = new Set(highlighted);
-  const notes = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
-  const defaults = { "C#": "C#/Db", "D#": "D#/Eb", "F#": "F#/Gb", "G#": "G#/Ab", "A#": "A#/Bb" };
-  return `<div class="theory-visual piano-visual" aria-label="Piano keyboard">${notes.map((note) => {
-    const label = displayLabels[note] ?? defaults[note] ?? note;
-    return `<span class="piano-key ${note.includes("#") ? "black" : "white"} ${active.has(note) ? "active" : ""}" data-note="${esc(note)}" aria-label="${esc(label)}">${esc(label)}</span>`;
-  }).join("")}</div>`;
+export function pianoVisual({ highlighted = [], highlightedKeys = [], displayLabels = {} } = {}) {
+  const exact = new Set(highlightedKeys);
+  const legacy = new Set(highlighted);
+  const usedLegacyPitch = new Set();
+  const isActive = (key) => {
+    if (exact.has(key.id)) return true;
+    if (!legacy.has(key.pitch) || usedLegacyPitch.has(key.pitch)) return false;
+    usedLegacyPitch.add(key.pitch);
+    return true;
+  };
+  const labelFor = (key) => displayLabels[key.id] ?? displayLabels[key.pitch] ?? key.label;
+  const whites = PIANO_WHITE_KEYS.map((key) => {
+    const active = isActive(key);
+    const label = labelFor(key);
+    return `<span class="piano-key white ${active ? "active" : ""}" data-key-id="${esc(key.id)}" data-note="${esc(key.pitch)}" aria-label="${esc(label)}">${esc(label)}</span>`;
+  }).join("");
+  const blacks = PIANO_BLACK_KEYS.map((key) => {
+    const active = isActive(key);
+    const label = labelFor(key);
+    return `<span class="piano-key black ${active ? "active" : ""}" style="--piano-black-left:${key.left}%" data-key-id="${esc(key.id)}" data-note="${esc(key.pitch)}" aria-label="${esc(label)}">${esc(label)}</span>`;
+  }).join("");
+  return `<div class="theory-visual piano-visual piano-visual-v2" aria-label="Piano keyboard from C to the next C"><div class="piano-white-row">${whites}</div><div class="piano-black-layer" aria-hidden="false">${blacks}</div></div>`;
 }
 
 export function intervalVisual({ root = "", target = "", label = "" } = {}) {
@@ -39,11 +71,6 @@ function circlePoint(index, count) {
   return { left: 50 + Math.sin(angle) * 42, top: 50 - Math.cos(angle) * 42 };
 }
 
-/**
- * Readable relationship-first Circle of Fifths visual. Major labels are the
- * outer/key-signature identity; relative minors sit directly with that same
- * position. Buttons become interactive when phase6-ui binds them.
- */
 export function circleOfFifthsVisual({
   labels = DEFAULT_MAJOR_LABELS,
   minorLabels = DEFAULT_MINOR_LABELS,
