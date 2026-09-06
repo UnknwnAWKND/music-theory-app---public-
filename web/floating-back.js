@@ -66,7 +66,8 @@ function mountFor(candidate) {
       scheduleRefresh();
       return;
     }
-    current.click();
+    source = current;
+    source?.click();
   });
   document.body.appendChild(floating);
 
