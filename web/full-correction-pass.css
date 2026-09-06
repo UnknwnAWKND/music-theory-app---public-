@@ -1,0 +1,140 @@
+/* Focused correction pass: connected piano, circular avatars, and no Home piano artwork. */
+
+/* Profile photo is circular in both primary and edit contexts. */
+.profile-avatar-xl,
+.profile-avatar-edit-preview,
+.profile-avatar-fallback,
+.profile-avatar-xl img,
+.profile-avatar-edit-preview img {
+  border-radius: 50% !important;
+}
+
+.profile-avatar-xl img,
+.profile-avatar-edit-preview img {
+  object-fit: cover;
+  object-position: center;
+}
+
+/* Home hero keeps typography and atmosphere only; decorative keyboard is gone. */
+.home-focus::after {
+  content: none !important;
+  display: none !important;
+  background: none !important;
+}
+
+.home-focus h1,
+.home-focus p {
+  max-width: min(760px, 100%) !important;
+}
+
+.home-focus .primary {
+  width: min(100%, 490px) !important;
+}
+
+/* One connected C4→C5 keyboard. */
+.piano-visual {
+  position: relative !important;
+  display: block !important;
+  width: 100% !important;
+  max-width: 760px;
+  height: clamp(184px, 34vw, 280px);
+  padding: 0 !important;
+  margin-inline: auto;
+  overflow: hidden !important;
+  border-radius: 18px;
+  background: var(--piano-white);
+  border: 1px solid var(--piano-white-border);
+  box-sizing: border-box;
+}
+
+.piano-white-row {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+  height: 100%;
+}
+
+.piano-black-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 3;
+}
+
+.piano-visual .piano-key {
+  display: flex !important;
+  align-items: flex-end;
+  justify-content: center;
+  box-sizing: border-box;
+  font-weight: 700;
+  line-height: 1.1;
+  transition: background .16s ease, color .16s ease, box-shadow .16s ease;
+}
+
+.piano-visual .piano-key.white {
+  position: relative;
+  min-width: 0;
+  height: 100%;
+  padding: 0 4px 15px;
+  border: 0 !important;
+  border-right: 1px solid var(--piano-white-border) !important;
+  border-radius: 0 !important;
+  background: var(--piano-white) !important;
+  color: var(--piano-label) !important;
+  z-index: 1;
+}
+
+.piano-visual .piano-key.white:last-child {
+  border-right: 0 !important;
+}
+
+.piano-visual .piano-key.black {
+  position: absolute !important;
+  top: 0;
+  width: 8%;
+  height: 62%;
+  transform: translateX(-50%);
+  padding: 0 3px 12px;
+  border: 1px solid #0d1017 !important;
+  border-top: 0 !important;
+  border-radius: 0 0 7px 7px !important;
+  background: var(--piano-black) !important;
+  color: #fff !important;
+  box-shadow: 0 7px 12px rgba(0,0,0,.28);
+  pointer-events: auto;
+  z-index: 4;
+}
+
+/* Highlight means the entire physical key surface changes, never outline-only. */
+.piano-visual .piano-key.white.active,
+.piano-visual .piano-key.black.active {
+  background: var(--accent-primary) !important;
+  color: var(--accent-foreground) !important;
+  border-color: var(--accent-border) !important;
+  box-shadow: inset 0 0 0 1px var(--accent-border), 0 0 20px var(--accent-shadow) !important;
+}
+
+.piano-visual .piano-key span {
+  position: relative;
+  z-index: 1;
+  overflow-wrap: anywhere;
+  text-align: center;
+}
+
+@media (max-width: 520px) {
+  .piano-visual {
+    height: clamp(166px, 48vw, 220px);
+    border-radius: 14px;
+  }
+  .piano-visual .piano-key.white {
+    padding-bottom: 11px;
+    font-size: .78rem;
+  }
+  .piano-visual .piano-key.black {
+    width: 8.5%;
+    height: 60%;
+    padding: 0 2px 8px;
+    font-size: .59rem;
+  }
+}
