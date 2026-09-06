@@ -1,11 +1,18 @@
 import { cp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
+import { transformAppBlock8, transformProfileController } from "./full-correction-app-transform.mjs";
 
 const OUT = "site";
 await rm(OUT, { recursive: true, force: true });
 await mkdir(OUT, { recursive: true });
 await cp("web", OUT, { recursive: true });
 await cp("dist", `${OUT}/core`, { recursive: true });
+
+// Apply the focused production correction without reintroducing historical app shells.
+const appSource = await readFile(`${OUT}/app-block8.js`, "utf8");
+await writeFile(`${OUT}/app-block8.js`, transformAppBlock8(appSource));
+const profileSource = await readFile(`${OUT}/profile-account-controller.js`, "utf8");
+await writeFile(`${OUT}/profile-account-controller.js`, transformProfileController(profileSource));
 
 // Block 8 is the final product build. Historical intermediate app shells are
 // intentionally not shipped in the production site.
