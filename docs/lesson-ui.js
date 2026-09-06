@@ -21,19 +21,22 @@ function renderVisual(visual) {
   return "";
 }
 
+function renderBody(body) {
+  return String(body ?? "").split(/\n\s*\n/).filter(Boolean).map((paragraph) => `<p>${esc(paragraph.trim())}</p>`).join("");
+}
+
 function renderStep(step, index, total) {
   return `<section class="lesson-step" data-step="${esc(step.id)}">
     <div class="question-meta"><span>Teaching ${index + 1} of ${total}</span></div>
     ${expectationLabel(step.expectation)}
     <h2>${esc(step.title)}</h2>
-    <p>${esc(step.body)}</p>
+    <div class="lesson-step-body">${renderBody(step.body)}</div>
     ${renderVisual(step.visual)}
     ${step.workedExample ? `<div class="worked-example"><strong>Example</strong><span>${esc(step.workedExample)}</span></div>` : ""}
     ${step.payoff ? `<div class="lesson-payoff"><strong>Why this matters</strong><span>${esc(step.payoff)}</span></div>` : ""}
   </section>`;
 }
 
-/** Full teaching rendering remains useful for replay/QA and places Skip to Review only after all teaching. */
 export function renderTeachingLesson({ lesson, openingState }) {
   const steps = lesson.teachingSteps.map((step, index) => renderStep(step, index, lesson.teachingSteps.length)).join("");
   const skip = openingState.canSkipToReview && openingState.skipPlacement === "teaching-bottom"
@@ -42,7 +45,6 @@ export function renderTeachingLesson({ lesson, openingState }) {
   return `<div class="lesson-content">${steps}${skip}</div>`;
 }
 
-/** The live lesson flow shows one short teaching screen at a time. */
 export function renderTeachingStep({ lesson, openingState, stepIndex }) {
   const safeIndex = Math.min(Math.max(0, Number(stepIndex) || 0), Math.max(0, lesson.teachingSteps.length - 1));
   const step = lesson.teachingSteps[safeIndex];
@@ -62,5 +64,5 @@ export function renderTeachingStep({ lesson, openingState, stepIndex }) {
 export function renderPracticeRoundCounter(answered, size, roundNumber = 1) {
   const safeSize = Math.max(1, Number(size) || 1);
   const questionNumber = Math.min(safeSize, Math.max(0, Number(answered) || 0) + 1);
-  return `<div class="question-meta"><span>Question ${questionNumber} of ${safeSize}</span><span>Round ${Math.max(1, Number(roundNumber) || 1)}</span></div>`;
+  return `<div class="question-meta practice-live-meta"><span>Question ${questionNumber} of ${safeSize}</span><span data-live-correct>0/0 correct</span></div>`;
 }
