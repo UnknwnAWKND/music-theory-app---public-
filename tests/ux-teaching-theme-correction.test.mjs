@@ -65,13 +65,12 @@ function contrast(a, b) {
   return (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05);
 }
 
-test("Phase 1 Lesson 1 teaches interval number from letters without later quality jargon", () => {
+test("Phase 1 Lesson 1 defines size and quality without prematurely teaching later quality categories", () => {
   const text = lessonText("intervals.lesson-1-unison-octave");
-  assert.match(text, /C.?D.?E.?F.?G/i);
-  assert.match(text, /five letter names/i);
-  assert.match(text, /interval number is a 5th/i);
+  assert.match(text, /distance in pitch between two notes/i);
+  assert.match(text, /size.*number of letter names spanned/i);
+  assert.match(text, /quality.*half-steps or semitones/i);
   assert.doesNotMatch(text, /\bMajor\b|\bMinor\b|Augmented|Diminished|inversion/i);
-  assert.doesNotMatch(text, /semitones?|half steps?/i);
 });
 
 test("Perfect 5th is named from five letters, not five whole steps or seven-semitone reasoning", () => {
