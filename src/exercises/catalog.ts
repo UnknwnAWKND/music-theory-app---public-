@@ -1,4 +1,4 @@
-import { PHASE1_INTERVAL_GENERATORS } from "./phase1-intervals.js";
+import { PHASE1_INTERVAL_GENERATORS } from "./phase1-intervals-semitone.js";
 import { PHASE2_MAJOR_SCALE_GENERATORS, phase2ExerciseForSkill } from "./phase2-major-scales.js";
 import { PHASE3_MINOR_SCALE_GENERATORS } from "./phase3-minor-scales.js";
 import { PHASE4_DIATONIC_CHORD_GENERATORS } from "./phase4-diatonic-chords.js";
