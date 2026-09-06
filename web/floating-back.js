@@ -73,7 +73,9 @@ function mountFor(candidate) {
   observer = new IntersectionObserver((entries) => {
     const entry = entries[0];
     if (!entry || !floating) return;
-    const shouldFloat = !entry.isIntersecting && candidate.isConnected && sourceHasScrolledAboveViewport(candidate);
+    const shouldFloat = !entry.isIntersecting
+      && sourceHasScrolledAboveViewport(candidate)
+      && candidate.isConnected;
     setFloatingVisible(shouldFloat);
   }, { root: null, threshold: 0.01 });
   observer.observe(candidate);
