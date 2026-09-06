@@ -15,7 +15,24 @@ import {
 
 const app = document.querySelector("#app");
 const config = runtimeConfig();
-const INTERACTIVE_SELECTOR = "input, textarea, select, button, [contenteditable='true'], [role='slider'], [data-ptr-ignore]";
+
+// Pull-to-refresh should not hijack true input/drag controls. Ordinary content
+// buttons are intentionally NOT blocked: on the Home screen the large CTA covers
+// a substantial part of the viewport, and starting a downward pull there should
+// still be able to refresh once the gesture clearly becomes a drag.
+const INTERACTIVE_SELECTOR = [
+  "input",
+  "textarea",
+  "select",
+  "[contenteditable='true']",
+  "[role='slider']",
+  "[role='switch']",
+  ".accent-swatch-grid",
+  ".theme-segmented",
+  ".bottom-nav",
+  ".floating-back-control",
+  "[data-ptr-ignore]",
+].join(", ");
 
 let clientPromise = null;
 let gesture = null;
@@ -23,11 +40,21 @@ let refreshing = false;
 let settleTimer = null;
 
 function pageScrollTop() {
-  return Number(document.scrollingElement?.scrollTop ?? window.scrollY ?? 0);
+  const candidates = [
+    document.scrollingElement?.scrollTop,
+    document.documentElement?.scrollTop,
+    document.body?.scrollTop,
+    window.scrollY,
+  ].map((value) => Number(value ?? 0)).filter(Number.isFinite);
+  return Math.max(0, ...candidates);
 }
 
 function interactiveTarget(target) {
   return target instanceof Element && Boolean(target.closest(INTERACTIVE_SELECTOR));
+}
+
+function refreshIconMarkup() {
+  return `<span class="ptr-refresh-icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="M20 11a8 8 0 1 0-2.34 5.66"/><path d="M20 4v7h-7"/></svg></span>`;
 }
 
 function indicator() {
@@ -39,7 +66,7 @@ function indicator() {
   node.setAttribute("role", "status");
   node.setAttribute("aria-live", "polite");
   node.setAttribute("aria-atomic", "true");
-  node.innerHTML = `<span class="ptr-spinner" aria-hidden="true"></span><span class="ptr-label">Pull to refresh</span>`;
+  node.innerHTML = `${refreshIconMarkup()}<span class="ptr-label">Pull to refresh</span>`;
   document.body.append(node);
   return node;
 }
@@ -79,10 +106,10 @@ function showPull(metrics) {
   app.classList.add("ptr-pulling");
   app.style.setProperty("--ptr-content-y", `${metrics.visualDistance}px`);
   setIndicator({
-    visible: metrics.rawDistance > 7,
+    visible: metrics.rawDistance > 2,
     ready: metrics.ready,
     progress: metrics.progress,
-    y: Math.max(0, metrics.visualDistance - 4),
+    y: Math.max(0, metrics.visualDistance - 2),
     label: metrics.ready ? "Release to refresh" : "Pull to refresh",
   });
 }
@@ -201,7 +228,7 @@ function beginGesture(event) {
   const touch = event.touches[0];
   const route = appRoute();
   const interactive = interactiveTarget(event.target);
-  const atTop = pageScrollTop() <= 1;
+  const atTop = pageScrollTop() <= 4;
   gesture = {
     route,
     startX: touch.clientX,
@@ -225,7 +252,7 @@ function moveGesture(event) {
   const metrics = pullGestureMetrics(gesture.startX, gesture.startY, touch.clientX, touch.clientY);
   gesture.metrics = metrics;
 
-  if (pageScrollTop() > 1) {
+  if (pageScrollTop() > 4) {
     gesture.eligible = false;
     settlePull();
     return;
@@ -234,14 +261,18 @@ function moveGesture(event) {
   if (!gesture.eligible) {
     // Active lessons/forms never get app pull-to-refresh. This top-edge guard also
     // prevents Safari/PWA native pull-to-refresh from hard-reloading in-progress state.
-    if (gesture.atTop && !gesture.interactive && metrics.dy > 8 && event.cancelable) event.preventDefault();
+    if (gesture.atTop && !gesture.interactive && metrics.dy > 4 && event.cancelable) event.preventDefault();
     return;
   }
   if (!metrics.directionValid) {
     if (metrics.dy <= 0) settlePull();
     return;
   }
-  if (event.cancelable) event.preventDefault();
+
+  // Cancel Safari's native rubber-band/browser refresh as soon as this is clearly
+  // our downward gesture. Using a non-passive capture listener makes this reliable
+  // in standalone/PWA and normal iPhone Safari contexts.
+  if (metrics.dy > 2 && event.cancelable) event.preventDefault();
   showPull(metrics);
 }
 
@@ -264,10 +295,10 @@ function cancelGesture() {
 if (app) {
   document.documentElement.classList.add("ptr-managed");
   indicator();
-  window.addEventListener("touchstart", beginGesture, { passive: true });
-  window.addEventListener("touchmove", moveGesture, { passive: false });
-  window.addEventListener("touchend", endGesture, { passive: true });
-  window.addEventListener("touchcancel", cancelGesture, { passive: true });
+  document.addEventListener("touchstart", beginGesture, { passive: false, capture: true });
+  document.addEventListener("touchmove", moveGesture, { passive: false, capture: true });
+  document.addEventListener("touchend", endGesture, { passive: true, capture: true });
+  document.addEventListener("touchcancel", cancelGesture, { passive: true, capture: true });
 }
 
 // Exposed only for deterministic browser tests/debugging; it still obeys the
