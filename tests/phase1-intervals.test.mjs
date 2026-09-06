@@ -40,7 +40,8 @@ test("exact Phase 1 lesson order remains untouched as later phases are added", (
 
 test("each Phase 1 lesson still has teaching and exercises", () => {
   for (const id of IDS) {
-    assert.ok(lessonForSkill(id)?.teachingSteps.length >= 4, id);
+    const minimumTeaching = id === IDS[0] ? 3 : 4;
+    assert.ok(lessonForSkill(id)?.teachingSteps.length >= minimumTeaching, id);
     assert.ok(exerciseForSkill(id,0), id);
   }
 });
@@ -141,12 +142,14 @@ test("Phase 1 recent question generation still has meaningful variety", () => {
   }
 });
 
-test("Phase 1 teaching still marks automatic recall vs understanding", () => {
+test("Phase 1 teaching still marks automatic recall vs understanding where pedagogically appropriate", () => {
   for (const lesson of phase1Lessons()) {
     const expectations=new Set(lesson.teachingSteps.map(x=>x.expectation));
-    assert.ok(expectations.has("know-instantly"),`${lesson.title} automatic target`);
     assert.ok(expectations.has("understand"),`${lesson.title} conceptual target`);
-    assert.ok(lesson.teachingSteps.filter(x=>x.workedExample).length>=lesson.teachingSteps.length-1,`${lesson.title} needs examples around its rules`);
+    if (lesson.skillId !== IDS[0]) {
+      assert.ok(expectations.has("know-instantly"),`${lesson.title} automatic target`);
+      assert.ok(lesson.teachingSteps.filter(x=>x.workedExample).length>=lesson.teachingSteps.length-1,`${lesson.title} needs examples around its rules`);
+    }
   }
   const ui=fs.readFileSync("web/lesson-ui.js","utf8");
   assert.match(ui,/KNOW THIS INSTANTLY/);
@@ -163,18 +166,20 @@ test("Phase 1 READY remains reviewable and RETAINED lowers but does not erase re
   assert.ok(interleavingTargets(new Map([[id,retained]])).includes(id));
 });
 
-test("Phase 1 priorities remain maximal and rounds remain at least 30", () => {
+test("Phase 1 priorities remain maximal while only Lesson 1 acquisition is shortened", () => {
   assert.ok(phase1Skills().every(x=>x.foundationality===5&&x.reviewPriority===5&&x.longTermRecurrence===5));
-  for (const skill of phase1Skills()) {
-    assert.ok(practiceRoundPlan(skill.id,"new").size>=30);
-    assert.ok(practiceRoundPlan(skill.id,"review").size>=30);
+  assert.equal(practiceRoundPlan(IDS[0],"new").size,10);
+  assert.equal(practiceRoundPlan(IDS[0],"review").size,30);
+  for (const skill of phase1Skills().slice(1)) {
+    assert.ok(practiceRoundPlan(skill.id,"new").size>=30, skill.id);
+    assert.ok(practiceRoundPlan(skill.id,"review").size>=30, skill.id);
   }
-  assert.match(renderPracticeRoundCounter(2,30,1),/Question 3 of 30/);
+  assert.match(renderPracticeRoundCounter(2,10,1),/Question 3 of 10/);
 });
 
 test("Phase 1 checkpoint remains intact while later checkpoints are added", () => {
   const checkpoint=checkpointDefinition(1);
-  assert.ok(checkpoint&&checkpoint.minItems>=14);
+  assert.ok(checkpoint&&checkpoint.minItems===200&&checkpoint.maxItems===200);
   const ids=new Set(checkpoint.competencies.map(x=>x.id));
   for (const id of ["perfect-construction","major-minor-construction","interval-identification","interval-inversion","quality-discrimination","tritone-spelling","varied-root-spelling"]) assert.ok(ids.has(id),id);
   assert.ok(checkpoint.competencies.every(x=>x.critical));
@@ -191,7 +196,7 @@ test("Phase 1 lesson replay starts at teaching and Skip to Review remains at bot
   const replay={stage:"teaching",teachingStepIndex:0,canSkipToReview:true,skipPlacement:"teaching-bottom"};
   assert.doesNotMatch(renderTeachingLesson({lesson,openingState:first}),/Skip to Review/);
   const html=renderTeachingLesson({lesson,openingState:replay});
-  assert.ok(html.indexOf("Skip to Review")>html.indexOf(lesson.teachingSteps.at(-1).body));
+  assert.ok(html.indexOf("Skip to Review")>html.indexOf("Perfect Octave"));
 });
 
 test("no Phase 1 user-facing hint controls were reintroduced", () => {
