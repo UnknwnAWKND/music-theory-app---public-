@@ -1,0 +1,10 @@
+import type { LessonContent } from "./types.js";
+export declare function registerLesson(content: LessonContent): void;
+export declare function lessonForSkill(skillId: string): LessonContent | undefined;
+export declare function activeLessonSkillIds(): string[];
+export declare function phase1Lessons(): readonly LessonContent[];
+export declare function phase2Lessons(): readonly LessonContent[];
+export declare function phase3Lessons(): readonly LessonContent[];
+export declare function phase4Lessons(): readonly LessonContent[];
+export declare function phase5Lessons(): readonly LessonContent[];
+export declare function phase6Lessons(): readonly LessonContent[];
