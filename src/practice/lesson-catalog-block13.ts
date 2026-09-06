@@ -63,7 +63,7 @@ const phase1 = patchSteps(priorPhase1Lessons(), [
     stepId: "p8",
     patch: {
       title: "Perfect Octave (P8)",
-      body: "A Perfect Octave reaches the same note name in the next octave.\n\nExample: C to the next C above.\n\nC–D–E–F–G–A–B–C spans eight note names, so the interval size is 8. On an equal-tempered piano, those two Cs are 12 semitones apart and are different piano keys.",
+      body: "A Perfect Octave reaches the same note name in the next octave.\n\nExample: C to the next C above.\n\nC–D–E–F–G–A–B–C spans eight note names, so the interval size is 8. The two Cs are different piano keys, 12 semitones apart on an equal-tempered piano.",
       expectation: "understand",
       visual: { kind: "piano", data: { highlightedKeys: ["C4", "C5"] } },
     },
