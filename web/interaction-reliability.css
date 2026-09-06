@@ -1,0 +1,52 @@
+/* Interaction reliability: visible recovery states must never become click blockers. */
+.interaction-recovery-toast {
+  position: fixed;
+  z-index: 3200;
+  left: 50%;
+  top: calc(env(safe-area-inset-top) + 14px);
+  max-width: min(88vw, 420px);
+  padding: 10px 14px;
+  color: var(--text-primary);
+  background: color-mix(in srgb, var(--surface-raised) 97%, transparent);
+  border: 1px solid var(--border-strong);
+  border-radius: 14px;
+  box-shadow: var(--shadow-float);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: translate(-50%, -8px);
+  transition: opacity 130ms ease, transform 130ms ease, visibility 130ms ease;
+  font-size: .82rem;
+  font-weight: 700;
+}
+
+.interaction-recovery-toast[data-visible="true"] {
+  opacity: 1;
+  visibility: visible;
+  transform: translate(-50%, 0);
+}
+
+/* Hidden helper/sentinel layers must never intercept a tap. */
+.profile-dock-anchor,
+.profile-dock-anchor[hidden],
+dialog:not([open]),
+.ptr-indicator,
+.floating-back-spacer {
+  pointer-events: none !important;
+}
+
+.floating-back-control:not(.is-visible) {
+  pointer-events: none !important;
+}
+
+/* Disabled controls must look disabled instead of appearing tappable. */
+button:disabled,
+input:disabled,
+[aria-disabled="true"] {
+  opacity: .52;
+  cursor: not-allowed;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .interaction-recovery-toast { transition: none; }
+}
