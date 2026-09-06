@@ -49,9 +49,48 @@ const phase1 = patchSteps(priorPhase1Lessons(), [
       body: "An interval is the distance in pitch between two notes.\n\nAn interval name has two parts. Size tells you how many note names are spanned, counted by letter. Quality tells you the exact version of that size, measured by its half-step (semitone) distance.",
     },
   },
+  {
+    skillId: "intervals.lesson-2-perfect-fifth",
+    stepId: "p5-definition",
+    patch: {
+      title: "Perfect 5th (P5)",
+      body: "Count the note letters first. A 5th spans five note names, counted by letter, including the starting note. The quality name here is Perfect; the full quality system comes later.",
+      workedExample: "C–D–E–F–G spans five note names. Use C→G as the reference Perfect 5th for this lesson.",
+      visual: { kind: "piano", data: { highlighted: ["C", "G"] } },
+    },
+  },
+  {
+    skillId: "intervals.lesson-4-thirds",
+    stepId: "major-minor-family",
+    patch: {
+      title: "Major and Minor describe the exact 3rd",
+      body: "The interval number still comes from the written note-letter span. Now half steps distinguish the exact quality. For the same interval number, Minor is one half step smaller than Major.",
+      workedExample: "C–D–E makes both examples 3rds. C→E is 4 half steps, so it is M3. C→E♭ is 3 half steps, so it is m3.",
+    },
+  },
 ]);
 
 const phase2 = patchSteps(priorPhase2Lessons(), [
+  {
+    skillId: "major-scales.lesson-1-formula",
+    stepId: "scale-tonic-definition",
+    patch: {
+      title: "Scale and tonic",
+      body: "A scale is an ordered set of notes organized around a home note. That home note is the tonic. In this curriculum, root is used mainly for the note a chord is built from.",
+      workedExample: "In D major, D is the tonic.",
+    },
+  },
+  {
+    skillId: "major-scales.lesson-1-formula",
+    stepId: "formula-payoff",
+    patch: {
+      title: "Use the formula as a reliable backup",
+      body: "The goal is eventually to recall familiar major scales quickly, but W-W-H-W-W-W-H lets you rebuild one accurately whenever memory fails.",
+      workedExample: "If E♭ major is not instant yet, the formula lets you reconstruct E♭ F G A♭ B♭ C D instead of guessing.",
+      payoff: "That same note collection will support later chord building and music-making in different keys.",
+      expectation: "understand",
+    },
+  },
   {
     skillId: "major-scales.lesson-3-build-all-roots",
     stepId: "twelve-pitch-classes",
@@ -64,10 +103,31 @@ const phase2 = patchSteps(priorPhase2Lessons(), [
   },
 ]);
 
-const phase3 = priorPhase3Lessons().map(cloneLesson);
+const phase3 = patchSteps(priorPhase3Lessons(), [
+  {
+    skillId: "minor-scales.lesson-4-melodic-minor",
+    stepId: "melodic-curriculum-form",
+    patch: {
+      title: "Classical melodic minor changes with direction",
+      body: "In the classical form taught here, ascending melodic minor starts from natural minor and raises degrees 6 and 7 by one half step. Descending, it returns to the natural-minor pitches.",
+      workedExample: "A ascending: A B C D E F♯ G♯ A. Descending: A G F E D C B A.",
+    },
+  },
+]);
+
 const phase4 = priorPhase4Lessons().map(cloneLesson);
 const phase5 = priorPhase5Lessons().map(cloneLesson);
-const phase6 = priorPhase6Lessons().map(cloneLesson);
+const phase6 = patchSteps(priorPhase6Lessons(), [
+  {
+    skillId: "circle-of-fifths.lesson-1-what-it-represents",
+    stepId: "counterclockwise-inverse",
+    patch: {
+      title: "Counterclockwise gives the P4/P5 partner direction",
+      body: "From one tonic, moving counterclockwise reaches a note a Perfect 4th (P4) above. The same destination can also be described as a Perfect 5th (P5) below, so the Phase 1 P4↔P5 relationship explains both directions.",
+      workedExample: "C→F counterclockwise is C up a P4, or equivalently C down a P5 to F.",
+    },
+  },
+]);
 
 const ALL_LESSONS = [...phase1, ...phase2, ...phase3, ...phase4, ...phase5, ...phase6];
 const BY_ID = new Map(ALL_LESSONS.map((lesson) => [lesson.skillId, lesson]));
