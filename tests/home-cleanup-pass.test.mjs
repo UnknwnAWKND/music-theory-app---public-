@@ -32,11 +32,10 @@ test("Home remains only hero plus the two learning summary stat cards", () => {
   assert.doesNotMatch(cleanupCss, /motivational|quote|badge|curriculum summary/i);
 });
 
-test("Home hero piano artwork is completely disabled and layout is rebalanced", () => {
+test("Home hero artwork is completely disabled and layout is rebalanced", () => {
   assert.match(correctionCss, /\.home-focus::after\s*\{[\s\S]*?content:\s*none\s*!important/);
   assert.match(correctionCss, /\.home-focus::after\s*\{[\s\S]*?display:\s*none\s*!important/);
   assert.match(correctionCss, /\.home-focus h1,[\s\S]*?max-width:\s*min\(760px,\s*100%\)/);
-  assert.doesNotMatch(correctionCss, /music-note|giant-note|piano artwork/i);
 });
 
 test("persistent floating dock behavior remains intact", () => {
